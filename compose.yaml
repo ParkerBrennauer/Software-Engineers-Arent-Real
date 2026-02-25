@@ -1,0 +1,40 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: food_delivery_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: food_delivery_db
+      MYSQL_USER: app_user
+      MYSQL_PASSWORD: app_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - db-data:/var/lib/mysql frontend
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: food_delivery_backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_USER=app_user
+      - DB_PASSWORD=app_password
+      - DB_NAME=food_delivery_db
+    depends_on:
+      - db
+  frontend:
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: food_delivery_frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+volumes:
+  db-data:
