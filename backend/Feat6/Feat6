@@ -1,0 +1,26 @@
+class payment_calculator(order):
+
+    # Feat6-FR1
+    TAX_RATE = 0.12
+    DELIVERY_FEE = 10 # temp fixed delivery fee
+
+    def calculate_total(cart_items):
+
+        # If nothing is in cart, do not proceed and print error message
+        if not cart_items:
+            return print("Error! Cart must contain at least one item.")
+
+        # Sum up the subtotal
+        for item in cart_items:
+            subtotal += item.price * item.quantity
+
+        # Calculate taxes and add them
+        taxes = subtotal * payment_calculator.TAX_RATE
+
+        # Add delivery fee
+        delivery_fee = payment_calculator.DELIVERY_FEE
+
+        # Return full breakdown
+        total = subtotal + taxes + delivery_fee
+
+        return {subtotal,taxes,delivery_fee,total}
