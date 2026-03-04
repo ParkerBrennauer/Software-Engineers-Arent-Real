@@ -3,7 +3,7 @@
 from pydantic import BaseModel
 
 class Customer(BaseModel):
-
+    
     name : str
     login : str
     password : str
