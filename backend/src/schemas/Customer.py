@@ -1,3 +1,5 @@
+"""Customer schema class module."""
+
 from pydantic import BaseModel
 
 class Customer(BaseModel):
@@ -9,7 +11,7 @@ class Customer(BaseModel):
     paymentType : str
     paymentdetails : str
     pastorders : list
-    
+
 class CreateCustomer(BaseModel):
 
     name : str
@@ -20,7 +22,7 @@ class CreateCustomer(BaseModel):
     paymentdetails : str
 
 class UpdateCustomer(BaseModel):
-    
+
     name : str
     login : str
     password : str
