@@ -16,17 +16,17 @@ async def test_create_user_success_customer():
     )
 
     with patch.object(UserRepo, "get_by_username", AsyncMock(return_value=None)), \
-         patch.object(UserRepo, "save_user", AsyncMock(return_value={
-             "id": 1,
-             "email": "c@example.com",
-             "full_name": "Cust User",
-             "role": UserRole.CUSTOMER,
-             "username": "cust1",
-             "hashed_password": "hashed_pw",
-             "is_active": True,
-             "requires_2fa": False,
-         })) as save_user_mock, \
-         patch.object(UserService, "get_password_hash", AsyncMock(return_value="hashed_pw")):
+            patch.object(UserRepo, "save_user", AsyncMock(return_value={
+                "id": 1,
+                "email": "c@example.com",
+                "full_name": "Cust User",
+                "role": UserRole.CUSTOMER,
+                "username": "cust1",
+                "hashed_password": "hashed_pw",
+                "is_active": True,
+                "requires_2fa": False,
+            })) as save_user_mock, \
+            patch.object(UserService, "get_password_hash", AsyncMock(return_value="hashed_pw")):
 
         created = await UserService.create_user(user_in)
 
@@ -50,7 +50,7 @@ async def test_create_user_duplicate_username_raises():
     )
 
     with patch.object(UserRepo, "get_by_username", AsyncMock(return_value={"id": 10, "username": "taken"})), \
-         patch.object(UserRepo, "save_user", AsyncMock()) as save_user_mock:
+            patch.object(UserRepo, "save_user", AsyncMock()) as save_user_mock:
 
         with pytest.raises(ValueError, match="Username already exists"):
             await UserService.create_user(user_in)
@@ -69,17 +69,17 @@ async def test_create_user_driver_requires_2fa():
     )
 
     with patch.object(UserRepo, "get_by_username", AsyncMock(return_value=None)), \
-         patch.object(UserRepo, "save_user", AsyncMock(return_value={
-             "id": 2,
-             "email": "d@example.com",
-             "full_name": "Driver User",
-             "role": UserRole.DRIVER,
-             "username": "driver1",
-             "hashed_password": "hashed_pw",
-             "is_active": True,
-             "requires_2fa": True,
-         })) as save_user_mock, \
-         patch.object(UserService, "get_password_hash", AsyncMock(return_value="hashed_pw")):
+            patch.object(UserRepo, "save_user", AsyncMock(return_value={
+                "id": 2,
+                "email": "d@example.com",
+                "full_name": "Driver User",
+                "role": UserRole.DRIVER,
+                "username": "driver1",
+                "hashed_password": "hashed_pw",
+                "is_active": True,
+                "requires_2fa": True,
+            })) as save_user_mock, \
+            patch.object(UserService, "get_password_hash", AsyncMock(return_value="hashed_pw")):
 
         await UserService.create_user(user_in)
         payload = save_user_mock.await_args.args[0]
