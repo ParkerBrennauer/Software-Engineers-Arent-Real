@@ -99,7 +99,7 @@ def test_rate_order_invalid_stars_zero():
         "/orders/1d8e87M/rating",
         json={"stars": 0}
     )
-    assert response.status_code == 422  
+    assert response.status_code == 422
 
 
 def test_rate_order_invalid_stars_six():
