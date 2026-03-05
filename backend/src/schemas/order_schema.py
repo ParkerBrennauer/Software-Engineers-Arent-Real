@@ -29,12 +29,3 @@ class OrderUpdate(BaseModel):
     time: int
     cusine: str
     distance: float
-
-
-class Item(BaseModel):
-
-    itemName: str
-    cost: float
-    cusine: str
-    time: int
-    resturant: str
