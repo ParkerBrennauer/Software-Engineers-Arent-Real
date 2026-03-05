@@ -9,4 +9,7 @@
 *.sln
 *.sw?
 
-*.env
+#Database Volume Data
+db-data/
+__pycache__/
+.env
