@@ -11,4 +11,4 @@
 
 #Database Volume Data
 db-data/
-**/db-data/
+**/db-data/__pycache__/
