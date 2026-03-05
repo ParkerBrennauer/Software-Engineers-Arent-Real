@@ -14,13 +14,13 @@ class PaymentService:
             return False
         if (customer.paymentType.lower() not in ["credit card", "debit card"]):
             return False
-        
+
         return True
 
     # Payment processing
     @staticmethod
     def process_payment(order: Order, customer: Customer) -> Order:
-    
+
         # Checking if the payment has already been processed
         if order.payment_status == PaymentStatus.ACCEPTED:
             raise Exception("Payment already successfully processed.")

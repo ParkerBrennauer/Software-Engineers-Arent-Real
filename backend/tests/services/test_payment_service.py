@@ -21,7 +21,7 @@ def create_order():
         cost=25.0,
         resturant="Joe's pizza",
         customer="Trevor",
-        time=67,
+        time=20,
         cusine="Italian",
         distance=5.0
     )
@@ -48,7 +48,7 @@ def test_validate_payment_invalid_card():
 
 # The system processes payment and updates both the order and payment status
 def test_process_payment_update_status():
-    
+
     customer = create_customer()
     order = create_order()
 
@@ -67,7 +67,7 @@ def test_process_payment_update_status():
 
 # Each order is processed only once (to prevent processing payment multiple times)
 def test_duplicate_payment_prevention():
-    
+
     customer = create_customer()
     order = create_order()
 

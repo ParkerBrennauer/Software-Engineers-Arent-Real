@@ -1,5 +1,5 @@
-from pydantic import BaseModel
 from enum import Enum
+from pydantic import BaseModel
 
 # Enum for keeping track of the order status and payment status
 class OrderStatus(str, Enum):
