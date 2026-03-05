@@ -27,7 +27,8 @@ def create_order():
     )
 
 # The system shall validate payment details
-def test_validate_payment_success():
+@pytest.mark.asyncio
+async def test_validate_payment_success():
 
     customer = create_customer()
 
@@ -37,7 +38,8 @@ def test_validate_payment_success():
 
 
 # The payment fails for invalid details
-def test_validate_payment_invalid_card():
+@pytest.mark.asyncio
+async def test_validate_payment_invalid_card():
 
     customer = create_customer()
     customer.paymentdetails = "abcd"
@@ -47,7 +49,8 @@ def test_validate_payment_invalid_card():
     assert result is False
 
 # The system processes payment and updates both the order and payment status
-def test_process_payment_update_status():
+@pytest.mark.asyncio
+async def test_process_payment_update_status():
 
     customer = create_customer()
     order = create_order()
@@ -66,7 +69,8 @@ def test_process_payment_update_status():
     ]
 
 # Each order is processed only once (to prevent processing payment multiple times)
-def test_duplicate_payment_prevention():
+@pytest.mark.asyncio
+async def test_duplicate_payment_prevention():
 
     customer = create_customer()
     order = create_order()
@@ -77,7 +81,8 @@ def test_duplicate_payment_prevention():
         PaymentService.process_payment(order, customer)
 
 # The system allows customer to retry after failed payment
-def test_retry_payment_after_failed_payment():
+@pytest.mark.asyncio
+async def test_retry_payment_after_failed_payment():
 
     customer = create_customer()
     order = create_order()
