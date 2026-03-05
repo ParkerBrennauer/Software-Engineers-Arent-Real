@@ -53,7 +53,8 @@ class UserService:
                 raise ValueError("Username already exists")
 
         if "password" in update_data:
-            update_data["hashed_password"] = await UserService.get_password_hash(update_data["password"])
+            update_data["hashed_password"] = \
+                await UserService.get_password_hash(update_data["password"])
             del update_data["password"]
 
         if "role" in update_data:
