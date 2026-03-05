@@ -1,4 +1,4 @@
-from src.schemas.user_schema import UserRole, UserBase
+from src.schemas.user_schema import UserBase
 
 
 class UserInternal(UserBase):

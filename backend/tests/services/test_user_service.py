@@ -1,5 +1,5 @@
-import pytest
 from unittest.mock import AsyncMock, patch
+import pytest
 from src.schemas.user_schema import UserRegister, UserRole
 from src.services.user_service import UserService
 from src.repositories.user_repo import UserRepo
@@ -49,7 +49,11 @@ async def test_create_user_duplicate_username_raises():
         password="secret123",
     )
 
-    with patch.object(UserRepo, "get_by_username", AsyncMock(return_value={"id": 10, "username": "taken"})), \
+    with \
+            patch.object(UserRepo, "get_by_username", AsyncMock(return_value={
+                "id": 10,
+                "username": "taken"
+            })), \
             patch.object(UserRepo, "save_user", AsyncMock()) as save_user_mock:
 
         with pytest.raises(ValueError, match="Username already exists"):

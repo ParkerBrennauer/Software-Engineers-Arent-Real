@@ -1,6 +1,6 @@
 import json
 
-jsonPath = "backend/src/data/raw/deliveries.json"
+JSON_PATH = "backend/src/data/raw/deliveries.json"
 restaurants = {}
 items = {}
 customers = {}
@@ -8,12 +8,11 @@ delivery = {}
 orders = {}
 reviews = {}
 
-with open(jsonPath, "r") as file:
+with open(JSON_PATH, "r", encoding="utf-8") as file:
     allEntries = json.load(file)
 
 for entry in allEntries:
 
-    # ---------- restaurant ----------
     restaurantId = entry["restaurant_id"]
     if restaurantId not in restaurants:
         restaurants[restaurantId] = {
@@ -23,37 +22,37 @@ for entry in allEntries:
 
     restaurants[restaurantId]["order_ids"].append(entry["order_id"])
 
-    if (entry["customer_rating"] == 5):
+    if entry["customer_rating"] == 5:
         restaurants[restaurantId]["ratings"]["5"] += 1
-    elif (entry["customer_rating"] == 4):
+    elif entry["customer_rating"] == 4:
         restaurants[restaurantId]["ratings"]["4"] += 1
-    elif (entry["customer_rating"] == 3):
+    elif entry["customer_rating"] == 3:
         restaurants[restaurantId]["ratings"]["3"] += 1
-    elif (entry["customer_rating"] == 2):
+    elif entry["customer_rating"] == 2:
         restaurants[restaurantId]["ratings"]["2"] += 1
-    elif (entry["customer_rating"] == 1):
+    elif entry["customer_rating"] == 1:
         restaurants[restaurantId]["ratings"]["1"] += 1
-    elif (entry["customer_rating"] == 0):
+    elif entry["customer_rating"] == 0:
         restaurants[restaurantId]["ratings"]["0"] += 1
 
     # ---------- items ----------
     food_items = entry["food_item"]
-    itemKey = f"{food_items}_{restaurantId}"
+    item_key = f"{food_items}_{restaurantId}"
 
-    if itemKey not in items:
-        items[itemKey] = {
+    if item_key not in items:
+        items[item_key] = {
             "food_item": entry["food_item"],
             "restaurant_id": entry["restaurant_id"],
             "times_ordered": 0,
             "avg_rating": 0.00
         }
 
-    items[itemKey]["times_ordered"] += 1
+    items[item_key]["times_ordered"] += 1
     # (currentAvg*oldCount) -> oldTotal + newValue -> newTotal/newCount -> newAvg
-    items[itemKey]["avg_rating"] = ((items[itemKey]["avg_rating"] * (
-        items[itemKey]["times_ordered"] - 1)) + entry["customer_rating"]) / items[itemKey]["times_ordered"]
+    items[item_key]["avg_rating"] = ((items[item_key]["avg_rating"] *
+                                      (items[item_key]["times_ordered"] - 1))
+                                     + entry["customer_rating"]) / items[item_key]["times_ordered"]
 
-    # ---------- orders ----------
     orderId = entry["order_id"]
     if orderId not in orders:
         orders[orderId] = {
@@ -62,7 +61,6 @@ for entry in allEntries:
             "route_taken": entry["route_taken"],
         }
 
-    # ---------- reviews -----------
     if orderId not in reviews:
         reviews[orderId] = {
             "customer_rating": entry["customer_rating"],
@@ -73,7 +71,6 @@ for entry in allEntries:
             "customer_satisfaction": entry["customer_satisfaction"]
         }
 
-    # ---------- customer ----------
     customerId = entry["customer_id"]
     if customerId not in customers:
         customers[customerId] = {
@@ -89,7 +86,6 @@ for entry in allEntries:
 
     customers[customerId]["order_ids"].append(entry["order_id"])
 
-    # ---------- delivery ----------
     if orderId not in delivery:
         delivery[orderId] = {
             "delivery_method": entry["delivery_method"],
@@ -108,27 +104,26 @@ for entry in allEntries:
         }
 
 
-# ---------- create new json files ----------
-restaurantsPath = "backend/src/data/restaurants.json"
-with open(restaurantsPath, "w", encoding="utf-8") as file:
+RESTAURANT_PATH = "backend/src/data/restaurants.json"
+with open(RESTAURANT_PATH, "w", encoding="utf-8") as file:
     json.dump(restaurants, file, indent=1)
 
-itemsPath = "backend/src/data/items.json"
-with open(itemsPath, "w", encoding="utf-8") as file:
+ITEM_PATH = "backend/src/data/items.json"
+with open(ITEM_PATH, "w", encoding="utf-8") as file:
     json.dump(items, file, indent=1)
 
-ordersPath = "backend/src/data/orders.json"
-with open(ordersPath, "w", encoding="utf-8") as file:
+ORDERS_PATH = "backend/src/data/orders.json"
+with open(ORDERS_PATH, "w", encoding="utf-8") as file:
     json.dump(orders, file, indent=1)
 
-reviewsPath = "backend/src/data/reviews.json"
-with open(reviewsPath, "w", encoding="utf-8") as file:
+REVIEWS_PATH = "backend/src/data/reviews.json"
+with open(REVIEWS_PATH, "w", encoding="utf-8") as file:
     json.dump(reviews, file, indent=1)
 
-customersPath = "backend/src/data/customer.json"
-with open(customersPath, "w", encoding="utf-8") as file:
+CUSTOMERS_PATH = "backend/src/data/customers.json"
+with open(CUSTOMERS_PATH, "w", encoding="utf-8") as file:
     json.dump(customers, file, indent=1)
 
-deliveryPath = "backend/src/data/delivery.json"
-with open(deliveryPath, "w", encoding="utf-8") as file:
+DELIVERY_PATH = "backend/src/data/delivery.json"
+with open(DELIVERY_PATH, "w", encoding="utf-8") as file:
     json.dump(delivery, file, indent=1)

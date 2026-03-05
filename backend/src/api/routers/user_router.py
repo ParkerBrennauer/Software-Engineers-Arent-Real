@@ -1,5 +1,5 @@
-from fastapi import APIRouter, HTTPException, status
-from src.schemas.user_schema import UserBase, UserRegister, UserLogin, UserRole, UserResponse
+from fastapi import APIRouter, status
+from src.schemas.user_schema import UserRegister, UserResponse
 from src.services.user_service import UserService
 # Define the prefix for the endpoints
 router = APIRouter(prefix="/users", tags=["users"])
