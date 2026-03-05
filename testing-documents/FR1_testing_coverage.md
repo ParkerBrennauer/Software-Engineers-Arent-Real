@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the unit and integration tests for FR1, which allows customers to rate completed orders using a star-based rating system (1–5 stars).
+This document describes the unit and integration tests for FR1 for Feature 9, which allows customers to rate completed orders using a star-based rating system (1–5 stars).
 
 **Acceptance Criteria:**
 - A customer can submit a star rating between 1 and 5 for a completed order
@@ -24,7 +24,7 @@ This document describes the unit and integration tests for FR1, which allows cus
 
 ## Unit Tests (`tests/test_unit_rating.py`)
 
-Unit tests verify individual functions in **isolation** using mocked dependencies. No server, no real data file.
+Unit tests verify individual functions in **isolation** using mocked dependencies. 
 
 ### Test 1: `test_submit_rating_success`
 - **Function tested:** `submit_rating()` in `rating_service.py`
