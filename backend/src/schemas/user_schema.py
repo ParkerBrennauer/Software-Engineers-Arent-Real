@@ -11,13 +11,21 @@ class UserRole(str, Enum):
 
 class UserBase(BaseModel):
     email: EmailStr
-    full_name: str
+    name: str
     role: UserRole
     username: str
 
 
 class UserRegister(UserBase):
     password: str
+
+
+class UserUpdate(BaseModel):
+    email: EmailStr | None = None
+    name: str | None = None
+    role: UserRole | None = None
+    username: str | None = None
+    password: str | None = None
 
 
 class UserLogin(BaseModel):

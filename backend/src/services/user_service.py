@@ -1,4 +1,4 @@
-from src.schemas.user_schema import UserRegister, UserRole
+from src.schemas.user_schema import UserRegister, UserRole, UserUpdate
 from src.repositories.user_repo import UserRepo
 from src.models.user_model import UserInternal
 from passlib.context import CryptContext
@@ -35,3 +35,35 @@ class UserService:
         saved_data = await UserRepo.save_user(user_data)
 
         return UserInternal.model_validate(saved_data)
+
+    @staticmethod
+    async def update_user(username: str, user_in: UserUpdate) -> dict:
+        existing_user = await UserRepo.get_by_username(username)
+        if not existing_user:
+            raise ValueError("User not found")
+
+        update_data = user_in.model_dump(exclude_unset=True, exclude_none=True)
+        if not update_data:
+            return UserInternal.model_validate(existing_user)
+
+        new_username = update_data.get("username")
+        if new_username and new_username != username:
+            username_taken = await UserRepo.get_by_username(new_username)
+            if username_taken:
+                raise ValueError("Username already exists")
+
+        if "password" in update_data:
+            update_data["hashed_password"] = \
+                await UserService.get_password_hash(update_data["password"])
+            del update_data["password"]
+
+        if "role" in update_data:
+            update_data["requires_2fa"] = update_data["role"] in [
+                UserRole.DRIVER, UserRole.RESTAURANT_OWNER, UserRole.RESTAURANT_STAFF
+            ]
+
+        updated_user = await UserRepo.update_by_username(username, update_data)
+        if not updated_user:
+            raise ValueError("User not found")
+
+        return UserInternal.model_validate(updated_user)

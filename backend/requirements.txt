@@ -2,4 +2,5 @@ aiofiles==25.1.0
 fastapi==0.135.1
 passlib==1.7.4
 pydantic==2.12.5
-pytest==9.0.2
+pytest==8.3.5
+pytest-asyncio==1.2.0
