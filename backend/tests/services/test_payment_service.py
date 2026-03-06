@@ -2,6 +2,7 @@ from src.services.payment_service import PaymentService
 from src.schemas.order_schema import Order, PaymentStatus, OrderStatus
 from src.schemas.customer_schema import Customer
 import pytest
+from pydantic import ValidationError
 
 # Creating helper objects so that I don't have to rewrite the shit every time
 def create_customer():
@@ -26,27 +27,30 @@ def create_order():
         distance=5.0
     )
 
-# The system shall validate payment details
+# The system shall validate payment details (by checking customer creation)
 @pytest.mark.asyncio
-async def test_validate_payment_success():
+async def test_validate_payment_details():
 
     customer = create_customer()
 
-    result = PaymentService.validate_payment(customer)
-
-    assert result is True
+    assert customer.paymentdetails == "1234567812345678"
 
 
 # The payment fails for invalid details
 @pytest.mark.asyncio
-async def test_validate_payment_invalid_card():
+async def test_invalid_card():
 
-    customer = create_customer()
-    customer.paymentdetails = "abcd"
+    with pytest.raises(ValidationError):
 
-    result = PaymentService.validate_payment(customer)
-
-    assert result is False
+        Customer(
+            name="Trevor",
+            login="trevor123",
+            password="pass",
+            email="twuchic123@gmail.com",
+            paymentType="credit card",
+            paymentdetails="abcd",
+            pastorders=[]
+        )
 
 # The system processes payment and updates both the order and payment status
 @pytest.mark.asyncio
@@ -55,15 +59,15 @@ async def test_process_payment_update_status():
     customer = create_customer()
     order = create_order()
 
-    update_order = PaymentService.process_payment(order, customer)
+    updated_order = await PaymentService.process_payment(order, customer)
 
     # We check both possibilities as we used RNG to determine outcome
-    assert update_order.payment_status in[
+    assert updated_order.payment_status in[
         PaymentStatus.ACCEPTED,
         PaymentStatus.REJECTED
     ]
 
-    assert update_order.order_status in [
+    assert updated_order.order_status in [
         OrderStatus.CONFIRMED,
         OrderStatus.PAYMENT_REJECTED
     ]
@@ -78,7 +82,7 @@ async def test_duplicate_payment_prevention():
     order.payment_status = PaymentStatus.ACCEPTED
 
     with pytest.raises(Exception):
-        PaymentService.process_payment(order, customer)
+        await PaymentService.process_payment(order, customer)
 
 # The system allows customer to retry after failed payment
 @pytest.mark.asyncio
@@ -89,7 +93,7 @@ async def test_retry_payment_after_failed_payment():
 
     order.payment_status = PaymentStatus.REJECTED
 
-    updated_order = PaymentService.process_payment(order,customer)
+    updated_order = await PaymentService.process_payment(order,customer)
 
     assert updated_order.payment_status in [
         PaymentStatus.ACCEPTED,
