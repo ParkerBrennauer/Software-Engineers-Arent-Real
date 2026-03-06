@@ -1,12 +1,13 @@
 import random
 from src.schemas.order_schema import PaymentStatus, OrderStatus, Order
-from src.schemas.customer_schema import Customer
 
+# Below is to make pylint happy
+# pylint: disable=too-few-public-methods
 class PaymentService:
 
     # Payment processing
     @staticmethod
-    async def process_payment(order: Order, customer: Customer) -> Order:
+    async def process_payment(order: Order) -> Order:
 
         # Checking if the payment has already been processed
         if order.payment_status == PaymentStatus.ACCEPTED:
