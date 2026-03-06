@@ -1,13 +1,14 @@
 from src.schemas.user_schema import UserRegister, UserRole, UserUpdate
 from src.repositories.user_repo import UserRepo
 from src.models.user_model import UserInternal
+from src.services.user_service_abstract import UserServiceAbstract
 from passlib.context import CryptContext
 
 # Use bcrypt for password salting and hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
-class UserService:
+class UserService(UserServiceAbstract):
     @staticmethod
     async def get_password_hash(password: str) -> str:
         return pwd_context.hash(password)
@@ -17,7 +18,7 @@ class UserService:
         return pwd_context.verify(plain_password, hashed_password)
 
     @staticmethod
-    async def create_user(user_in: UserRegister) -> dict:
+    async def create_user(user_in: UserRegister) -> UserInternal:
 
         existing_user = await UserRepo.get_by_username(user_in.username)
         if existing_user:
@@ -37,7 +38,7 @@ class UserService:
         return UserInternal.model_validate(saved_data)
 
     @staticmethod
-    async def update_user(username: str, user_in: UserUpdate) -> dict:
+    async def update_user(username: str, user_in: UserUpdate) -> UserInternal:
         existing_user = await UserRepo.get_by_username(username)
         if not existing_user:
             raise ValueError("User not found")

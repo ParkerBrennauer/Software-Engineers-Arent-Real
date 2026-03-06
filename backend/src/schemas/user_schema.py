@@ -1,15 +1,13 @@
-from enum import Enum
 from pydantic import BaseModel, EmailStr
+from src.schemas.user_schema_abstract import (
+    UserBaseAbstract,
+    UserResponseAbstract,
+    UserRole,
+    UserUpdateAbstract
+)
 
 
-class UserRole(str, Enum):
-    CUSTOMER = "customer"
-    DRIVER = "driver"
-    RESTAURANT_OWNER = "owner"
-    RESTAURANT_STAFF = "staff"
-
-
-class UserBase(BaseModel):
+class UserBase(UserBaseAbstract, BaseModel):
     email: EmailStr
     name: str
     role: UserRole
@@ -20,7 +18,7 @@ class UserRegister(UserBase):
     password: str
 
 
-class UserUpdate(BaseModel):
+class UserUpdate(UserUpdateAbstract, BaseModel):
     email: EmailStr | None = None
     name: str | None = None
     role: UserRole | None = None
@@ -33,6 +31,6 @@ class UserLogin(BaseModel):
     password: str
 
 
-class UserResponse(BaseModel):
+class UserResponse(UserResponseAbstract, BaseModel):
     id: int
     requires_2fa: bool = False

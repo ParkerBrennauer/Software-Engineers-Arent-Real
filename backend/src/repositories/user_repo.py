@@ -4,7 +4,7 @@ from typing import List, Optional
 import aiofiles
 
 
-class UserRepo:
+class UserRepo():
     FILE_PATH = "../data/users.json"
 
     @classmethod
