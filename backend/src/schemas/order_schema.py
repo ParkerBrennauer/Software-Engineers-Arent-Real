@@ -1,4 +1,18 @@
+from enum import Enum
 from pydantic import BaseModel
+
+# Enum for keeping track of the order status and payment status
+class OrderStatus(str, Enum):
+    CREATED = "created"
+    PAYMENT_PENDING = "payment pending"
+    PAYMENT_REJECTED = "payment rejected"
+    PAYMENT_ACCEPTED = "payment accepted"
+    CONFIRMED = "confirmed"
+
+class PaymentStatus(str, Enum):
+    PENDING = "pending"
+    ACCEPTED = "accepted"
+    REJECTED = "rejected"
 
 
 class Order(BaseModel):
@@ -9,6 +23,9 @@ class Order(BaseModel):
     time: int
     cusine: str
     distance: float
+
+    order_status: OrderStatus = OrderStatus.PAYMENT_PENDING
+    payment_status: PaymentStatus = PaymentStatus.PENDING
 
 
 class OrderCreate(BaseModel):
