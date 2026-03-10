@@ -12,15 +12,10 @@ import pytest
 from fastapi.testclient import TestClient
 from main import app
 
-# Path to the actual reviews.json (same path your repo uses)
 DATA_PATH = Path(__file__).resolve().parents[1] / "data" / "reviews.json"
 
 client = TestClient(app)
 
-
-# ---------------------------------------------------------------------------
-# FIXTURE: Backs up and restores reviews.json around each test
-# ---------------------------------------------------------------------------
 
 @pytest.fixture(autouse=True)
 def reset_reviews_data():
@@ -32,10 +27,6 @@ def reset_reviews_data():
     with open(DATA_PATH, "w", encoding="utf-8") as f:
         json.dump(original_data, f, indent=2)
 
-
-# ---------------------------------------------------------------------------
-# Integration Test 1: Successfully rate an order via the API
-# ---------------------------------------------------------------------------
 
 def test_rate_order_success():
     order_id = "1d8e87M"
@@ -55,10 +46,6 @@ def test_rate_order_success():
     assert orders[order_id]["submitted_stars"] == 5
 
 
-# ---------------------------------------------------------------------------
-# Integration Test 2: Reject rating for nonexistent order
-# ---------------------------------------------------------------------------
-
 def test_rate_nonexistent_order():
     response = client.post(
         "/orders/NONEXISTENT_ORDER/rating",
@@ -68,10 +55,6 @@ def test_rate_nonexistent_order():
     assert response.status_code == 404
     assert response.json()["detail"] == "Order not found"
 
-
-# ---------------------------------------------------------------------------
-# Integration Test 3: Reject duplicate rating
-# ---------------------------------------------------------------------------
 
 def test_rate_order_duplicate():
     order_id = "f4d84dC"
@@ -89,10 +72,6 @@ def test_rate_order_duplicate():
     assert response2.status_code == 400
     assert response2.json()["detail"] == "This order has already been rated"
 
-
-# ---------------------------------------------------------------------------
-# Integration Test 4: Reject invalid star values via API
-# ---------------------------------------------------------------------------
 
 def test_rate_order_invalid_stars_zero():
     response = client.post(
