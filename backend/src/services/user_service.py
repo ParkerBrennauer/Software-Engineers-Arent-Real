@@ -1,11 +1,10 @@
+import random
+from datetime import datetime, timedelta, timezone
 from src.schemas.user_schema import UserRegister, UserRole, UserUpdate
 from src.repositories.user_repo import UserRepo
 from src.models.user_model import UserInternal
 from passlib.context import CryptContext
-import random
-from datetime import datetime, timedelta, timezone
 
-# Use bcrypt for password salting and hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 

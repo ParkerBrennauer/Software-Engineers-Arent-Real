@@ -1,5 +1,5 @@
-import pytest
 from datetime import datetime, timedelta, timezone
+import pytest
 from src.schemas.user_schema import UserRegister, UserRole, UserUpdate
 from src.services.user_service import UserService
 from src.repositories.user_repo import UserRepo
