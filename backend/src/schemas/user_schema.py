@@ -33,6 +33,15 @@ class UserLogin(BaseModel):
     password: str
 
 
+class TwoFactorVerify(BaseModel):
+    code: str
+
+
+class TwoFactorResponse(BaseModel):
+    message: str
+    requires_2fa: bool = False
+
+
 class UserResponse(BaseModel):
     id: int
     requires_2fa: bool = False
