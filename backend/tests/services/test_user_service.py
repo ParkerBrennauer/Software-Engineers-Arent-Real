@@ -28,8 +28,7 @@ async def test_create_user_success_customer():
 
     monkeypatch = pytest.MonkeyPatch()
     monkeypatch.setattr(UserRepo, "get_by_username", fake_get_by_username)
-    monkeypatch.setattr(UserService, "get_password_hash",
-                        fake_get_password_hash)
+    monkeypatch.setattr(UserService, "get_password_hash", fake_get_password_hash)
     monkeypatch.setattr(UserRepo, "save_user", fake_save_user)
 
     created = await UserService.create_user(user_in)
@@ -94,8 +93,7 @@ async def test_create_user_driver_requires_2fa():
 
     monkeypatch = pytest.MonkeyPatch()
     monkeypatch.setattr(UserRepo, "get_by_username", fake_get_by_username)
-    monkeypatch.setattr(UserService, "get_password_hash",
-                        fake_get_password_hash)
+    monkeypatch.setattr(UserService, "get_password_hash", fake_get_password_hash)
     monkeypatch.setattr(UserRepo, "save_user", fake_save_user)
 
     await UserService.create_user(user_in)
@@ -106,8 +104,7 @@ async def test_create_user_driver_requires_2fa():
 
 @pytest.mark.asyncio
 async def test_update_user_success_password_and_role(monkeypatch):
-    user_in = UserUpdate(password="new_secret",
-                         role=UserRole.DRIVER, name="New Name")
+    user_in = UserUpdate(password="new_secret", role=UserRole.DRIVER, name="New Name")
     captured = {}
 
     existing_user = {
@@ -135,10 +132,8 @@ async def test_update_user_success_password_and_role(monkeypatch):
         return {**existing_user, **updates}
 
     monkeypatch.setattr(UserRepo, "get_by_username", fake_get_by_username)
-    monkeypatch.setattr(UserService, "get_password_hash",
-                        fake_get_password_hash)
-    monkeypatch.setattr(UserRepo, "update_by_username",
-                        fake_update_by_username)
+    monkeypatch.setattr(UserService, "get_password_hash", fake_get_password_hash)
+    monkeypatch.setattr(UserRepo, "update_by_username", fake_update_by_username)
 
     updated = await UserService.update_user("user7", user_in)
 
@@ -162,7 +157,7 @@ async def test_update_user_duplicate_username_raises(monkeypatch):
                 "email": "c@example.com",
                 "role": UserRole.CUSTOMER,
                 "hashed_password": "h",
-                "is_active": True
+                "is_active": True,
             }
         if username == "taken":
             return {"id": 2, "username": "taken"}
@@ -172,8 +167,7 @@ async def test_update_user_duplicate_username_raises(monkeypatch):
         raise AssertionError("update_by_username should not be called")
 
     monkeypatch.setattr(UserRepo, "get_by_username", fake_get_by_username)
-    monkeypatch.setattr(UserRepo, "update_by_username",
-                        fake_update_by_username)
+    monkeypatch.setattr(UserRepo, "update_by_username", fake_update_by_username)
 
     with pytest.raises(ValueError, match="Username already exists"):
         await UserService.update_user("current", user_in)
