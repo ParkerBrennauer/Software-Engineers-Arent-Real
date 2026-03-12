@@ -1,3 +1,5 @@
+from pydantic.v1 import BaseModel
+
 from src.schemas.user_schema import UserRegister, UserUpdate, UserRole
 
 
@@ -11,3 +13,7 @@ class RestaurantStaffRegister(UserRegister):
 
 class RestaurantAdminUpdate(UserUpdate):
     pass
+
+
+class StaffAssignmentRequest(BaseModel):
+    staff_username: str

@@ -6,6 +6,7 @@ from src.schemas.user_schema import (
     TwoFactorVerify,
     TwoFactorResponse,
 )
+from src.schemas.restaurant_admin_schema import StaffAssignmentRequest
 from src.services.user_service import UserService
 
 # Define the prefix for the endpoints
@@ -45,7 +46,9 @@ async def update_user(username: str, user_in: UserUpdate):
 
 
 @router.post(
-    "/{username}/2fa/generate", response_model=TwoFactorResponse, status_code=status.HTTP_200_OK
+    "/{username}/2fa/generate",
+    response_model=TwoFactorResponse,
+    status_code=status.HTTP_200_OK,
 )
 async def generate_2fa_code(username: str):
     try:
@@ -66,7 +69,9 @@ async def generate_2fa_code(username: str):
 
 
 @router.post(
-    "/{username}/2fa/verify", response_model=TwoFactorResponse, status_code=status.HTTP_200_OK
+    "/{username}/2fa/verify",
+    response_model=TwoFactorResponse,
+    status_code=status.HTTP_200_OK,
 )
 async def verify_2fa_code(username: str, body: TwoFactorVerify):
     try:
@@ -80,6 +85,33 @@ async def verify_2fa_code(username: str, body: TwoFactorVerify):
         if message == "User not found":
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail=message
+            ) from err
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=message
+        ) from err
+
+
+@router.post(
+    "/{owner_username}/staff",
+    response_model=UserResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def assign_staff(owner_username: str, body: StaffAssignmentRequest):
+    try:
+        updated_user = await UserService.assign_user_as_staff(
+            owner_username,
+            body.staff_username,
+        )
+        return updated_user
+    except ValueError as err:
+        message = str(err)
+        if message in ["Owner not found", "User not found"]:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail=message
+            ) from err
+        if message == "User is not a restaurant owner":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail=message
             ) from err
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=message
