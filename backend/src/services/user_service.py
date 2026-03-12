@@ -78,6 +78,18 @@ class UserService:
         return UserInternal.model_validate(updated_user)
 
     @staticmethod
+    async def reset_password(username: str, code: str, new_password: str) -> bool:
+        # verify_2fa_code raises ValueError for invalid/expired codes
+        await UserService.verify_2fa_code(username, code)
+
+        hashed = await UserService.get_password_hash(new_password)
+        updated = await UserRepo.update_by_username(username, {"hashed_password": hashed})
+        if not updated:
+            raise ValueError("User not found")
+
+        return True
+
+    @staticmethod
     async def generate_2fa_code(username: str) -> str:
         user = await UserRepo.get_by_username(username)
         if not user:

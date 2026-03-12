@@ -37,6 +37,11 @@ class TwoFactorVerify(BaseModel):
     code: str
 
 
+class PasswordReset(BaseModel):
+    code: str
+    new_password: str
+
+
 class TwoFactorResponse(BaseModel):
     message: str
     requires_2fa: bool = False
