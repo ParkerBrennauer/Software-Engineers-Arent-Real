@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, status
+from src.services.restaurant_owner_services import RestaurantOwnerService
 from src.schemas.user_schema import (
     UserRegister,
     UserResponse,
@@ -98,7 +99,7 @@ async def verify_2fa_code(username: str, body: TwoFactorVerify):
 )
 async def assign_staff(owner_username: str, body: StaffAssignmentRequest):
     try:
-        updated_user = await UserService.assign_user_as_staff(
+        updated_user = await RestaurantOwnerService.assign_user_as_staff(
             owner_username,
             body.staff_username,
         )
