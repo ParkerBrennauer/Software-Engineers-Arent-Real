@@ -83,7 +83,9 @@ class UserService:
         await UserService.verify_2fa_code(username, code)
 
         hashed = await UserService.get_password_hash(new_password)
-        updated = await UserRepo.update_by_username(username, {"hashed_password": hashed})
+        updated = await UserRepo.update_by_username(
+            username, {"hashed_password": hashed}
+        )
         if not updated:
             raise ValueError("User not found")
 
@@ -94,9 +96,6 @@ class UserService:
         user = await UserRepo.get_by_username(username)
         if not user:
             raise ValueError("User not found")
-
-        if not user.get("requires_2fa", False):
-            raise ValueError("2FA is not required for this user")
 
         code = f"{random.randint(0, 999999):06d}"
         expires_at = (datetime.now(timezone.utc) + timedelta(minutes=5)).isoformat()
