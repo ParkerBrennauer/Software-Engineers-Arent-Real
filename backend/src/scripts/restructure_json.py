@@ -16,12 +16,12 @@ for entry in allEntries:
     restaurantId = entry["restaurant_id"]
     if restaurantId not in restaurants:
         restaurants[restaurantId] = {
+            "restaurant_id": restaurantId,
             "order_ids": [],
-            "ratings": {"5": 0, "4": 0, "3": 0, "2": 0, "1": 0, "0": 0}
+            "ratings": {"5": 0, "4": 0, "3": 0, "2": 0, "1": 0, "0": 0},
         }
 
     restaurants[restaurantId]["order_ids"].append(entry["order_id"])
-
     if entry["customer_rating"] == 5:
         restaurants[restaurantId]["ratings"]["5"] += 1
     elif entry["customer_rating"] == 4:

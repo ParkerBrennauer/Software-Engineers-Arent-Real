@@ -1,6 +1,5 @@
-from unittest.mock import AsyncMock, patch
 import pytest
-from src.schemas.user_schema import UserRegister, UserRole
+from src.schemas.user_schema import UserRegister, UserRole, UserUpdate
 from src.services.user_service import UserService
 from src.repositories.user_repo import UserRepo
 
@@ -9,82 +8,172 @@ from src.repositories.user_repo import UserRepo
 async def test_create_user_success_customer():
     user_in = UserRegister(
         email="c@example.com",
-        full_name="Cust User",
+        name="Cust User",
         role=UserRole.CUSTOMER,
         username="cust1",
         password="secret123",
     )
 
-    with patch.object(UserRepo, "get_by_username", AsyncMock(return_value=None)), \
-            patch.object(UserRepo, "save_user", AsyncMock(return_value={
-                "id": 1,
-                "email": "c@example.com",
-                "full_name": "Cust User",
-                "role": UserRole.CUSTOMER,
-                "username": "cust1",
-                "hashed_password": "hashed_pw",
-                "is_active": True,
-                "requires_2fa": False,
-            })) as save_user_mock, \
-            patch.object(UserService, "get_password_hash", AsyncMock(return_value="hashed_pw")):
+    captured = {}
 
-        created = await UserService.create_user(user_in)
+    async def fake_get_by_username(_username: str):
+        return None
 
-        assert created.id == 1
-        assert created.username == "cust1"
-        payload = save_user_mock.await_args.args[0]
-        assert payload["hashed_password"] == "hashed_pw"
-        assert payload["requires_2fa"] is False
-        assert payload["is_active"] is True
-        assert "password" not in payload
+    async def fake_get_password_hash(_password: str):
+        return "hashed_pw"
+
+    async def fake_save_user(user_data: dict):
+        captured["payload"] = user_data
+        return {"id": 1, **user_data}
+
+    monkeypatch = pytest.MonkeyPatch()
+    monkeypatch.setattr(UserRepo, "get_by_username", fake_get_by_username)
+    monkeypatch.setattr(UserService, "get_password_hash",
+                        fake_get_password_hash)
+    monkeypatch.setattr(UserRepo, "save_user", fake_save_user)
+
+    created = await UserService.create_user(user_in)
+
+    assert created.id == 1
+    assert created.username == "cust1"
+    payload = captured["payload"]
+    assert payload["hashed_password"] == "hashed_pw"
+    assert payload["requires_2fa"] is False
+    assert payload["is_active"] is True
+    assert "password" not in payload
+    monkeypatch.undo()
 
 
 @pytest.mark.asyncio
 async def test_create_user_duplicate_username_raises():
     user_in = UserRegister(
         email="dup@example.com",
-        full_name="Dup User",
+        name="Dup User",
         role=UserRole.CUSTOMER,
         username="taken",
         password="secret123",
     )
 
-    with \
-            patch.object(UserRepo, "get_by_username", AsyncMock(return_value={
-                "id": 10,
-                "username": "taken"
-            })), \
-            patch.object(UserRepo, "save_user", AsyncMock()) as save_user_mock:
+    async def fake_get_by_username(_username: str):
+        return {"id": 10, "username": "taken"}
 
-        with pytest.raises(ValueError, match="Username already exists"):
-            await UserService.create_user(user_in)
+    async def fake_save_user(user_data: dict):
+        raise AssertionError("save_user should not be called")
 
-        save_user_mock.assert_not_called()
+    monkeypatch = pytest.MonkeyPatch()
+    monkeypatch.setattr(UserRepo, "get_by_username", fake_get_by_username)
+    monkeypatch.setattr(UserRepo, "save_user", fake_save_user)
+
+    with pytest.raises(ValueError, match="Username already exists"):
+        await UserService.create_user(user_in)
+
+    monkeypatch.undo()
 
 
 @pytest.mark.asyncio
 async def test_create_user_driver_requires_2fa():
     user_in = UserRegister(
         email="d@example.com",
-        full_name="Driver User",
+        name="Driver User",
         role=UserRole.DRIVER,
         username="driver1",
         password="secret123",
     )
 
-    with patch.object(UserRepo, "get_by_username", AsyncMock(return_value=None)), \
-            patch.object(UserRepo, "save_user", AsyncMock(return_value={
-                "id": 2,
-                "email": "d@example.com",
-                "full_name": "Driver User",
-                "role": UserRole.DRIVER,
-                "username": "driver1",
-                "hashed_password": "hashed_pw",
-                "is_active": True,
-                "requires_2fa": True,
-            })) as save_user_mock, \
-            patch.object(UserService, "get_password_hash", AsyncMock(return_value="hashed_pw")):
+    captured = {}
 
-        await UserService.create_user(user_in)
-        payload = save_user_mock.await_args.args[0]
-        assert payload["requires_2fa"] is True
+    async def fake_get_by_username(_username: str):
+        return None
+
+    async def fake_get_password_hash(_password: str):
+        return "hashed_pw"
+
+    async def fake_save_user(user_data: dict):
+        captured["payload"] = user_data
+        return {"id": 2, **user_data}
+
+    monkeypatch = pytest.MonkeyPatch()
+    monkeypatch.setattr(UserRepo, "get_by_username", fake_get_by_username)
+    monkeypatch.setattr(UserService, "get_password_hash",
+                        fake_get_password_hash)
+    monkeypatch.setattr(UserRepo, "save_user", fake_save_user)
+
+    await UserService.create_user(user_in)
+    payload = captured["payload"]
+    assert payload["requires_2fa"] is True
+    monkeypatch.undo()
+
+
+@pytest.mark.asyncio
+async def test_update_user_success_password_and_role(monkeypatch):
+    user_in = UserUpdate(password="new_secret",
+                         role=UserRole.DRIVER, name="New Name")
+    captured = {}
+
+    existing_user = {
+        "id": 7,
+        "email": "u@example.com",
+        "name": "Old Name",
+        "role": UserRole.CUSTOMER,
+        "username": "user7",
+        "hashed_password": "old_hash",
+        "is_active": True,
+        "requires_2fa": False,
+    }
+
+    async def fake_get_by_username(username: str):
+        if username == "user7":
+            return existing_user
+        return None
+
+    async def fake_get_password_hash(_password: str):
+        return "new_hash"
+
+    async def fake_update_by_username(username: str, updates: dict):
+        captured["username"] = username
+        captured["updates"] = updates
+        return {**existing_user, **updates}
+
+    monkeypatch.setattr(UserRepo, "get_by_username", fake_get_by_username)
+    monkeypatch.setattr(UserService, "get_password_hash",
+                        fake_get_password_hash)
+    monkeypatch.setattr(UserRepo, "update_by_username",
+                        fake_update_by_username)
+
+    updated = await UserService.update_user("user7", user_in)
+
+    assert captured["username"] == "user7"
+    assert "password" not in captured["updates"]
+    assert captured["updates"]["hashed_password"] == "new_hash"
+    assert captured["updates"]["requires_2fa"] is True
+    assert updated.name == "New Name"
+
+
+@pytest.mark.asyncio
+async def test_update_user_duplicate_username_raises(monkeypatch):
+    user_in = UserUpdate(username="taken")
+
+    async def fake_get_by_username(username: str):
+        if username == "current":
+            return {
+                "id": 1,
+                "username": "current",
+                "name": "Current",
+                "email": "c@example.com",
+                "role": UserRole.CUSTOMER,
+                "hashed_password": "h",
+                "is_active": True
+            }
+        if username == "taken":
+            return {"id": 2, "username": "taken"}
+        return None
+
+    async def fake_update_by_username(_username: str, _updates: dict):
+        raise AssertionError("update_by_username should not be called")
+
+    monkeypatch.setattr(UserRepo, "get_by_username", fake_get_by_username)
+    monkeypatch.setattr(UserRepo, "update_by_username",
+                        fake_update_by_username)
+
+    with pytest.raises(ValueError, match="Username already exists"):
+        await UserService.update_user("current", user_in)

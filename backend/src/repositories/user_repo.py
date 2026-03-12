@@ -1,6 +1,6 @@
+import os
 import json
 from typing import List, Optional
-import os
 import aiofiles
 
 
@@ -37,4 +37,19 @@ class UserRepo:
         for user in users:
             if user["username"] == username:
                 return user
+        return None
+
+    @classmethod
+    async def update_by_username(cls, username: str, updates: dict) -> Optional[dict]:
+        users = await cls.read_all()
+
+        for index, user in enumerate(users):
+            if user["username"] == username:
+                users[index].update(updates)
+
+                async with aiofiles.open(cls.FILE_PATH, mode='w') as f:
+                    await f.write(json.dumps(users, indent=4))
+
+                return users[index]
+
         return None

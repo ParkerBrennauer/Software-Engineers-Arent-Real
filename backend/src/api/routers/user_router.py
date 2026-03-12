@@ -1,5 +1,5 @@
-from fastapi import APIRouter, status
-from src.schemas.user_schema import UserRegister, UserResponse
+from fastapi import APIRouter, HTTPException, status
+from src.schemas.user_schema import UserRegister, UserResponse, UserUpdate
 from src.services.user_service import UserService
 # Define the prefix for the endpoints
 router = APIRouter(prefix="/users", tags=["users"])
@@ -11,3 +11,20 @@ router = APIRouter(prefix="/users", tags=["users"])
 async def register_user(user_in: UserRegister):
     new_user = await UserService.create_user(user_in)
     return new_user
+
+
+@router.patch("/{username}", response_model=UserResponse, status_code=status.HTTP_200_OK)
+async def update_user(username: str, user_in: UserUpdate):
+    try:
+        updated_user = await UserService.update_user(username, user_in)
+        return updated_user
+    except ValueError as err:
+        message = str(err)
+        if message == "User not found":
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail=message) from err
+        if message == "Username already exists":
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail=message) from err
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=message) from err
