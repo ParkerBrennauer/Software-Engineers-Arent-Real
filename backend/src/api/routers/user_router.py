@@ -7,7 +7,7 @@ from src.schemas.user_schema import (
     TwoFactorVerify,
     TwoFactorResponse,
 )
-from src.schemas.restaurant_admin_schema import StaffAssignmentRequest
+from src.schemas.restaurant_admininstration_schema import StaffAssignmentRequest
 from src.services.user_service import UserService
 
 # Define the prefix for the endpoints

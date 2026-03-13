@@ -20,6 +20,10 @@ class RestaurantOwnerService:
         if RestaurantOwnerService._role_value(owner) != UserRole.RESTAURANT_OWNER.value:
             raise ValueError("User is not a restaurant owner")
 
+        owner_restaurant_id = owner.get("restaurant_id")
+        if not owner_restaurant_id:
+            raise ValueError("Owner has no associated restaurant")
+
         target_user = await UserRepo.get_by_username(staff_username)
         if not target_user:
             raise ValueError("User not found")
@@ -40,6 +44,7 @@ class RestaurantOwnerService:
             staff_username,
             {
                 "role": UserRole.RESTAURANT_STAFF,
+                "restaurant_id": owner_restaurant_id,
                 "requires_2fa": True,
             },
         )
