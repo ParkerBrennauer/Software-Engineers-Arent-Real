@@ -1,6 +1,6 @@
 import os
 import json
-from src.schemas.order_schema import Order
+from backend.src.schemas.order_schema import Order
 
 class OrderRepo():
 
@@ -8,8 +8,8 @@ class OrderRepo():
 
     @staticmethod
     async def get_all_orders():
-        
-        with open(OrderRepo.DATA_PATH, "r") as f:
+
+        with open(OrderRepo.DATA_PATH, "r", encoding="utf-8") as f:
             return json.load(f)
 
     @staticmethod
@@ -25,7 +25,7 @@ class OrderRepo():
 
         orders = await OrderRepo.get_all_orders()
         orders[order_id] = order.model_dump()
-        with open(OrderRepo.DATA_PATH, "w") as f:
+        with open(OrderRepo.DATA_PATH, "w", encoding="utf-8") as f:
             json.dump(orders, f, indent=4)
         return order
 

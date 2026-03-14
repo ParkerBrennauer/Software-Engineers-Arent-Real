@@ -14,11 +14,9 @@ class OrderService:
 
         orders = await OrderRepo.get_all_orders()
         restaurant_orders = []
-
-        for order_id, order_data in orders.items():
+        for _, order_data in orders.items():
             if order_data.get("restaurant") == restaurant:
                 restaurant_orders.append(Order(**order_data))
-
         return restaurant_orders
 
     @staticmethod
@@ -27,7 +25,6 @@ class OrderService:
         order = await OrderRepo.get_order(order_id)
         order.order_status = OrderStatus.READY_FOR_PICKUP
         await OrderRepo.update_order(order_id, order)
-
         return order
 
     @staticmethod
@@ -37,9 +34,8 @@ class OrderService:
         order.order_status = OrderStatus.DELAYED
         order.delay_reason = reason
         await OrderRepo.update_order(order_id, order)
-
         return order
-    
+
     @staticmethod
     async def get_driver_orders(driver : str) -> list[Order]:
 
@@ -51,7 +47,6 @@ class OrderService:
         order = await OrderRepo.get_order(order_id)
         order.order_status = OrderStatus.PICKED_UP
         await OrderRepo.update_order(order_id, order)
-
         return order
 
     @staticmethod
@@ -61,7 +56,6 @@ class OrderService:
         order.order_status = OrderStatus.DELAYED
         order.delay_reason = reason
         await OrderRepo.update_order(order_id, order)
-
         return order
 
     @staticmethod
@@ -70,5 +64,4 @@ class OrderService:
         order = await OrderRepo.get_order(order_id)
         order.order_status = OrderStatus.CANCELLED
         await OrderRepo.update_order(order_id, order)
-
         return order
