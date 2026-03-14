@@ -4,7 +4,7 @@ from src.schemas.order_schema import Order
 
 class OrderRepo():
 
-    DATA_PATH = os.path.join(os.path.dirname(__file__), "backend/src/data/order.json")
+    DATA_PATH = os.path.join(os.path.dirname(__file__), "../data/order.json")
 
     @staticmethod
     async def get_all_orders():
