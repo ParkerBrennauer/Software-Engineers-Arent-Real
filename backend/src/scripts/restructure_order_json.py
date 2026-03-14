@@ -1,6 +1,6 @@
 import json
 
-with open("../data/raw/deliveries.json") as f:
+with open("backend/src/data/raw/deliveries.json") as f:
     raw = json.load(f)
 
 fixed_orders = {}
@@ -8,7 +8,7 @@ fixed_orders = {}
 for order in raw:
     
     fixed_orders[order["order_id"]] = {
-        "items": [order["food item"]],
+        "items": [order["food_item"]],
         "cost": order["order_value"],
         "restaurant": f"Restaurant_{order['restaurant_id']}",
         "customer": order["customer_id"],
@@ -17,5 +17,5 @@ for order in raw:
         "distance": order["delivery_distance"]
     }
 
-with open("../data/orders.json") as f:
+with open("backend/src/data/orders.json", "w") as f:
     json.dump(fixed_orders, f, indent=4)
