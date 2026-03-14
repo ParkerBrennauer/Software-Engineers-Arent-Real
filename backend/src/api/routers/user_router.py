@@ -7,6 +7,7 @@ from src.schemas.user_schema import (
     UserTwoFactorResponse,
     UserPasswordReset,
 )
+
 from src.services.user_service import UserService
 
 # Define the prefix for the endpoints
