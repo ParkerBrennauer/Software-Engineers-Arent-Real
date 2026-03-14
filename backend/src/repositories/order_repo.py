@@ -20,10 +20,20 @@ class OrderRepo():
             raise ValueError("Order not found")
         return Order(**orders[order_id])      
     
-    async def update_order():
-        pass
-
-    async def get_orders_by_driver():
-        pass
-
-    # Work on this shit last
+    @staticmethod
+    async def update_order(order_id: str, order: Order):
+        
+        orders = await OrderRepo.get_all_orders()
+        orders[order_id] = order.model_dump()
+        with open(OrderRepo.DATA_PATH, "w") as f:
+            json.dump(orders, f, indent=4)
+        return order
+    
+    @staticmethod
+    async def get_orders_by_driver(driver: str):
+        orders = await OrderRepo.get_all_orders()
+        driver_orders = []
+        for order_data in orders.values():
+            if order_data.get("driver") == driver:
+                driver_orders.append(Order(**order_data))
+        return driver_orders
