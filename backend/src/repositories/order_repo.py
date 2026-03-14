@@ -1,9 +1,9 @@
 import os
 import json
 from src.schemas.order_schema import Order
-import aiofiles
 
 class OrderRepo():
+
     DATA_PATH = os.path.join(os.path.dirname(__file__), "backend/src/data/order.json")
 
     @staticmethod
@@ -15,20 +15,20 @@ class OrderRepo():
     @staticmethod
     async def get_order(order_id: str) -> Order:
 
-        orders = await Order.get_all_orders()
+        orders = await OrderRepo.get_all_orders()
         if order_id not in orders:
             raise ValueError("Order not found")
-        return Order(**orders[order_id])      
-    
+        return Order(**orders[order_id])
+
     @staticmethod
     async def update_order(order_id: str, order: Order):
-        
+
         orders = await OrderRepo.get_all_orders()
         orders[order_id] = order.model_dump()
         with open(OrderRepo.DATA_PATH, "w") as f:
             json.dump(orders, f, indent=4)
         return order
-    
+
     @staticmethod
     async def get_orders_by_driver(driver: str):
         orders = await OrderRepo.get_all_orders()
