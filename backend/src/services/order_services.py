@@ -1,4 +1,4 @@
-from src.schemas.order_schema import Order, OrderStatus
+from src.schemas.order_schema import Order, OrderStatus, OrderUpdate
 from src.repositories.order_repo import OrderRepo
 
 class OrderService:
@@ -22,19 +22,17 @@ class OrderService:
     @staticmethod
     async def mark_ready_for_pickup(order_id: str) -> Order:
 
-        order = await OrderRepo.get_order(order_id)
-        order.order_status = OrderStatus.READY_FOR_PICKUP
-        await OrderRepo.update_order(order_id, order)
-        return order
+        update = OrderUpdate(order_status=OrderStatus.READY_FOR_PICKUP)
+        return await OrderRepo.update_order(order_id, update)
 
     @staticmethod
     async def report_restaurant_delay(order_id: str, reason: str) -> Order:
 
-        order = await OrderRepo.get_order(order_id)
-        order.order_status = OrderStatus.DELAYED
-        order.delay_reason = reason
-        await OrderRepo.update_order(order_id, order)
-        return order
+        update = OrderUpdate(
+            order_status = OrderStatus.DELAYED,
+            delay_reason = reason
+        )
+        return await OrderRepo.update_order(order_id, update)
 
     @staticmethod
     async def get_driver_orders(driver : str) -> list[Order]:
@@ -44,24 +42,20 @@ class OrderService:
     @staticmethod
     async def pickup_order(order_id: str) -> Order:
 
-        order = await OrderRepo.get_order(order_id)
-        order.order_status = OrderStatus.PICKED_UP
-        await OrderRepo.update_order(order_id, order)
-        return order
+        update = OrderUpdate(order_status=OrderStatus.PICKED_UP)
+        return await OrderRepo.update_order(order_id, update)
 
     @staticmethod
     async def report_driver_delay(order_id: str, reason: str) -> Order:
 
-        order = await OrderRepo.get_order(order_id)
-        order.order_status = OrderStatus.DELAYED
-        order.delay_reason = reason
-        await OrderRepo.update_order(order_id, order)
-        return order
+        update = OrderUpdate(
+            order_status = OrderStatus.DELAYED,
+            delay_reason = reason
+        )
+        return await OrderRepo.update_order(order_id, update)
 
     @staticmethod
     async def cancel_order(order_id: str) -> Order:
 
-        order = await OrderRepo.get_order(order_id)
-        order.order_status = OrderStatus.CANCELLED
-        await OrderRepo.update_order(order_id, order)
-        return order
+        update = OrderUpdate(order_status=OrderStatus.CANCELLED)
+        return await OrderRepo.update_order(order_id, update)
