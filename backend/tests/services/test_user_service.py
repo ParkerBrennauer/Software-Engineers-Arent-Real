@@ -336,6 +336,7 @@ async def test_assign_user_as_staff_success(monkeypatch):
         "hashed_password": "h",
         "is_active": True,
         "requires_2fa": True,
+        "restaurant_id": 1,
     }
     target_user = {
         "id": 2,
@@ -416,6 +417,7 @@ async def test_assign_user_as_staff_target_user_not_found(monkeypatch):
         "hashed_password": "h",
         "is_active": True,
         "requires_2fa": True,
+        "restaurant_id": 1,
     }
 
     async def fake_get_by_username(username: str):
