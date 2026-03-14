@@ -22,7 +22,7 @@ class Restaurant(BaseModel):
 class RestaurantCreate(BaseModel):
     menu: list[Item]
     cuisine: str
-    ratings: dict[str]
+    ratings: dict[str, float]
     orders: list[Order]
 
 
