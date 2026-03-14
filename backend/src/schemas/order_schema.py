@@ -55,3 +55,8 @@ class OrderUpdate(BaseModel):
     time: int | None = None
     cuisine: str | None = None
     distance: float | None = None
+
+    order_status: OrderStatus | None = None
+    delay_reason: str | None = None
+
+    driver: str | None = None
