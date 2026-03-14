@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from backend.src.services.order_services import OrderService
+from src.services.order_services import OrderService
 
 router = APIRouter(prefix="/orders", tags=["Orders"])
 

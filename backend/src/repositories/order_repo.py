@@ -1,6 +1,6 @@
 import os
 import json
-from backend.src.schemas.order_schema import Order
+from src.schemas.order_schema import Order
 
 class OrderRepo():
 
