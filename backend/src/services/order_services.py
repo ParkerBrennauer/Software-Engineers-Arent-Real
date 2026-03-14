@@ -59,3 +59,9 @@ class OrderService:
 
         update = OrderUpdate(order_status=OrderStatus.CANCELLED)
         return await OrderRepo.update_order(order_id, update)
+
+    @staticmethod
+    async def assign_driver(order_id: str, driver: str) -> Order:
+
+        update = OrderUpdate(driver=driver)
+        return await OrderRepo.update_order(order_id, update)
