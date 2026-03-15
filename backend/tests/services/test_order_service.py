@@ -24,4 +24,21 @@ async def test_get_order_status():
 
 @pytest.mark.asyncio
 async def test_mark_ready_for_pickup():
-    
+
+    with patch("src.repositories.order_repo.OrderRepo.update_order", new_callable=AsyncMock) as mock_update:
+
+        mock_update.return_value = "updated_order"
+        result = await OrderService.mark_ready_for_pickup("123")
+        mock_update.assert_called_once()
+        assert result == "updated_order"
+
+@pytest.mark.asyncio
+async def test_assign_driver():
+
+    with patch("src.repositories.order_repo.OrderRepo.update_order", new_callable=AsyncMock) as mock_update:
+        
+        mock_update.return_value = "updated_order"
+        result = await OrderService.assign_driver("123", "driver1")
+        mock_update.assert_called_once()
+        args = mock_update.call_args[0]
+        assert args[0] == "123"
