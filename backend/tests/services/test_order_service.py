@@ -7,12 +7,12 @@ import pytest
 async def test_get_order_status():
 
     fake_order = Order(
-        items=["Pizza"],
+        items=["Spaghetti"],
         cost=20.0,
         restaurant="Trevor's pasta",
         customer="Joe",
         time=20,
-        cuisine="spaghetti",
+        cuisine="Italian",
         distance=2.5,
     )
 
@@ -31,8 +31,9 @@ async def test_mark_ready_for_pickup():
 
         mock_update.return_value = "updated_order"
         result = await OrderService.mark_ready_for_pickup("123")
-        mock_update.assert_called_once()
         assert result == "updated_order"
+        mock_update.assert_called_once()
+        assert mock_update.call_args[0][0] == "123"
 
 @pytest.mark.asyncio
 async def test_assign_driver():
@@ -41,7 +42,8 @@ async def test_assign_driver():
                 new_callable=AsyncMock) as mock_update:
 
         mock_update.return_value = "updated_order"
-        await OrderService.assign_driver("123", "driver1")
+        result = await OrderService.assign_driver("123", "driver1")
+        assert result == "updated_order"
         mock_update.assert_called_once()
         args = mock_update.call_args[0]
         assert args[0] == "123"
@@ -64,15 +66,32 @@ async def test_cancel_order():
 
         mock_update.return_value = "cancelled"
         result = await OrderService.cancel_order("123")
-        mock_update.assert_called_once()
         assert result == "cancelled"
+        mock_update.assert_called_once()
+        assert mock_update.call_args[0][0] == "123"
 
 @pytest.mark.asyncio
 async def test_get_restaurant_orders():
 
     fake_orders = {
-        "1" : {"restaurant": "Trevor's pasta"},
-        "2" : {"restaurant": "Other restaurants"}
+        "1" : {
+            "items": ["Spaghetti"],
+            "cost": 20.0,
+            "restaurant": "Trevor's pasta",
+            "customer": "Joe",
+            "time": 20,
+            "cuisine": "Italian",
+            "distance": 2.5
+        },
+        "2" : {
+            "items": ["Burger"],
+            "cost": 15.0,
+            "restaurant": "MD",
+            "customer": "Mike",
+            "time": 15,
+            "cuisine": "American",
+            "distance": 7.5
+        }
     }
 
     with patch("src.repositories.order_repo.OrderRepo.get_all_orders",
@@ -80,18 +99,19 @@ async def test_get_restaurant_orders():
 
         mock_get.return_value = fake_orders
         orders = await OrderService.get_restaurant_orders("Trevor's pasta")
-        assert len(orders) == 1
+        assert orders[0].restaurant == "Trevor's pasta"
 
 @pytest.mark.asyncio
 async def test_report_restaurant_delay():
 
     with patch("src.repositories.order_repo.OrderRepo.update_order",
                new_callable=AsyncMock) as mock_update:
-        
+
         mock_update.return_value = "delayed"
         result = await OrderService.report_restaurant_delay("123", "Busy restaurant")
-        mock_update.assert_called_once()
         assert result == "delayed"
+        mock_update.assert_called_once()
+        assert mock_update.call_args[0][0] == "123"
 
 @pytest.mark.asyncio
 async def test_pickup_order():
@@ -109,8 +129,9 @@ async def test_report_driver_delay():
 
     with patch("src.repositories.order_repo.OrderRepo.update_order",
                new_callable=AsyncMock) as mock_update:
-        
+
         mock_update.return_value = "driver_delayed"
         result = await OrderService.report_driver_delay("123", "Busy traffic")
-        mock_update.assert_called_once()
         assert result == "driver_delayed"
+        mock_update.assert_called_once()
+        assert mock_update.call_args[0][0] == "123"
