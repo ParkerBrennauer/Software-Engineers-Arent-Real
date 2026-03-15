@@ -42,3 +42,22 @@ async def test_assign_driver():
         mock_update.assert_called_once()
         args = mock_update.call_args[0]
         assert args[0] == "123"
+
+@pytest.mark.asyncio
+async def test_get_driver_orders():
+
+    with patch("src.repositories.order_repo.OrderRepo.get_orders_by_driver", new_callable=AsyncMock) as mock_get:
+
+        mock_get.return_value = ["order1", "order2"]
+        orders = await OrderService.get_driver_orders("driver1")
+        assert len(orders) == 2
+
+@pytest.mark.asyncio
+async def test_cancel_order():
+
+    with patch("src.repositories.order_repo.OrderRepo.update_order", new_callable=AsyncMock) as mock_update:
+
+        mock_update.return_value = "cancelled"
+        result = await OrderService.cancel_order("123")
+        mock_update.assert_called_once()
+        assert result == "cancelled"
