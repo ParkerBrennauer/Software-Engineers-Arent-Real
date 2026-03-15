@@ -16,7 +16,8 @@ async def test_get_order_status():
         distance=5.0,
     )
 
-    with patch("src.repositories.order_repo.OrderRepo.get_order", new_callable=AsyncMock) as mock_get:
+    with patch("src.repositories.order_repo.OrderRepo.get_order"
+               , new_callable=AsyncMock) as mock_get:
 
         mock_get.return_value = fake_order
         order = await OrderService.get_order_status("123")
@@ -25,7 +26,8 @@ async def test_get_order_status():
 @pytest.mark.asyncio
 async def test_mark_ready_for_pickup():
 
-    with patch("src.repositories.order_repo.OrderRepo.update_order", new_callable=AsyncMock) as mock_update:
+    with patch("src.repositories.order_repo.OrderRepo.update_order"
+               , new_callable=AsyncMock) as mock_update:
 
         mock_update.return_value = "updated_order"
         result = await OrderService.mark_ready_for_pickup("123")
@@ -35,10 +37,11 @@ async def test_mark_ready_for_pickup():
 @pytest.mark.asyncio
 async def test_assign_driver():
 
-    with patch("src.repositories.order_repo.OrderRepo.update_order", new_callable=AsyncMock) as mock_update:
-        
+    with patch("src.repositories.order_repo.OrderRepo.update_order"
+               , new_callable=AsyncMock) as mock_update:
+
         mock_update.return_value = "updated_order"
-        result = await OrderService.assign_driver("123", "driver1")
+        await OrderService.assign_driver("123", "driver1")
         mock_update.assert_called_once()
         args = mock_update.call_args[0]
         assert args[0] == "123"
@@ -46,7 +49,8 @@ async def test_assign_driver():
 @pytest.mark.asyncio
 async def test_get_driver_orders():
 
-    with patch("src.repositories.order_repo.OrderRepo.get_orders_by_driver", new_callable=AsyncMock) as mock_get:
+    with patch("src.repositories.order_repo.OrderRepo.get_orders_by_driver"
+               , new_callable=AsyncMock) as mock_get:
 
         mock_get.return_value = ["order1", "order2"]
         orders = await OrderService.get_driver_orders("driver1")
@@ -55,7 +59,8 @@ async def test_get_driver_orders():
 @pytest.mark.asyncio
 async def test_cancel_order():
 
-    with patch("src.repositories.order_repo.OrderRepo.update_order", new_callable=AsyncMock) as mock_update:
+    with patch("src.repositories.order_repo.OrderRepo.update_order"
+               , new_callable=AsyncMock) as mock_update:
 
         mock_update.return_value = "cancelled"
         result = await OrderService.cancel_order("123")
