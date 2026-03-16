@@ -9,8 +9,6 @@ class PaymentService:
 
         if order.payment_status == PaymentStatus.ACCEPTED:
             raise ValueError("Payment already successfully processed.")
-
-
         order.payment_status = PaymentStatus.ACCEPTED
         order.order_status = OrderStatus.CONFIRMED
 
