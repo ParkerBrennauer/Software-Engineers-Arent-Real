@@ -9,8 +9,8 @@ class ItemService:
         return items
 
     @staticmethod
-    async def get_items_by_restaurant_id(id: int) -> list:
-        items = await ItemRepo.get_by_restaurant_id(id)
+    async def get_items_by_restaurant_id(restaurant_id: int) -> list:
+        items = await ItemRepo.get_by_restaurant_id(restaurant_id)
         return items
 
     @staticmethod

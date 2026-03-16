@@ -79,7 +79,7 @@ class ItemRepo:
         data = await cls.read_all()
 
         results = []
-        for key, value in data.items():
+        for value in data.items():
             if value.get("restaurant_id") == restaurant_id:
                 results.append(value)
 
