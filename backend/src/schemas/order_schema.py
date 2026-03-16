@@ -8,7 +8,13 @@ class OrderStatus(str, Enum):
     PAYMENT_REJECTED = "payment rejected"
     PAYMENT_ACCEPTED = "payment accepted"
     CONFIRMED = "confirmed"
-
+    PREPARING = "preparing"
+    READY_FOR_PICKUP = "ready for pickup"
+    PICKED_UP = "picked up"
+    OUT_FOR_DELIVERY = "out for delivery"
+    DELIVERED = "delivered"
+    DELAYED = "delayed"
+    CANCELLED = "cancelled"
 
 class PaymentStatus(str, Enum):
     PENDING = "pending"
@@ -28,6 +34,8 @@ class Order(BaseModel):
     order_status: OrderStatus = OrderStatus.PAYMENT_PENDING
     payment_status: PaymentStatus = PaymentStatus.PENDING
 
+    delay_reason: str | None = None
+    driver: str | None = None
 
 class OrderCreate(BaseModel):
     items: list
@@ -47,3 +55,8 @@ class OrderUpdate(BaseModel):
     time: int | None = None
     cuisine: str | None = None
     distance: float | None = None
+
+    order_status: OrderStatus | None = None
+    delay_reason: str | None = None
+
+    driver: str | None = None
