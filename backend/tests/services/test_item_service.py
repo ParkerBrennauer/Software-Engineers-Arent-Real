@@ -90,11 +90,11 @@ async def test_update_item_by_key_unchanged(monkeypatch):
         }
     }
 
-    async def fake_read_all(cls):
+    async def fake_read_all(cls):  # pylint: disable=unused-argument
         return test_data
 
-    async def fake_write_all(cls, data):
-        None
+    async def fake_write_all(cls, data):  # pylint: disable=unused-argument
+        return None
 
     monkeypatch.setattr(ItemRepo, "read_all", classmethod(fake_read_all))
     monkeypatch.setattr(ItemRepo, "write_all", classmethod(fake_write_all))
@@ -129,11 +129,11 @@ async def test_update_item_by_key_changed(monkeypatch):
         }
     }
 
-    async def fake_read_all(cls):
+    async def fake_read_all(cls):  # pylint: disable=unused-argument
         return test_data
 
-    async def fake_write_all(cls, data):
-        None
+    async def fake_write_all(cls, data):  # pylint: disable=unused-argument
+        return None
 
     monkeypatch.setattr(ItemRepo, "read_all", classmethod(fake_read_all))
     monkeypatch.setattr(ItemRepo, "write_all", classmethod(fake_write_all))
@@ -168,11 +168,11 @@ async def test_update_item_updates_dietary(monkeypatch):
         }
     }
 
-    async def fake_read_all(cls):
+    async def fake_read_all(cls):  # pylint: disable=unused-argument
         return test_data
 
-    async def fake_write_all(cls, data):
-        None
+    async def fake_write_all(cls, data):  # pylint: disable=unused-argument
+        return None
 
     monkeypatch.setattr(ItemRepo, "read_all", classmethod(fake_read_all))
     monkeypatch.setattr(ItemRepo, "write_all", classmethod(fake_write_all))
