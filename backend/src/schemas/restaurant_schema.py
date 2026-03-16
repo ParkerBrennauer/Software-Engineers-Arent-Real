@@ -1,16 +1,7 @@
 from typing import List
 from pydantic import BaseModel
-from src.schemas.order_schema import Order
-
-
-class Item(BaseModel):
-    restaurantId: int
-    itemName: str
-    cost: float
-    cuisine: str
-    restaurant: str
-    avg_rating: float
-
+from backend.src.schemas.item_schema import Item
+from backend.src.schemas.order_schema import Order
 
 class Restaurant(BaseModel):
     # name: str
