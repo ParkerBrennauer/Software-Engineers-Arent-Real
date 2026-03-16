@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional
 
+
 class ItemRestrictions(BaseModel):
     vegan: bool = False
     vegetarian: bool = False
@@ -9,6 +10,7 @@ class ItemRestrictions(BaseModel):
     nut_free: bool = False
     halal: bool = False
     kosher: bool = False
+
 
 class ItemBase(BaseModel):
     item_name: str

@@ -4,11 +4,10 @@ from backend.src.repositories.item_repo import ItemRepo
 from backend.src.schemas.item_schema import ItemUpdate, ItemRestrictions
 
 
-
 @pytest.mark.asyncio
 async def test_get_item_by_key(monkeypatch):
     test_data = {
-        "Briyani_20" : {"food_item": "Briyani", "restaurant_id": 20, "times_ordered": 2, "avg_rating": 4.3},
+        "Briyani_20": {"food_item": "Briyani", "restaurant_id": 20, "times_ordered": 2, "avg_rating": 4.3},
         "Tacos_6": {"food_item": "Taccos", "restaurant_id": 6, "times_ordered": 8, "avg_rating": 3.9},
         "Shawarma_78": {"food_item": "Shawarma", "restaurant_id": 78, "times_ordered": 3, "avg_rating": 4.6},
     }
@@ -20,7 +19,8 @@ async def test_get_item_by_key(monkeypatch):
 
     results = await ItemService.get_items_by_key("Tacos_6")
 
-    assert results == {"food_item": "Taccos", "restaurant_id": 6, "times_ordered": 8, "avg_rating": 3.9}
+    assert results == {"food_item": "Taccos",
+                       "restaurant_id": 6, "times_ordered": 8, "avg_rating": 3.9}
 
 
 @pytest.mark.asyncio
@@ -39,8 +39,10 @@ async def test_get_items_by_restaurant_id(monkeypatch):
     results = await ItemService.get_items_by_restaurant_id(10)
 
     assert results == [
-        {"food_item": "Briyani", "restaurant_id": 10, "times_ordered": 2, "avg_rating": 4.3},
-        {"food_item": "Shawarma", "restaurant_id": 10, "times_ordered": 3, "avg_rating": 4.6}
+        {"food_item": "Briyani", "restaurant_id": 10,
+            "times_ordered": 2, "avg_rating": 4.3},
+        {"food_item": "Shawarma", "restaurant_id": 10,
+            "times_ordered": 3, "avg_rating": 4.6}
     ]
 
 
@@ -106,7 +108,7 @@ async def test_update_item_by_key_changed(monkeypatch):
     monkeypatch.setattr(ItemRepo, "read_all", classmethod(fake_read_all))
     monkeypatch.setattr(ItemRepo, "write_all", classmethod(fake_write_all))
 
-    updates = ItemUpdate(item_name = "Taco")
+    updates = ItemUpdate(item_name="Taco")
 
     result = await ItemService.update_item_by_key("Tacos_16", updates)
 

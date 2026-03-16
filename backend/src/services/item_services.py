@@ -8,7 +8,6 @@ class ItemService:
         items = await ItemRepo.get_by_key(key)
         return items
 
-
     @staticmethod
     async def get_items_by_restaurant_id(id: int) -> list:
         items = await ItemRepo.get_by_restaurant_id(id)
@@ -35,4 +34,3 @@ class ItemService:
             raise ValueError("Item does not exist")
 
         return result
-

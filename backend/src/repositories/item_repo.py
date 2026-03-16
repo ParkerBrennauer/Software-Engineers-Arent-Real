@@ -25,7 +25,6 @@ class ItemRepo:
         async with aiofiles.open(cls.FILE_PATH, "w") as f:
             await f.write(json.dumps(data, indent=1))
 
-
     @classmethod
     async def save_item(cls, item_data: dict) -> dict:
 
@@ -70,7 +69,6 @@ class ItemRepo:
         result["key"] = new_key
         return result
 
-
     @classmethod
     async def get_by_key(cls, item_key: str) -> Optional[dict]:
         data = await cls.read_all()
@@ -91,5 +89,3 @@ class ItemRepo:
     async def get_by_name(cls, item_key: str) -> Optional[dict]:
         data = await cls.read_all()
         return data.get(item_key)
-
-
