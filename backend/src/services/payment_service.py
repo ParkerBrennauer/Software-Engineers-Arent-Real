@@ -1,7 +1,5 @@
 from src.schemas.order_schema import PaymentStatus, OrderStatus, Order
 
-# Below is to make pylint happy
-# pylint: disable=too-few-public-methods
 class PaymentService:
 
     @staticmethod
