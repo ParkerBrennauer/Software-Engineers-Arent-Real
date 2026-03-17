@@ -16,7 +16,7 @@ class PaymentStatus(str, Enum):
     REJECTED = "rejected"
 
 
-class Order(BaseModel):
+class OrderBase(BaseModel):
     items: list
     cost: float
     restaurant: str
