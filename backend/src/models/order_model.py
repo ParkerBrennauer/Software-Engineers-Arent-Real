@@ -1,6 +1,6 @@
 from src.schemas.order_schema import OrderBase
 
-class OrderInternal(OrderBase):
+class OrderInternal(Order):
     id: int
     order_status: str
     payment_status: str
