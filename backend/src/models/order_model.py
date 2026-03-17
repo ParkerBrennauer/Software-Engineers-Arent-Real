@@ -1,4 +1,4 @@
-from src.schemas.order_schema import OrderBase
+from src.schemas.order_schema import Order
 
 class OrderInternal(Order):
     id: int
