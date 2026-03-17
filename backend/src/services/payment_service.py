@@ -1,4 +1,3 @@
-import random
 from src.schemas.order_schema import PaymentStatus, OrderStatus, Order
 
 # Below is to make pylint happy
