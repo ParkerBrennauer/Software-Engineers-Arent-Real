@@ -1,4 +1,4 @@
-from src.schemas.order.schema import OrderCreate
+from src.schemas.order_schema import OrderCreate
 from src.models.order_model import OrderInternal
 from src.repositories import OrderRepo
 
