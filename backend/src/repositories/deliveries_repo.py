@@ -26,7 +26,6 @@ def get_order(order_id: str):
 
 
 def get_restaurant_by_order(order_id: str):
-    """Find which restaurant an order belongs to."""
     restaurants = load_restaurants()
     for rest_id, rest_data in restaurants.items():
         if order_id in rest_data.get("order_ids", []):
