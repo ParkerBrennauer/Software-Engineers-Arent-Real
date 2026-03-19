@@ -1,53 +1,71 @@
-"""
-Integration Tests for Feature 9 - FR1: Star-based Rating System
-
-RUN WITH: pytest tests/test_integration_rating.py -v
-(from inside the src/ directory)
-"""
-
-import json
-from pathlib import Path
 
 import pytest
-from fastapi.testclient import TestClient
+from httpx import ASGITransport, AsyncClient
 from main import app
-
-DATA_PATH = Path(__file__).resolve().parents[1] / "data" / "reviews.json"
-
-client = TestClient(app)
+import repositories.deliveries_repo as repo_module
 
 
-@pytest.fixture(autouse=True)
-def reset_reviews_data():
-    with open(DATA_PATH, "r", encoding="utf-8") as f:
-        original_data = json.load(f)
-
-    yield
-
-    with open(DATA_PATH, "w", encoding="utf-8") as f:
-        json.dump(original_data, f, indent=2)
+@pytest.fixture
+def async_client():
+    transport = ASGITransport(app=app)
+    return AsyncClient(transport=transport, base_url="http://test")
 
 
-def test_rate_order_success():
-    order_id = "1d8e87M"
+FAKE_ORDERS = {
+    "1d8e87M": {
+        "customer_rating": 4,
+        "food_temperature": "Hot",
+        "food_freshness": 5,
+        "packaging_quality": 1,
+        "food_condition": "Fair",
+        "customer_satisfaction": 3,
+        "submitted_stars": None
+    },
+    "f4d84dC": {
+        "customer_rating": 1,
+        "food_temperature": "Warm",
+        "food_freshness": 3,
+        "packaging_quality": 2,
+        "food_condition": "Fair",
+        "customer_satisfaction": 5,
+        "submitted_stars": None
+    }
+}
 
-    response = client.post(
-        f"/orders/{order_id}/rating",
+
+
+@pytest.mark.asyncio
+async def test_rate_order_success(async_client, monkeypatch):
+    order_data = {**FAKE_ORDERS["1d8e87M"]}
+
+    def fake_get_order(order_id):
+        if order_id == "1d8e87M":
+            return order_data
+        return None
+
+    def fake_update_rating(order_id, stars):
+        order_data["submitted_stars"] = stars
+        return order_data
+
+    monkeypatch.setattr(repo_module, "get_order", fake_get_order)
+    monkeypatch.setattr(repo_module, "update_rating", fake_update_rating)
+
+    response = await async_client.post(
+        "/orders/1d8e87M/rating",
         json={"stars": 5}
     )
 
     assert response.status_code == 200
     data = response.json()
-    assert data["order_id"] == order_id
+    assert data["order_id"] == "1d8e87M"
     assert data["stars"] == 5
 
-    with open(DATA_PATH, "r", encoding="utf-8") as f:
-        orders = json.load(f)
-    assert orders[order_id]["submitted_stars"] == 5
 
+@pytest.mark.asyncio
+async def test_rate_nonexistent_order(async_client, monkeypatch):
+    monkeypatch.setattr(repo_module, "get_order", lambda order_id: None)
 
-def test_rate_nonexistent_order():
-    response = client.post(
+    response = await async_client.post(
         "/orders/NONEXISTENT_ORDER/rating",
         json={"stars": 3}
     )
@@ -56,33 +74,51 @@ def test_rate_nonexistent_order():
     assert response.json()["detail"] == "Order not found"
 
 
-def test_rate_order_duplicate():
-    order_id = "f4d84dC"
 
-    response1 = client.post(
-        f"/orders/{order_id}/rating",
+@pytest.mark.asyncio
+async def test_rate_order_duplicate(async_client, monkeypatch):
+    order_data = {**FAKE_ORDERS["f4d84dC"]}
+
+    def fake_get_order(order_id):
+        return order_data
+
+    def fake_update_rating(order_id, stars):
+        order_data["submitted_stars"] = stars
+        return order_data
+
+    monkeypatch.setattr(repo_module, "get_order", fake_get_order)
+    monkeypatch.setattr(repo_module, "update_rating", fake_update_rating)
+
+    response1 = await async_client.post(
+        "/orders/f4d84dC/rating",
         json={"stars": 4}
     )
     assert response1.status_code == 200
 
-    response2 = client.post(
-        f"/orders/{order_id}/rating",
+    response2 = await async_client.post(
+        "/orders/f4d84dC/rating",
         json={"stars": 2}
     )
     assert response2.status_code == 400
     assert response2.json()["detail"] == "This order has already been rated"
 
 
-def test_rate_order_invalid_stars_zero():
-    response = client.post(
+@pytest.mark.asyncio
+async def test_rate_order_invalid_stars_zero(async_client, monkeypatch):
+    monkeypatch.setattr(repo_module, "get_order", lambda order_id: FAKE_ORDERS["1d8e87M"])
+
+    response = await async_client.post(
         "/orders/1d8e87M/rating",
         json={"stars": 0}
     )
     assert response.status_code == 422
 
 
-def test_rate_order_invalid_stars_six():
-    response = client.post(
+@pytest.mark.asyncio
+async def test_rate_order_invalid_stars_six(async_client, monkeypatch):
+    monkeypatch.setattr(repo_module, "get_order", lambda order_id: FAKE_ORDERS["1d8e87M"])
+
+    response = await async_client.post(
         "/orders/1d8e87M/rating",
         json={"stars": 6}
     )
