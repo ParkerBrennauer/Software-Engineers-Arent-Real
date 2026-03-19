@@ -1,6 +1,6 @@
 from fastapi import HTTPException
 from repositories.deliveries_repo import get_order, update_rating
-from schemas.ratings import RatingCreate
+from schemas.ratings_schema import RatingCreate
 
 
 def submit_rating(order_id: str, payload: RatingCreate):

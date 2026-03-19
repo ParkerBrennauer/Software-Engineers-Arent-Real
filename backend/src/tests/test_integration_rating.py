@@ -1,12 +1,13 @@
+# pylint: disable=redefined-outer-name,unused-argument,duplicate-code
 
 import pytest
 from httpx import ASGITransport, AsyncClient
 from main import app
-import repositories.deliveries_repo as repo_module
-
+import services.rating_service as service_module
 
 @pytest.fixture
 def async_client():
+
     transport = ASGITransport(app=app)
     return AsyncClient(transport=transport, base_url="http://test")
 
@@ -47,8 +48,8 @@ async def test_rate_order_success(async_client, monkeypatch):
         order_data["submitted_stars"] = stars
         return order_data
 
-    monkeypatch.setattr(repo_module, "get_order", fake_get_order)
-    monkeypatch.setattr(repo_module, "update_rating", fake_update_rating)
+    monkeypatch.setattr(service_module, "get_order", fake_get_order)
+    monkeypatch.setattr(service_module, "update_rating", fake_update_rating)
 
     response = await async_client.post(
         "/orders/1d8e87M/rating",
@@ -63,7 +64,7 @@ async def test_rate_order_success(async_client, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_rate_nonexistent_order(async_client, monkeypatch):
-    monkeypatch.setattr(repo_module, "get_order", lambda order_id: None)
+    monkeypatch.setattr(service_module, "get_order", lambda order_id: None)
 
     response = await async_client.post(
         "/orders/NONEXISTENT_ORDER/rating",
@@ -86,8 +87,8 @@ async def test_rate_order_duplicate(async_client, monkeypatch):
         order_data["submitted_stars"] = stars
         return order_data
 
-    monkeypatch.setattr(repo_module, "get_order", fake_get_order)
-    monkeypatch.setattr(repo_module, "update_rating", fake_update_rating)
+    monkeypatch.setattr(service_module, "get_order", fake_get_order)
+    monkeypatch.setattr(service_module, "update_rating", fake_update_rating)
 
     response1 = await async_client.post(
         "/orders/f4d84dC/rating",
@@ -105,7 +106,7 @@ async def test_rate_order_duplicate(async_client, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_rate_order_invalid_stars_zero(async_client, monkeypatch):
-    monkeypatch.setattr(repo_module, "get_order", lambda order_id: FAKE_ORDERS["1d8e87M"])
+    monkeypatch.setattr(service_module, "get_order", lambda order_id: FAKE_ORDERS["1d8e87M"])
 
     response = await async_client.post(
         "/orders/1d8e87M/rating",
@@ -116,7 +117,7 @@ async def test_rate_order_invalid_stars_zero(async_client, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_rate_order_invalid_stars_six(async_client, monkeypatch):
-    monkeypatch.setattr(repo_module, "get_order", lambda order_id: FAKE_ORDERS["1d8e87M"])
+    monkeypatch.setattr(service_module, "get_order", lambda order_id: FAKE_ORDERS["1d8e87M"])
 
     response = await async_client.post(
         "/orders/1d8e87M/rating",

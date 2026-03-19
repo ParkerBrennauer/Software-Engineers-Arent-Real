@@ -1,7 +1,9 @@
+# pylint: disable=duplicate-code
+
 import pytest
 from pydantic import ValidationError
 from fastapi import HTTPException
-from schemas.ratings import RatingCreate
+from schemas.ratings_schema import RatingCreate
 from services.rating_service import submit_rating
 import services.rating_service as rating_service_module
 
@@ -20,7 +22,8 @@ async def test_submit_rating_success(monkeypatch):
     updated_order = {**fake_order, "submitted_stars": 5}
 
     monkeypatch.setattr(rating_service_module, "get_order", lambda order_id: fake_order)
-    monkeypatch.setattr(rating_service_module, "update_rating", lambda order_id, stars: updated_order)
+    monkeypatch.setattr(
+        rating_service_module, "update_rating", lambda order_id, stars: updated_order)
 
     payload = RatingCreate(stars=5)
     result = submit_rating("1d8e87M", payload)
