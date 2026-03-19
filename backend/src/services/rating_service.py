@@ -2,9 +2,11 @@ from fastapi import HTTPException
 from repositories.deliveries_repo import (
     get_order, update_rating, update_review,
     get_restaurant_by_order, edit_review, delete_review,
-    get_restaurant_reviews
+    get_restaurant_reviews, create_report
 )
-from schemas.ratings_schema import RatingCreate, ReviewCreate, ReviewEdit
+from schemas.ratings_schema import (
+    RatingCreate, ReviewCreate, ReviewEdit, ReportCreate
+)
 
 
 def submit_rating(order_id: str, payload: RatingCreate):
@@ -149,4 +151,39 @@ def get_filtered_reviews(restaurant_id: int, stars: int = None):
         "stars_filter": stars,
         "total_reviews": len(reviews),
         "reviews": reviews
+    }
+
+
+def submit_report(order_id: str, payload: ReportCreate):
+    order = get_order(order_id)
+
+    if order is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Order not found"
+        )
+
+    has_review = (
+        order.get("submitted_stars") is not None
+        or order.get("review_text") is not None
+    )
+
+    if not has_review:
+        raise HTTPException(
+            status_code=400,
+            detail="No review exists to report for this order"
+        )
+
+    report = create_report(
+        order_id,
+        reason=payload.reason.value,
+        description=payload.description
+    )
+
+    return {
+        "report_id": report["report_id"],
+        "order_id": order_id,
+        "reason": payload.reason,
+        "description": payload.description,
+        "message": "Report submitted successfully"
     }

@@ -3,6 +3,7 @@ from pathlib import Path
 
 DATA_PATH = Path(__file__).resolve().parents[1] / "data" / "reviews.json"
 RESTAURANTS_PATH = Path(__file__).resolve().parents[1] / "data" / "restaurants.json"
+REPORTS_PATH = Path(__file__).resolve().parents[1] / "data" / "reports.json"
 
 
 def load_orders():
@@ -18,6 +19,16 @@ def save_orders(orders):
 def load_restaurants():
     with open(RESTAURANTS_PATH, "r", encoding="utf-8") as f:
         return json.load(f)
+
+
+def load_reports():
+    with open(REPORTS_PATH, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def save_reports(reports):
+    with open(REPORTS_PATH, "w", encoding="utf-8") as f:
+        json.dump(reports, f, indent=2)
 
 
 def get_order(order_id: str):
@@ -130,3 +141,21 @@ def delete_review(order_id: str):
     save_orders(orders)
 
     return orders[order_id]
+
+
+def create_report(order_id: str, reason: str, description: str = None):
+    reports = load_reports()
+
+    report_id = len(reports) + 1
+
+    report = {
+        "report_id": report_id,
+        "order_id": order_id,
+        "reason": reason,
+        "description": description
+    }
+
+    reports.append(report)
+    save_reports(reports)
+
+    return report

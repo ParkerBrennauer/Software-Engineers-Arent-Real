@@ -5,12 +5,14 @@ from schemas.ratings_schema import (
     ReviewCreate, ReviewResponse,
     ReviewEdit, ReviewEditResponse,
     DeleteResponse, FeedbackPromptResponse,
-    FilteredReviewsResponse
+    FilteredReviewsResponse,
+    ReportCreate, ReportResponse
 )
 from services.rating_service import (
     submit_rating, submit_review,
     edit_order_review, delete_order_review,
-    check_feedback_prompt, get_filtered_reviews
+    check_feedback_prompt, get_filtered_reviews,
+    submit_report
 )
 
 router = APIRouter(prefix="/orders", tags=["ratings"])
@@ -36,7 +38,10 @@ def delete_review(order_id: str):
     return delete_order_review(order_id)
 
 
-@router.get("/{order_id}/feedback-prompt", response_model=FeedbackPromptResponse)
+@router.get(
+    "/{order_id}/feedback-prompt",
+    response_model=FeedbackPromptResponse
+)
 def feedback_prompt(order_id: str):
     return check_feedback_prompt(order_id)
 
@@ -50,3 +55,8 @@ def filter_reviews(
     stars: Optional[int] = Query(None, ge=1, le=5)
 ):
     return get_filtered_reviews(restaurant_id, stars=stars)
+
+
+@router.post("/{order_id}/report", response_model=ReportResponse)
+def report_review(order_id: str, payload: ReportCreate):
+    return submit_report(order_id, payload)
