@@ -58,3 +58,33 @@ def update_review(order_id: str, review_text: str):
     save_orders(orders)
 
     return orders[order_id]
+
+
+def edit_review(order_id: str, stars: int = None, review_text: str = None):
+    orders = load_orders()
+
+    if order_id not in orders:
+        return None
+
+    if stars is not None:
+        orders[order_id]["submitted_stars"] = stars
+    if review_text is not None:
+        orders[order_id]["review_text"] = review_text
+
+    save_orders(orders)
+
+    return orders[order_id]
+
+
+def delete_review(order_id: str):
+    orders = load_orders()
+
+    if order_id not in orders:
+        return None
+
+    orders[order_id]["submitted_stars"] = None
+    orders[order_id]["review_text"] = None
+
+    save_orders(orders)
+
+    return orders[order_id]
