@@ -34,6 +34,48 @@ def get_restaurant_by_order(order_id: str):
     return None
 
 
+def get_restaurant_orders(restaurant_id: int):
+    """Get all order IDs for a restaurant."""
+    restaurants = load_restaurants()
+    rest_data = restaurants.get(str(restaurant_id))
+    if rest_data is None:
+        return None
+    return rest_data.get("order_ids", [])
+
+
+def get_restaurant_reviews(restaurant_id: int, stars: int = None):
+    """Get all reviews for a restaurant, optionally filtered by stars."""
+    order_ids = get_restaurant_orders(restaurant_id)
+    if order_ids is None:
+        return None
+
+    orders = load_orders()
+    reviews = []
+
+    for order_id in order_ids:
+        order = orders.get(order_id)
+        if order is None:
+            continue
+
+        has_feedback = (
+            order.get("submitted_stars") is not None
+            or order.get("review_text") is not None
+        )
+        if not has_feedback:
+            continue
+
+        if stars is not None and order.get("submitted_stars") != stars:
+            continue
+
+        reviews.append({
+            "order_id": order_id,
+            "submitted_stars": order.get("submitted_stars"),
+            "review_text": order.get("review_text")
+        })
+
+    return reviews
+
+
 def update_rating(order_id: str, stars: int):
     orders = load_orders()
 

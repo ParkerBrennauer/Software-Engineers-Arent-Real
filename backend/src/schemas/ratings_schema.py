@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel, Field
 
 class RatingCreate(BaseModel):
@@ -40,3 +40,16 @@ class FeedbackPromptResponse(BaseModel):
     order_id: str
     prompt_feedback: bool
     message: str
+
+
+class FilteredReview(BaseModel):
+    order_id: str
+    submitted_stars: Optional[int]
+    review_text: Optional[str]
+
+
+class FilteredReviewsResponse(BaseModel):
+    restaurant_id: int
+    stars_filter: Optional[int]
+    total_reviews: int
+    reviews: List[FilteredReview]

@@ -1,14 +1,16 @@
-from fastapi import APIRouter
+from typing import Optional
+from fastapi import APIRouter, Query
 from schemas.ratings_schema import (
     RatingCreate, RatingResponse,
     ReviewCreate, ReviewResponse,
     ReviewEdit, ReviewEditResponse,
-    DeleteResponse, FeedbackPromptResponse
+    DeleteResponse, FeedbackPromptResponse,
+    FilteredReviewsResponse
 )
 from services.rating_service import (
     submit_rating, submit_review,
     edit_order_review, delete_order_review,
-    check_feedback_prompt
+    check_feedback_prompt, get_filtered_reviews
 )
 
 router = APIRouter(prefix="/orders", tags=["ratings"])
@@ -37,3 +39,14 @@ def delete_review(order_id: str):
 @router.get("/{order_id}/feedback-prompt", response_model=FeedbackPromptResponse)
 def feedback_prompt(order_id: str):
     return check_feedback_prompt(order_id)
+
+
+@router.get(
+    "/restaurants/{restaurant_id}/reviews",
+    response_model=FilteredReviewsResponse
+)
+def filter_reviews(
+    restaurant_id: int,
+    stars: Optional[int] = Query(None, ge=1, le=5)
+):
+    return get_filtered_reviews(restaurant_id, stars=stars)

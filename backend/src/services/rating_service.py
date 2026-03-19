@@ -1,7 +1,8 @@
 from fastapi import HTTPException
 from repositories.deliveries_repo import (
     get_order, update_rating, update_review,
-    get_restaurant_by_order, edit_review, delete_review
+    get_restaurant_by_order, edit_review, delete_review,
+    get_restaurant_reviews
 )
 from schemas.ratings_schema import RatingCreate, ReviewCreate, ReviewEdit
 
@@ -131,4 +132,21 @@ def check_feedback_prompt(order_id: str):
         "order_id": order_id,
         "prompt_feedback": True,
         "message": "How was your order? Leave a rating and review!"
+    }
+
+
+def get_filtered_reviews(restaurant_id: int, stars: int = None):
+    reviews = get_restaurant_reviews(restaurant_id, stars=stars)
+
+    if reviews is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Restaurant not found"
+        )
+
+    return {
+        "restaurant_id": restaurant_id,
+        "stars_filter": stars,
+        "total_reviews": len(reviews),
+        "reviews": reviews
     }
