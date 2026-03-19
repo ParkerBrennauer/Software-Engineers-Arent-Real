@@ -14,6 +14,7 @@ class OrderRepo:
         async with aiofiles.open(cls.FilePath, mode='r') as f:
             orders = await f.read()
             return json.loads(orders) if orders else []
+            return orders
 
     @classmethod
     async def get_by_id(cls, order_id: int) -> dict:
