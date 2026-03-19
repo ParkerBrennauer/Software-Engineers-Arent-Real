@@ -1,5 +1,4 @@
 from src.repositories.item_repo import ItemRepo
-from src.schemas.item_schema import ItemUpdate, ItemUpdateAnalytics
 
 
 class ItemService:
