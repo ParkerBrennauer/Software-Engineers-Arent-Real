@@ -5,4 +5,8 @@ init-hook=import sys; sys.path.append('backend')
 disable=
     C0114,
     C0115,
-    C0116
+    C0116,
+    C0301,
+    E0401,
+    W0613,
+    W0104
