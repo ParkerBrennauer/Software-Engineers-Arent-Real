@@ -103,3 +103,23 @@ async def reset_password(username: str, body: UserPasswordReset):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=message
         ) from err
+
+
+@router.post(
+    "/{username}/register-driver",
+    response_model=UserResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def register_driver(username: str):
+    try:
+        updated_user = await UserService.reassign_user_as_driver(username)
+        return updated_user
+    except ValueError as err:
+        message = str(err)
+        if message == "User not found":
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail=message
+            ) from err
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=message
+        ) from err
