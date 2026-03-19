@@ -116,3 +116,19 @@ def delete_order_review(order_id: str):
         "order_id": order_id,
         "message": "Review and rating deleted successfully"
     }
+
+
+def check_feedback_prompt(order_id: str):
+    order = get_order(order_id)
+
+    if order is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Order not found"
+        )
+
+    return {
+        "order_id": order_id,
+        "prompt_feedback": True,
+        "message": "How was your order? Leave a rating and review!"
+    }

@@ -1,5 +1,6 @@
-from typing import Optional
 from pydantic import BaseModel, Field
+from typing import Optional
+
 
 class RatingCreate(BaseModel):
     stars: int = Field(..., ge=1, le=5)
@@ -33,4 +34,10 @@ class ReviewEditResponse(BaseModel):
 
 class DeleteResponse(BaseModel):
     order_id: str
+    message: str
+
+
+class FeedbackPromptResponse(BaseModel):
+    order_id: str
+    prompt_feedback: bool
     message: str
