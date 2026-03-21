@@ -1,11 +1,10 @@
-from typing import List
 from pydantic import BaseModel
 from src.schemas.order_schema import Order
 
 
 class Item(BaseModel):
-    restaurantId: int
-    itemName: str
+    restaurant_id: int
+    item_name: str
     cost: float
     cuisine: str
     restaurant: str
@@ -13,23 +12,20 @@ class Item(BaseModel):
 
 
 class Restaurant(BaseModel):
-    # name: str
-    restaurantId: int
-    menu: List[Item]
+    restaurant_id: int
+    menu: list[Item]
     cuisine: str
     ratings: dict
-    orders: List[Order]
+    orders: list[Order]
 
 
 class RestaurantCreate(BaseModel):
-    # name: str
-    menu: List[Item]
+    menu: list[Item]
     cuisine: str
-    ratings: dict
-    orders: List[Order]
+    ratings: dict[str, float]
+    orders: list[Order]
 
 
 class RestaurantUpdate(BaseModel):
-    # name: str
-    menu: List[Item]
-    cuisine: str
+    menu: list[Item] | None = None
+    cuisine: str | None = None
