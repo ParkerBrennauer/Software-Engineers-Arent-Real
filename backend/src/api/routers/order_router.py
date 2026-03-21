@@ -35,7 +35,7 @@ async def get_driver_orders(driver: str):
 
 @router.put("/{order_id}/pickup")
 async def pickup_order(order_id: str):
-    
+
     order = await OrderService.pickup_order(order_id)
     return order
 
