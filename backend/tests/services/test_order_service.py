@@ -17,7 +17,7 @@ async def test_get_order_status():
     )
     with patch("src.repositories.order_repo.OrderRepo.get_order",
                new_callable=AsyncMock) as mock_get:
-        
+
         mock_get.return_value = fake_order
         order = await OrderService.get_order_status("123")
         assert order == fake_order
@@ -27,9 +27,32 @@ async def test_mark_ready_for_pickup():
 
     with patch("src.repositories.order_repo.OrderRepo.update_order",
                 new_callable=AsyncMock) as mock_update:
-        
+
         mock_update.return_value = "updated_order"
         result = await OrderService.mark_ready_for_pickup("123")
         assert result == "updated_order"
         mock_update.assert_called_once()
         assert mock_update.call_args[0][0] == "123"
+
+@pytest.mark.asyncio
+async def test_assign_driver():
+
+    with patch("src.repositories.order_repo.OrderRepo.update_order",
+                new_callable=AsyncMock) as mock_update:
+
+        mock_update.return_value = "updated_order"
+        result = await OrderService.assign_driver("123", "driver1")
+        assert result == "updated_order"
+        mock_update.assert_called_once()
+        args = mock_update.call_args[0]
+        assert args[0] == "123"
+
+@pytest.mark.asyncio
+async def test_get_driver_orders():
+
+    with patch("src.repositories.order_repo.OrderRepo.get_orders_by_driver",
+                new_callable=AsyncMock) as mock_get:
+
+        mock_get.return_value = ["order1", "order2"]
+        orders = await OrderService.get_driver_orders("driver1")
+        assert len(orders) == 2
