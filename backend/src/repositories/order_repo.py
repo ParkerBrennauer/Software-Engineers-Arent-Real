@@ -19,10 +19,27 @@ class OrderRepo():
         if order_id not in orders:
             raise ValueError("Order not found")
         return Order(**orders[order_id])
-    
+
     @staticmethod
     async def update_order(order_id: str, update: OrderUpdate) -> Order:
 
         orders = await OrderRepo.get_all_orders()
         if order_id not in orders:
             raise ValueError("Order not found")
+        order_data = orders[order_id]
+        update_data = update.model_dump(exclude_unset= True)
+        for key, value in update_data.items():
+            order_data[key] = value
+        orders[order_id] = order_data
+        with open(OrderRepo.DATA_PATH, "w", encoding="utf=8") as f:
+            json.dump(orders, f, indent=4)
+        return Order(**order_data)
+
+    @staticmethod
+    async def get_orders_by_driver(driver: str):
+        orders = await OrderRepo.get_all_orders()
+        driver_orders = []
+        for order_data in orders.values():
+            if order_data.get("driver") == driver:
+                driver_orders.append(Order(**order_data))
+        return driver_orders
