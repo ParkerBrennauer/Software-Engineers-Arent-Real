@@ -2,7 +2,8 @@ from fastapi import HTTPException
 from repositories.deliveries_repo import (
     get_order, update_rating, update_review, get_restaurant_by_order
 )
-from schemas.ratings_schema import RatingCreate, ReviewCreate
+from schemas.rating_schema import RatingCreate
+from schemas.review_schema import ReviewCreate
 
 
 def submit_rating(order_id: str, payload: RatingCreate):

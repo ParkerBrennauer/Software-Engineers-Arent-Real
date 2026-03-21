@@ -3,7 +3,7 @@
 import pytest
 from pydantic import ValidationError
 from fastapi import HTTPException
-from schemas.ratings_schema import RatingCreate
+from schemas.rating_schema import RatingCreate
 from services.rating_service import submit_rating
 import services.rating_service as rating_service_module
 

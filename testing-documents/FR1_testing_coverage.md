@@ -17,7 +17,8 @@ This document describes the unit and integration tests for FR1 for Feature 9, wh
 |------|-------|-----------------------|
 | `services/rating_service.py` | Service | `submit_rating(order_id, payload)` |
 | `repositories/deliveries_repo.py` | Data | `get_order(order_id)`, `update_rating(order_id, stars)` |
-| `schemas/ratings.py` | Schema | `RatingCreate`, `RatingResponse` |
+| `schemas/rating_schema.py` | Schema | `RatingCreate`, `RatingResponse` |
+| `schemas/review_schema.py` | Schema | `ReviewCreate`, `ReviewResponse` |
 | `routers/ratings.py` | Router | `POST /orders/{order_id}/rating` |
 
 ---
@@ -42,7 +43,7 @@ Unit tests verify individual functions in **isolation** using mocked dependencie
 - **How:** Mocks `get_order` to return an order with `submitted_stars: 4`. Asserts the correct exception is raised.
 
 ### Test 4: `test_rating_schema_rejects_zero_stars` / `test_rating_schema_rejects_six_stars` / `test_rating_schema_accepts_valid_stars`
-- **Class tested:** `RatingCreate` in `schemas/ratings.py`
+- **Class tested:** `RatingCreate` in `schemas/rating_schema.py`
 - **What it checks:** The Pydantic schema enforces the 1–5 star constraint. Stars of 0 or 6 raise `ValidationError`. Stars 1 through 5 are accepted.
 - **How:** Directly instantiates `RatingCreate` with boundary values and asserts validation behavior.
 

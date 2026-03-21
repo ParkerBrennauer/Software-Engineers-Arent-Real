@@ -1,5 +1,6 @@
 from fastapi import APIRouter
-from schemas.ratings_schema import RatingCreate, RatingResponse, ReviewCreate, ReviewResponse
+from schemas.rating_schema import RatingCreate, RatingResponse
+from schemas.review_schema import ReviewCreate, ReviewResponse
 from services.rating_service import submit_rating, submit_review
 
 router = APIRouter(prefix="/orders", tags=["ratings"])
