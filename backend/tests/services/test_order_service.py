@@ -56,3 +56,46 @@ async def test_get_driver_orders():
         mock_get.return_value = ["order1", "order2"]
         orders = await OrderService.get_driver_orders("driver1")
         assert len(orders) == 2
+
+@pytest.mark.asyncio
+async def test_cancel_order():
+
+    with patch("src.repositories.order_repo.OrderRepo.update_order",
+                new_callable=AsyncMock) as mock_update:
+
+        mock_update.return_value = "cancelled"
+        result = await OrderService.cancel_order("123")
+        assert result == "cancelled"
+        mock_update.assert_called_once()
+        assert mock_update.call_args[0][0] == "123"
+
+@pytest.mark.asyncio
+async def test_get_restaurant_orders():
+
+    fake_orders = {
+        "1" : {
+            "items": ["Spaghetti"],
+            "cost": 20.0,
+            "restaurant": "Trevor's pasta",
+            "customer": "Joe",
+            "time": 20,
+            "cuisine": "Italian",
+            "distance": 2.5
+        },
+        "2" : {
+            "items": ["Burger"],
+            "cost": 15.0,
+            "restaurant": "MD",
+            "customer": "Mike",
+            "time": 15,
+            "cuisine": "American",
+            "distance": 7.5
+        }
+    }
+
+    with patch("src.repositories.order_repo.OrderRepo.get_all_orders",
+               new_callable=AsyncMock) as mock_get:
+
+        mock_get.return_value = fake_orders
+        orders = await OrderService.get_restaurant_orders("Trevor's pasta")
+        assert orders[0].restaurant == "Trevor's pasta"
