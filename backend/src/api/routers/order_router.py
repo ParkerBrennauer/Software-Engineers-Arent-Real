@@ -44,3 +44,14 @@ async def driver_delay(order_id: str, reason: str):
 
     order = await OrderService.report_driver_delay(order_id, reason)
     return order
+
+@router.put("/{order_id}/cancel")
+async def cancel_order(order_id: str):
+
+    order = await OrderService.cancel_order(order_id)
+    return order
+
+@router.put("/{order_id}/assign-driver")
+async def assign_driver(order_id: str, driver: str):
+
+    return await OrderService.assign_driver(order_id, driver)
