@@ -1,4 +1,4 @@
-from src.schemas.order_schema import Order, OrderStatus, OrderUpdate
+from src.schemas.order_schema import Order, OrderStatus, OrderUpdate, PaymentStatus
 from src.repositories.order_repo import OrderRepo
 
 class OrderService:
@@ -34,11 +34,15 @@ class OrderService:
     @staticmethod
     async def report_restaurant_delay(order_id: str, reason: str) -> Order:
 
+        order = await OrderRepo.get_order(order_id)
         update = OrderUpdate(
             order_status= OrderStatus.DELAYED,
             delay_reason= reason
         )
-        return await OrderRepo.update_order(order_id, update)
+        updated_order = await OrderRepo.update_order(order_id, update)
+        if "cancel" in reason.lower() or "cannot prepare" in reason.lower():
+            updated_order = await OrderService.process_refund(order_id)
+        return updated_order
 
     @staticmethod
     async def assign_driver(order_id: str, driver: str) -> Order:
@@ -63,5 +67,25 @@ class OrderService:
         update = OrderUpdate(
             order_status= OrderStatus.DELAYED,
             delay_reason= reason
+        )
+        return await OrderRepo.update_order(order_id, update)
+
+    @staticmethod
+    async def process_refund(order_id: str) -> Order:
+
+        order = await OrderRepo.get_order(order_id)
+
+        if order.refund_issued:
+            raise ValueError("Refund already issued")
+
+        if order.order_status not in [OrderStatus.DELAYED, OrderStatus.CANCELLED]:
+            raise ValueError("Refund not applicable")
+
+        if order.payment_status != PaymentStatus.ACCEPTED:
+            raise ValueError("Cannot refund unpaid order")
+
+        update = OrderUpdate(
+            refund_issued=True,
+            refund_amount=order.cost
         )
         return await OrderRepo.update_order(order_id, update)

@@ -55,3 +55,8 @@ async def driver_delay(order_id: str, reason: str):
 async def assign_driver(order_id: str, driver: str):
 
     return await OrderService.assign_driver(order_id, driver)
+
+@router.put("/{order_id}/refund")
+async def refund_order(order_id: str):
+
+    return await OrderService.process_refund(order_id)
