@@ -15,43 +15,8 @@ async def get_restaurant_orders(restaurant: str):
     orders = await OrderService.get_restaurant_orders(restaurant)
     return orders
 
-@router.put("/{order_id}/ready")
-async def mark_ready(order_id: str):
-
-    order = await OrderService.mark_ready_for_pickup(order_id)
-    return order
-
-@router.put("/{order_id}/restaurant-delay")
-async def restaurant_delay(order_id: str, reason: str):
-
-    order = await OrderService.report_restaurant_delay(order_id, reason)
-    return order
-
-@router.get("/driver/{driver}")
-async def get_driver_orders(driver: str):
-
-    orders = await OrderService.get_driver_orders(driver)
-    return orders
-
-@router.put("/{order_id}/pickup")
-async def pickup_order(order_id: str):
-
-    order = await OrderService.pickup_order(order_id)
-    return order
-
-@router.put("/{order_id}/driver-delay")
-async def driver_delay(order_id: str, reason: str):
-
-    order = await OrderService.report_driver_delay(order_id, reason)
-    return order
-
 @router.put("/{order_id}/cancel")
 async def cancel_order(order_id: str):
 
     order = await OrderService.cancel_order(order_id)
     return order
-
-@router.put("/{order_id}/assign-driver")
-async def assign_driver(order_id: str, driver: str):
-
-    return await OrderService.assign_driver(order_id, driver)
