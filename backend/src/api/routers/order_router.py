@@ -20,3 +20,15 @@ async def cancel_order(order_id: str):
 
     order = await OrderService.cancel_order(order_id)
     return order
+
+@router.put("/{order_id}/ready")
+async def mark_ready(order_id: str):
+
+    order = await OrderService.mark_ready_for_pickup(order_id)
+    return order
+
+@router.put("/{order_id}/restaurant-delay")
+async def restaurant_delay(order_id: str, reason: str):
+
+    order = await OrderService.report_restaurant_delay(order_id, reason)
+    return order

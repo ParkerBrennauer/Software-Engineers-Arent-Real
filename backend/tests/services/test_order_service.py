@@ -64,3 +64,27 @@ async def test_get_restaurant_orders():
         mock_get.return_value = fake_orders
         orders = await OrderService.get_restaurant_orders("Trevor's pasta")
         assert orders[0].restaurant == "Trevor's pasta"
+
+@pytest.mark.asyncio
+async def test_mark_ready_for_pickup():
+
+    with patch("src.repositories.order_repo.OrderRepo.update_order",
+                new_callable=AsyncMock) as mock_update:
+
+        mock_update.return_value = "updated_order"
+        result = await OrderService.mark_ready_for_pickup("123")
+        assert result == "updated_order"
+        mock_update.assert_called_once()
+        assert mock_update.call_args[0][0] == "123"
+
+@pytest.mark.asyncio
+async def test_report_restaurant_delay():
+
+    with patch("src.repositories.order_repo.OrderRepo.update_order",
+               new_callable=AsyncMock) as mock_update:
+
+        mock_update.return_value = "delayed"
+        result = await OrderService.report_restaurant_delay("123", "Busy restaurant")
+        assert result == "delayed"
+        mock_update.assert_called_once()
+        assert mock_update.call_args[0][0] == "123"
