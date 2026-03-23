@@ -24,3 +24,18 @@ class OrderService:
 
         update = OrderUpdate(order_status=OrderStatus.CANCELLED)
         return await OrderRepo.update_order(order_id, update)
+
+    @staticmethod
+    async def mark_ready_for_pickup(order_id: str) -> Order:
+
+        update = OrderUpdate(order_status=OrderStatus.READY_FOR_PICKUP)
+        return await OrderRepo.update_order(order_id, update)
+
+    @staticmethod
+    async def report_restaurant_delay(order_id: str, reason: str) -> Order:
+
+        update = OrderUpdate(
+            order_status= OrderStatus.DELAYED,
+            delay_reason= reason
+        )
+        return await OrderRepo.update_order(order_id, update)
