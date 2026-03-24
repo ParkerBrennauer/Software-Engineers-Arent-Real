@@ -3,6 +3,7 @@ annotated-doc==0.0.4
 annotated-types==0.7.0
 anyio==4.12.1
 dill==0.4.1
+email-validator==2.2.0
 fastapi==0.135.1
 idna==3.11
 iniconfig==2.3.0
@@ -22,3 +23,4 @@ starlette==0.52.1
 tomlkit==0.14.0
 typing-inspection==0.4.2
 typing_extensions==4.15.0
+httpx==0.28.1
