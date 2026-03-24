@@ -5,6 +5,7 @@ import pytest
 from pydantic import ValidationError
 
 
+# Creating helper objects so that I don't have to rewrite the shit every time
 def create_customer():
     return CustomerRegister(
         name="Trevor",
@@ -28,6 +29,7 @@ def create_order():
     )
 
 
+# The system shall validate payment details (by checking customer creation)
 @pytest.mark.asyncio
 async def test_validate_payment_details():
 
@@ -36,6 +38,7 @@ async def test_validate_payment_details():
     assert customer.payment_details == "1234567812345678"
 
 
+# The payment fails for invalid details
 @pytest.mark.asyncio
 async def test_invalid_card():
 
@@ -50,6 +53,7 @@ async def test_invalid_card():
         )
 
 
+# The system processes payment and updates both the order and payment status
 @pytest.mark.asyncio
 async def test_process_payment_update_status():
 
@@ -57,6 +61,7 @@ async def test_process_payment_update_status():
 
     updated_order = await PaymentService.process_payment(order)
 
+    # We check both possibilities as we used RNG to determine outcome
     assert updated_order.payment_status in [
         PaymentStatus.ACCEPTED,
         PaymentStatus.REJECTED,
@@ -68,6 +73,7 @@ async def test_process_payment_update_status():
     ]
 
 
+# Each order is processed only once (to prevent processing payment multiple times)
 @pytest.mark.asyncio
 async def test_duplicate_payment_prevention():
 
@@ -79,6 +85,7 @@ async def test_duplicate_payment_prevention():
         await PaymentService.process_payment(order)
 
 
+# The system allows customer to retry after failed payment
 @pytest.mark.asyncio
 async def test_retry_payment_after_failed_payment():
 
