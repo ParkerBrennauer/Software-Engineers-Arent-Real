@@ -8,6 +8,7 @@ from src.schemas.user_schema import (
     UserPasswordReset,
 )
 from src.schemas.customer_schema import CustomerRegister
+from src.schemas.driver_schema import DriverRegister
 
 from src.services.user_service import UserService
 
@@ -31,6 +32,24 @@ async def register_customer(customer_in: CustomerRegister):
     try:
         new_customer = await UserService.create_user(customer_in)
         return new_customer
+    except ValueError as err:
+        message = str(err)
+        if message == "Username already exists":
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail=message
+            ) from err
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=message
+        ) from err
+
+
+@router.post(
+    "/register/driver", response_model=UserResponse, status_code=status.HTTP_201_CREATED
+)
+async def register_driver(driver_in: DriverRegister):
+    try:
+        new_driver = await UserService.create_user(driver_in)
+        return new_driver
     except ValueError as err:
         message = str(err)
         if message == "Username already exists":
