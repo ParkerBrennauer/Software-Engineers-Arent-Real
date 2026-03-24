@@ -1,10 +1,15 @@
+import sys
+
 import pytest
 
 from src.repositories.order_repo import OrderRepo
 from src.schemas.order_schema import OrderStatus
 from src.schemas.order_tracking_schema import OrderTrackingStatusUpdate
 from src.services.order_tracking_service import OrderTrackingService
-import src.services.order_tracking_service as order_tracking_service_module
+
+
+def get_order_tracking_service_module():
+    return sys.modules[OrderTrackingService.__module__]
 
 
 @pytest.mark.asyncio
@@ -29,8 +34,16 @@ async def test_get_tracking_info_generates_metrics_for_restaurant_stage(monkeypa
 
     monkeypatch.setattr(OrderRepo, "get_by_id", fake_get_by_id)
     monkeypatch.setattr(OrderRepo, "update_order", fake_update_order)
-    monkeypatch.setattr(order_tracking_service_module.random, "uniform", lambda _a, _b: 7.25)
-    monkeypatch.setattr(order_tracking_service_module.random, "randint", lambda _a, _b: 18)
+    monkeypatch.setattr(
+        get_order_tracking_service_module().random,
+        "uniform",
+        lambda _a, _b: 7.25,
+    )
+    monkeypatch.setattr(
+        get_order_tracking_service_module().random,
+        "randint",
+        lambda _a, _b: 18,
+    )
 
     tracking = await OrderTrackingService.get_tracking_info("12")
 
@@ -62,8 +75,16 @@ async def test_refresh_tracking_updates_in_transit_metrics(monkeypatch):
 
     monkeypatch.setattr(OrderRepo, "get_by_id", fake_get_by_id)
     monkeypatch.setattr(OrderRepo, "update_order", fake_update_order)
-    monkeypatch.setattr(order_tracking_service_module.random, "uniform", lambda _a, _b: 1.25)
-    monkeypatch.setattr(order_tracking_service_module.random, "randint", lambda _a, _b: 4)
+    monkeypatch.setattr(
+        get_order_tracking_service_module().random,
+        "uniform",
+        lambda _a, _b: 1.25,
+    )
+    monkeypatch.setattr(
+        get_order_tracking_service_module().random,
+        "randint",
+        lambda _a, _b: 4,
+    )
 
     tracking = await OrderTrackingService.refresh_tracking("33")
 
