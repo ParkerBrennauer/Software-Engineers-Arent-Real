@@ -5,6 +5,7 @@ from src.repositories import OrderRepo
 
 async def test_create_order_success():
     order_in = order_schema.OrderCreate(
+        id = 0,
         restaurant="Test Restaurant",
         customer="test_customer",
         time=30,
