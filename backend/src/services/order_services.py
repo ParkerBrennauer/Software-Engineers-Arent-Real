@@ -34,7 +34,7 @@ class OrderService:
     @staticmethod
     async def report_restaurant_delay(order_id: str, reason: str) -> Order:
 
-        order = await OrderRepo.get_order(order_id)
+        await OrderRepo.get_order(order_id)
         update = OrderUpdate(
             order_status= OrderStatus.DELAYED,
             delay_reason= reason
