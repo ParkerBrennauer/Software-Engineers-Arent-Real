@@ -44,6 +44,32 @@ class ItemRepo:
         return data[item_key]
 
     @classmethod
+    async def update_by_key(cls, old_key: str, updates: dict) -> Optional[dict]:
+        data = await cls.read_all()
+
+        if old_key not in data:
+            return None
+
+        update_item = dict(data[old_key])
+        update_item.update(updates)
+        item_name = update_item.get("item_name")
+        restaurant_id = update_item.get("restaurant_id")
+        new_key = f"{item_name}_{restaurant_id}"
+
+        if new_key != old_key and new_key in data:
+            raise ValueError("Updated item key already exists")
+
+        if new_key != old_key:
+            del data[old_key]
+        data[new_key] = update_item
+
+        await cls.write_all(data)
+
+        result = dict(update_item)
+        result["key"] = new_key
+        return result
+
+    @classmethod
     async def get_by_key(cls, item_key: str) -> Optional[dict]:
         data = await cls.read_all()
         return data.get(item_key)
