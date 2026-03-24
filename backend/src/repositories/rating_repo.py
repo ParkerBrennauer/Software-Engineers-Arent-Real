@@ -83,3 +83,40 @@ class RatingRepo:
             await file.write(json.dumps(reviews, indent=1))
 
         return reviews[order_id]
+
+    @classmethod
+    async def update_review_fields(
+        cls,
+        order_id: str,
+        stars: int | None = None,
+        review_text: str | None = None,
+    ) -> dict[str, Any] | None:
+        reviews = await cls.read_all()
+
+        if order_id not in reviews:
+            return None
+
+        if stars is not None:
+            reviews[order_id]["submitted_stars"] = stars
+        if review_text is not None:
+            reviews[order_id]["review_text"] = review_text
+
+        async with aiofiles.open(cls.FILE_PATH, mode="w") as file:
+            await file.write(json.dumps(reviews, indent=1))
+
+        return reviews[order_id]
+
+    @classmethod
+    async def delete_review(cls, order_id: str) -> dict[str, Any] | None:
+        reviews = await cls.read_all()
+
+        if order_id not in reviews:
+            return None
+
+        reviews[order_id]["submitted_stars"] = None
+        reviews[order_id]["review_text"] = None
+
+        async with aiofiles.open(cls.FILE_PATH, mode="w") as file:
+            await file.write(json.dumps(reviews, indent=1))
+
+        return reviews[order_id]

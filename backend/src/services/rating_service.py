@@ -1,6 +1,12 @@
 from src.repositories.rating_repo import RatingRepo
 from src.schemas.rating_schema import RatingCreate, RatingResponse
-from src.schemas.review_schema import ReviewCreate, ReviewResponse
+from src.schemas.review_schema import (
+    DeleteResponse,
+    ReviewCreate,
+    ReviewEdit,
+    ReviewEditResponse,
+    ReviewResponse,
+)
 
 
 class RatingService:
@@ -55,4 +61,58 @@ class RatingService:
             order_id=order_id,
             restaurant_id=restaurant_id,
             review_text=payload.review_text,
+        )
+
+    @staticmethod
+    async def edit_order_review(
+        order_id: str, payload: ReviewEdit
+    ) -> ReviewEditResponse:
+        order = await RatingRepo.get_by_order_id(order_id)
+
+        if order is None:
+            raise ValueError("Order not found")
+
+        if (
+            order.get("submitted_stars") is None
+            and order.get("review_text") is None
+        ):
+            raise ValueError("No review exists to edit for this order")
+
+        if payload.stars is None and payload.review_text is None:
+            raise ValueError("Nothing to update")
+
+        updated_order = await RatingRepo.update_review_fields(
+            order_id,
+            stars=payload.stars,
+            review_text=payload.review_text,
+        )
+        if not updated_order:
+            raise ValueError("Order not found")
+
+        return ReviewEditResponse(
+            order_id=order_id,
+            submitted_stars=updated_order.get("submitted_stars"),
+            review_text=updated_order.get("review_text"),
+        )
+
+    @staticmethod
+    async def delete_order_review(order_id: str) -> DeleteResponse:
+        order = await RatingRepo.get_by_order_id(order_id)
+
+        if order is None:
+            raise ValueError("Order not found")
+
+        if (
+            order.get("submitted_stars") is None
+            and order.get("review_text") is None
+        ):
+            raise ValueError("No review exists to delete for this order")
+
+        deleted_order = await RatingRepo.delete_review(order_id)
+        if not deleted_order:
+            raise ValueError("Order not found")
+
+        return DeleteResponse(
+            order_id=order_id,
+            message="Review and rating deleted successfully",
         )

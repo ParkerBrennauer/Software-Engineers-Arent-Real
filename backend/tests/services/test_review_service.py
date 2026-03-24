@@ -2,7 +2,7 @@ import pytest
 from pydantic import ValidationError
 
 from src.repositories.rating_repo import RatingRepo
-from src.schemas.review_schema import ReviewCreate
+from src.schemas.review_schema import ReviewCreate, ReviewEdit
 from src.services.rating_service import RatingService
 
 
@@ -116,3 +116,167 @@ async def test_review_schema_rejects_empty_text():
 async def test_review_schema_accepts_valid_text():
     review = ReviewCreate(review_text="Food was amazing!")
     assert review.review_text == "Food was amazing!"
+
+
+@pytest.mark.asyncio
+async def test_edit_review_update_both(monkeypatch):
+    order = {
+        "submitted_stars": 4,
+        "review_text": "Pretty good food",
+    }
+
+    async def fake_get_by_order_id(_order_id: str):
+        return dict(order)
+
+    async def fake_update_review_fields(
+        _order_id: str,
+        stars: int | None = None,
+        review_text: str | None = None,
+    ):
+        return {
+            "submitted_stars": stars,
+            "review_text": review_text,
+        }
+
+    monkeypatch.setattr(RatingRepo, "get_by_order_id", fake_get_by_order_id)
+    monkeypatch.setattr(
+        RatingRepo,
+        "update_review_fields",
+        fake_update_review_fields,
+    )
+
+    result = await RatingService.edit_order_review(
+        "1d8e87M",
+        ReviewEdit(stars=5, review_text="Updated review"),
+    )
+
+    assert result.order_id == "1d8e87M"
+    assert result.submitted_stars == 5
+    assert result.review_text == "Updated review"
+
+
+@pytest.mark.asyncio
+async def test_edit_review_update_stars_only(monkeypatch):
+    async def fake_get_by_order_id(_order_id: str):
+        return {
+            "submitted_stars": 4,
+            "review_text": "Pretty good food",
+        }
+
+    async def fake_update_review_fields(
+        _order_id: str,
+        stars: int | None = None,
+        review_text: str | None = None,
+    ):
+        return {
+            "submitted_stars": stars,
+            "review_text": "Pretty good food" if review_text is None else review_text,
+        }
+
+    monkeypatch.setattr(RatingRepo, "get_by_order_id", fake_get_by_order_id)
+    monkeypatch.setattr(
+        RatingRepo,
+        "update_review_fields",
+        fake_update_review_fields,
+    )
+
+    result = await RatingService.edit_order_review(
+        "1d8e87M",
+        ReviewEdit(stars=2),
+    )
+
+    assert result.submitted_stars == 2
+    assert result.review_text == "Pretty good food"
+
+
+@pytest.mark.asyncio
+async def test_edit_review_order_not_found(monkeypatch):
+    async def fake_get_by_order_id(_order_id: str):
+        return None
+
+    monkeypatch.setattr(RatingRepo, "get_by_order_id", fake_get_by_order_id)
+
+    with pytest.raises(ValueError, match="Order not found"):
+        await RatingService.edit_order_review(
+            "FAKE_ID",
+            ReviewEdit(stars=3),
+        )
+
+
+@pytest.mark.asyncio
+async def test_edit_review_no_existing_review(monkeypatch):
+    async def fake_get_by_order_id(_order_id: str):
+        return {
+            "submitted_stars": None,
+            "review_text": None,
+        }
+
+    monkeypatch.setattr(RatingRepo, "get_by_order_id", fake_get_by_order_id)
+
+    with pytest.raises(ValueError, match="No review exists to edit for this order"):
+        await RatingService.edit_order_review(
+            "1d8e87M",
+            ReviewEdit(stars=3),
+        )
+
+
+@pytest.mark.asyncio
+async def test_edit_review_nothing_to_update(monkeypatch):
+    async def fake_get_by_order_id(_order_id: str):
+        return {
+            "submitted_stars": 4,
+            "review_text": "Pretty good food",
+        }
+
+    monkeypatch.setattr(RatingRepo, "get_by_order_id", fake_get_by_order_id)
+
+    with pytest.raises(ValueError, match="Nothing to update"):
+        await RatingService.edit_order_review("1d8e87M", ReviewEdit())
+
+
+@pytest.mark.asyncio
+async def test_delete_review_success(monkeypatch):
+    async def fake_get_by_order_id(_order_id: str):
+        return {
+            "submitted_stars": 4,
+            "review_text": "Pretty good food",
+        }
+
+    async def fake_delete_review(_order_id: str):
+        return {
+            "submitted_stars": None,
+            "review_text": None,
+        }
+
+    monkeypatch.setattr(RatingRepo, "get_by_order_id", fake_get_by_order_id)
+    monkeypatch.setattr(RatingRepo, "delete_review", fake_delete_review)
+
+    result = await RatingService.delete_order_review("1d8e87M")
+
+    assert result.order_id == "1d8e87M"
+    assert result.message == "Review and rating deleted successfully"
+
+
+@pytest.mark.asyncio
+async def test_delete_review_order_not_found(monkeypatch):
+    async def fake_get_by_order_id(_order_id: str):
+        return None
+
+    monkeypatch.setattr(RatingRepo, "get_by_order_id", fake_get_by_order_id)
+
+    with pytest.raises(ValueError, match="Order not found"):
+        await RatingService.delete_order_review("FAKE_ID")
+
+
+@pytest.mark.asyncio
+async def test_delete_review_nothing_to_delete(monkeypatch):
+    async def fake_get_by_order_id(_order_id: str):
+        return {
+            "submitted_stars": None,
+            "review_text": None,
+        }
+
+    monkeypatch.setattr(RatingRepo, "get_by_order_id", fake_get_by_order_id)
+
+    with pytest.raises(ValueError, match="No review exists to delete for this order"):
+        await RatingService.delete_order_review("1d8e87M")
