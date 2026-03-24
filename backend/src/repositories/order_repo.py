@@ -9,11 +9,16 @@ class OrderRepo:
     FILE_PATH = Path(__file__).resolve().parent.parent / "data" / "orders.json"
 
     @classmethod
+    def _path(cls) -> Path:
+        return Path(cls.FILE_PATH)
+
+    @classmethod
     async def _read_raw(cls) -> dict[str, dict[str, Any]]:
-        if not cls.FILE_PATH.exists():
+        file_path = cls._path()
+        if not file_path.exists():
             return {}
 
-        async with aiofiles.open(cls.FILE_PATH, mode="r") as file:
+        async with aiofiles.open(file_path, mode="r") as file:
             raw_orders = await file.read()
 
         if not raw_orders:
@@ -21,31 +26,74 @@ class OrderRepo:
 
         return json.loads(raw_orders)
 
+    @staticmethod
+    def _normalize_order(
+        order_id: str,
+        order_data: dict[str, Any],
+    ) -> dict[str, Any]:
+        normalized_order = dict(order_data)
+
+        if (
+            "order_satus" in normalized_order
+            and "order_status" not in normalized_order
+        ):
+            normalized_order["order_status"] = normalized_order.pop("order_satus")
+
+        normalized_order.setdefault("id", int(order_id))
+        return normalized_order
+
+    @staticmethod
+    def _prepare_for_storage(
+        order_data: dict[str, Any],
+        existing_order: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        persisted_order = dict(order_data)
+        persisted_order.pop("id", None)
+
+        should_use_legacy_status_key = (
+            existing_order is not None
+            and "order_satus" in existing_order
+            and "order_status" not in existing_order
+        )
+
+        if should_use_legacy_status_key and "order_status" in persisted_order:
+            persisted_order["order_satus"] = persisted_order.pop("order_status")
+
+        return persisted_order
+
+    @classmethod
+    async def _write_raw(cls, orders: dict[str, dict[str, Any]]) -> None:
+        async with aiofiles.open(cls._path(), mode="w") as file:
+            await file.write(json.dumps(orders, indent=4))
+
     @classmethod
     async def read_all(cls) -> dict[str, dict[str, Any]]:
         orders = await cls._read_raw()
         return {
-            str(order_id): cls._normalize_order(order_data)
+            str(order_id): cls._normalize_order(str(order_id), order_data)
             for order_id, order_data in orders.items()
         }
 
-    @staticmethod
-    def _normalize_order(order_data: dict[str, Any]) -> dict[str, Any]:
-        normalized_order = dict(order_data)
-
-        if "order_satus" in normalized_order and "order_status" not in normalized_order:
-            normalized_order["order_status"] = normalized_order.pop("order_satus")
-
-        return normalized_order
-
     @classmethod
-    async def get_by_id(cls, order_id: str) -> dict[str, Any] | None:
+    async def get_by_id(cls, order_id: int | str) -> dict[str, Any] | None:
         orders = await cls.read_all()
         return orders.get(str(order_id))
 
     @classmethod
+    async def save_order(cls, order_data: dict[str, Any]) -> dict[str, Any]:
+        orders = await cls._read_raw()
+
+        order_id = str(order_data.get("id", await cls.get_largest_order_id() + 1))
+        orders[order_id] = cls._prepare_for_storage(order_data)
+
+        await cls._write_raw(orders)
+        return cls._normalize_order(order_id, orders[order_id])
+
+    @classmethod
     async def update_order(
-        cls, order_id: str, updates: dict[str, Any]
+        cls,
+        order_id: int | str,
+        updated_data: dict[str, Any],
     ) -> dict[str, Any] | None:
         orders = await cls._read_raw()
         normalized_order_id = str(order_id)
@@ -54,17 +102,48 @@ class OrderRepo:
             return None
 
         existing_order = orders[normalized_order_id]
-        persisted_updates = dict(updates)
-        if (
-            "order_status" in persisted_updates
-            and "order_satus" in existing_order
-            and "order_status" not in existing_order
-        ):
-            persisted_updates["order_satus"] = persisted_updates.pop("order_status")
+        merged_order = {**existing_order, **dict(updated_data)}
+        orders[normalized_order_id] = cls._prepare_for_storage(
+            merged_order,
+            existing_order=existing_order,
+        )
 
-        existing_order.update(persisted_updates)
+        await cls._write_raw(orders)
+        return cls._normalize_order(
+            normalized_order_id,
+            orders[normalized_order_id],
+        )
 
-        async with aiofiles.open(cls.FILE_PATH, mode="w") as file:
-            await file.write(json.dumps(orders, indent=4))
+    @classmethod
+    async def get_largest_order_id(cls) -> int:
+        orders = await cls._read_raw()
+        if not orders:
+            return 0
 
-        return cls._normalize_order(orders[normalized_order_id])
+        largest_key_id = max((int(order_id) for order_id in orders), default=0)
+        largest_embedded_id = max(
+            (
+                int(order.get("id", 0))
+                for order in orders.values()
+                if str(order.get("id", "")).isdigit()
+            ),
+            default=0,
+        )
+        return max(largest_key_id, largest_embedded_id)
+
+    @classmethod
+    async def get_orders_by_driver(cls, driver: str) -> list[dict[str, Any]]:
+        orders = await cls.read_all()
+        return [
+            order
+            for order in orders.values()
+            if order.get("driver") == driver
+        ]
+
+    @classmethod
+    async def get_order(cls, order_id: int | str) -> dict[str, Any] | None:
+        return await cls.get_by_id(order_id)
+
+    @classmethod
+    async def get_all_orders(cls) -> dict[str, dict[str, Any]]:
+        return await cls.read_all()
