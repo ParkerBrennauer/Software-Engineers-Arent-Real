@@ -47,9 +47,12 @@ class OrderService:
     async def calculate_order_cost(items: list) -> float:
         total = 0.0
         for item in items:
-            total += item.get("price", 0)
+            if isinstance(item, dict):
+                total += item.get("price", 0)
+            else:
+                total += 0
 
-        total = total * 1.13
+        total *= 1.13
         return round(total, 2)
 
     @staticmethod
@@ -152,11 +155,15 @@ class OrderService:
 
         updated_order = {
             **order_dict,
+            "id": order_dict.get("id", int(order_id)),
             "refund_issued": True,
             "refund_amount": order.cost if isinstance(order, Order) else order_dict.get("cost", 0)
         }
 
         saved = await OrderRepo.update_order(order_id, updated_order)
+
+        if isinstance(saved, str):
+            return saved
 
         if isinstance(saved, Order):
             saved = saved.model_dump()
