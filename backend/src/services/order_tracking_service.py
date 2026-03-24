@@ -64,6 +64,76 @@ class OrderTrackingService:
         return random.randint(minimum, maximum)
 
     @classmethod
+    def _ensure_restaurant_metrics(
+        cls, distance: float, time_minutes: int
+    ) -> tuple[float, int]:
+        if distance <= 0:
+            distance = cls._generate_distance()
+        if time_minutes <= 0:
+            time_minutes = cls._generate_time()
+        return distance, time_minutes
+
+    @classmethod
+    def _resolve_delivery_tracking(
+        cls, status: OrderStatus, distance: float, time_minutes: int, refresh: bool
+    ) -> tuple[OrderStatus, float, int]:
+        if distance <= 0:
+            distance = cls._generate_distance(0.5, 10.0)
+        if time_minutes <= 0:
+            time_minutes = cls._generate_time(5, 35)
+
+        if not refresh:
+            return status, distance, time_minutes
+
+        distance = round(max(0.0, distance - random.uniform(0.3, 2.5)), 2)
+        time_minutes = max(0, time_minutes - random.randint(2, 8))
+
+        if distance == 0.0 or time_minutes == 0:
+            return OrderStatus.DELIVERED, 0.0, 0
+
+        return status, distance, time_minutes
+
+    @classmethod
+    def _resolve_tracking_progress(
+        cls, status: OrderStatus, distance: float, time_minutes: int, refresh: bool
+    ) -> tuple[OrderStatus, float, int]:
+        if status in cls.INACTIVE_TRACKING_STATUSES:
+            return status, 0.0, 0
+
+        if status in cls.RESTAURANT_STATUSES:
+            distance, time_minutes = cls._ensure_restaurant_metrics(
+                distance,
+                time_minutes,
+            )
+            return status, distance, time_minutes
+
+        if status in cls.DELIVERY_STATUSES:
+            delivery_status, distance, time_minutes = cls._resolve_delivery_tracking(
+                status,
+                distance,
+                time_minutes,
+                refresh,
+            )
+            return delivery_status, distance, time_minutes
+
+        return status, distance, time_minutes
+
+    @classmethod
+    def _build_tracking_updates(
+        cls, order: dict, status: OrderStatus, distance: float, time_minutes: int
+    ) -> dict[str, object]:
+        updates: dict[str, object] = {}
+
+        if cls._coerce_status(order.get("order_status")) != status:
+            updates["order_status"] = status.value
+        if cls._coerce_distance(order.get("distance")) != distance:
+            updates["distance"] = distance
+        if cls._coerce_time(order.get("time")) != time_minutes:
+            updates["time"] = time_minutes
+
+        return updates
+
+    @classmethod
     async def get_tracking_info(cls, order_id: str) -> OrderTrackingResponse:
         order = await OrderRepo.get_by_id(order_id)
         if not order:
@@ -111,37 +181,13 @@ class OrderTrackingService:
         status = cls._coerce_status(order.get("order_status"))
         distance = cls._coerce_distance(order.get("distance"))
         time_minutes = cls._coerce_time(order.get("time"))
-        updates: dict[str, object] = {}
-
-        if status in cls.INACTIVE_TRACKING_STATUSES:
-            distance = 0.0
-            time_minutes = 0
-        elif status in cls.RESTAURANT_STATUSES:
-            if distance <= 0:
-                distance = cls._generate_distance()
-            if time_minutes <= 0:
-                time_minutes = cls._generate_time()
-        elif status in cls.DELIVERY_STATUSES:
-            if distance <= 0:
-                distance = cls._generate_distance(0.5, 10.0)
-            if time_minutes <= 0:
-                time_minutes = cls._generate_time(5, 35)
-
-            if refresh:
-                distance = round(max(0.0, distance - random.uniform(0.3, 2.5)), 2)
-                time_minutes = max(0, time_minutes - random.randint(2, 8))
-
-                if distance == 0.0 or time_minutes == 0:
-                    status = OrderStatus.DELIVERED
-                    distance = 0.0
-                    time_minutes = 0
-
-        if cls._coerce_status(order.get("order_status")) != status:
-            updates["order_status"] = status.value
-        if cls._coerce_distance(order.get("distance")) != distance:
-            updates["distance"] = distance
-        if cls._coerce_time(order.get("time")) != time_minutes:
-            updates["time"] = time_minutes
+        status, distance, time_minutes = cls._resolve_tracking_progress(
+            status,
+            distance,
+            time_minutes,
+            refresh,
+        )
+        updates = cls._build_tracking_updates(order, status, distance, time_minutes)
 
         if not updates:
             normalized_order = dict(order)
