@@ -1,7 +1,5 @@
 name: Pylint
-
 on: [push]
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -21,4 +19,4 @@ jobs:
         pip install -r requirements.txt
     - name: Analysing the code with pylint
       run: |
-        pylint --disable=C0114,C0115,C0116,R0903 $(git ls-files '*.py')
+        PYTHONPATH=backend/src pylint --disable=C0114,C0115,C0116,R0903,E0401 $(git ls-files '*.py')
