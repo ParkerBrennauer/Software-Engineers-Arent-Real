@@ -27,38 +27,18 @@ class OrderRepo:
         return json.loads(raw_orders)
 
     @staticmethod
-    def _normalize_order(
+    def _with_order_id(
         order_id: str,
         order_data: dict[str, Any],
     ) -> dict[str, Any]:
-        normalized_order = dict(order_data)
-
-        if (
-            "order_satus" in normalized_order
-            and "order_status" not in normalized_order
-        ):
-            normalized_order["order_status"] = normalized_order.pop("order_satus")
-
-        normalized_order.setdefault("id", int(order_id))
-        return normalized_order
+        hydrated_order = dict(order_data)
+        hydrated_order.setdefault("id", int(order_id))
+        return hydrated_order
 
     @staticmethod
-    def _prepare_for_storage(
-        order_data: dict[str, Any],
-        existing_order: dict[str, Any] | None = None,
-    ) -> dict[str, Any]:
+    def _prepare_for_storage(order_data: dict[str, Any]) -> dict[str, Any]:
         persisted_order = dict(order_data)
         persisted_order.pop("id", None)
-
-        should_use_legacy_status_key = (
-            existing_order is not None
-            and "order_satus" in existing_order
-            and "order_status" not in existing_order
-        )
-
-        if should_use_legacy_status_key and "order_status" in persisted_order:
-            persisted_order["order_satus"] = persisted_order.pop("order_status")
-
         return persisted_order
 
     @classmethod
@@ -70,7 +50,7 @@ class OrderRepo:
     async def read_all(cls) -> dict[str, dict[str, Any]]:
         orders = await cls._read_raw()
         return {
-            str(order_id): cls._normalize_order(str(order_id), order_data)
+            str(order_id): cls._with_order_id(str(order_id), order_data)
             for order_id, order_data in orders.items()
         }
 
@@ -87,7 +67,7 @@ class OrderRepo:
         orders[order_id] = cls._prepare_for_storage(order_data)
 
         await cls._write_raw(orders)
-        return cls._normalize_order(order_id, orders[order_id])
+        return cls._with_order_id(order_id, orders[order_id])
 
     @classmethod
     async def update_order(
@@ -103,13 +83,10 @@ class OrderRepo:
 
         existing_order = orders[normalized_order_id]
         merged_order = {**existing_order, **dict(updated_data)}
-        orders[normalized_order_id] = cls._prepare_for_storage(
-            merged_order,
-            existing_order=existing_order,
-        )
+        orders[normalized_order_id] = cls._prepare_for_storage(merged_order)
 
         await cls._write_raw(orders)
-        return cls._normalize_order(
+        return cls._with_order_id(
             normalized_order_id,
             orders[normalized_order_id],
         )
