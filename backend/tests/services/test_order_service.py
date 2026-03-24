@@ -81,8 +81,20 @@ async def test_mark_ready_for_pickup():
 async def test_report_restaurant_delay():
 
     with patch("src.repositories.order_repo.OrderRepo.update_order",
-               new_callable=AsyncMock) as mock_update:
+               new_callable=AsyncMock) as mock_update, \
+         patch("src.repositories.order_repo.OrderRepo.get_order",
+               new_callable=AsyncMock) as mock_get:
 
+        mock_get.return_value = Order(
+            items=["Spaghetti"],
+            cost=20.0,
+            restaurant="Trevor's pasta",
+            customer="Joe",
+            time=20,
+            cuisine="Italian",
+            distance=2.5,
+            order_status="preparing"
+        )
         mock_update.return_value = "delayed"
         result = await OrderService.report_restaurant_delay("123", "Busy restaurant")
         assert result == "delayed"
