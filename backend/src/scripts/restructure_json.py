@@ -41,7 +41,7 @@ for entry in allEntries:
 
     if item_key not in items:
         items[item_key] = {
-            "food_item": entry["food_item"],
+            "item_name": entry["food_item"],
             "restaurant_id": entry["restaurant_id"],
             "times_ordered": 0,
             "avg_rating": 0.00

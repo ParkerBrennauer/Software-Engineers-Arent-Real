@@ -1,45 +1,64 @@
-import os
 import json
-from src.schemas.order_schema import Order, OrderUpdate
+from typing import List, Optional
+import os
+import aiofiles
 
-class OrderRepo():
 
-    DATA_PATH = os.path.join(os.path.dirname(__file__), "../data/order.json")
+class OrderRepo:
+    FilePath = "orders.json"
 
-    @staticmethod
-    async def get_all_orders():
+    @classmethod
+    async def read_all(cls) -> List[dict]:
+        if not os.path.exists(cls.FilePath):
+            return []
 
-        with open(OrderRepo.DATA_PATH, "r", encoding="utf-8") as f:
-            return json.load(f)
+        async with aiofiles.open(cls.FilePath, mode='r') as f:
+            orders = await f.read()
+            return json.loads(orders) if orders else []
 
-    @staticmethod
-    async def get_order(order_id: str) -> Order:
+    @classmethod
+    async def get_by_id(cls, order_id: int) -> Optional[dict]:
+        orders = await cls.read_all()
 
-        orders = await OrderRepo.get_all_orders()
-        if order_id not in orders:
-            raise ValueError("Order not found")
-        return Order(**orders[order_id])
+        for order in orders:
+            if order["id"] == order_id:
+                return order
+        return None
 
-    @staticmethod
-    async def update_order(order_id: str, update: OrderUpdate) -> Order:
+    @classmethod
+    async def save_order(cls, order_data: dict) -> dict:
+        orders = await cls.read_all()
 
-        orders = await OrderRepo.get_all_orders()
-        if order_id not in orders:
-            raise ValueError("Order not found")
-        order_data = orders[order_id]
-        update_data = update.model_dump(exclude_unset= True)
-        for key, value in update_data.items():
-            order_data[key] = value
-        orders[order_id] = order_data
-        with open(OrderRepo.DATA_PATH, "w", encoding="utf=8") as f:
-            json.dump(orders, f, indent=4)
-        return Order(**order_data)
+        new_id = max((o.get("id", 0) for o in orders), default=0) + 1
+        order_data["id"] = new_id
+        orders.append(order_data)
 
-    @staticmethod
-    async def get_orders_by_driver(driver: str):
-        orders = await OrderRepo.get_all_orders()
-        driver_orders = []
-        for order_data in orders.values():
-            if order_data.get("driver") == driver:
-                driver_orders.append(Order(**order_data))
-        return driver_orders
+        async with aiofiles.open(cls.FilePath, mode='w') as f:
+            await f.write(json.dumps(orders, indent=4))
+
+        return order_data
+
+    @classmethod
+    async def update_order(cls, order_id: int, updated_data: dict) -> Optional[dict]:
+        orders = await cls.read_all()
+
+        for index, order in enumerate(orders):
+            if order["id"] == order_id:
+                orders[index] = updated_data
+
+                async with aiofiles.open(cls.FilePath, mode='w') as f:
+                    await f.write(json.dumps(orders, indent=4))
+
+                return orders[index]
+
+        return None
+
+    @classmethod
+    async def get_largest_order_id(cls) -> int:
+        orders = await cls.read_all()
+        return max((order.get("id", 0) for order in orders), default=0)
+
+    @classmethod
+    async def get_orders_by_driver(cls, driver: str) -> List[dict]:
+        orders = await cls.read_all()
+        return [order for order in orders if order.get("driver") == driver]
