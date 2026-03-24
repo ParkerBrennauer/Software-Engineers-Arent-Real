@@ -1,0 +1,12 @@
+[MASTER]
+init-hook=import sys; sys.path.append('backend')
+
+[MESSAGES CONTROL]
+disable=
+    C0114,
+    C0115,
+    C0116,
+    E0401,
+    W0311,
+    C0325,
+    W0311
