@@ -9,7 +9,7 @@
 *.sln
 *.sw?
 
-#Database Volume Data
-db-data/
-__pycache__/
-.env
+*.env
+**/__pycache__/
+*.py[cod]
+/bin/*
