@@ -1,6 +1,13 @@
 from fastapi import FastAPI
-from routers.orders_router import router as ratings_router
 
-app = FastAPI()
+from src.api.routers.rating_router import router as rating_router
+from src.api.routers.restaurant_administration_router import (
+    router as restaurant_administration_router,
+)
+from src.api.routers.user_router import router as user_router
 
-app.include_router(ratings_router)
+app = FastAPI(title="Software Engineers Aren't Real Backend")
+
+app.include_router(user_router)
+app.include_router(restaurant_administration_router)
+app.include_router(rating_router)
