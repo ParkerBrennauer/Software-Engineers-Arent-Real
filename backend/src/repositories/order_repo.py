@@ -1,7 +1,8 @@
 import json
 from typing import List, Optional
-import aiofiles
 import os
+import aiofiles
+
 
 class OrderRepo:
     FilePath = "orders.json"
@@ -39,8 +40,8 @@ class OrderRepo:
 
     @classmethod
     async def update_by_id(cls, order_id: int, updates: dict, completed: bool) -> Optional[dict]:
-        if(completed):
-             return None
+        if completed:
+            return None
 
         orders = await cls.read_all()
 
@@ -54,3 +55,8 @@ class OrderRepo:
                 return orders[index]
 
         return None
+
+    @classmethod
+    async def get_largest_order_id(cls) -> int:
+        orders = await cls.read_all()
+        return max((order.get("id", 0) for order in orders), default=0)
