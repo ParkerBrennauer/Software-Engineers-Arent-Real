@@ -5,6 +5,11 @@ from src.repositories import OrderRepo
 
 async def test_create_order_success():
     order_in = order_schema.OrderCreate(
+        restaurant="Test Restaurant",
+        customer="test_customer",
+        time=30,
+        cuisine="testfood",
+        distance=2,
         items=[
             {"id": 1, "price": 10.0},
             {"id": 2, "price": 5.5},
