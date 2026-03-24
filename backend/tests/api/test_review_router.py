@@ -333,3 +333,100 @@ async def test_feedback_prompt_order_not_found(monkeypatch):
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Order not found"
+
+
+@pytest.mark.asyncio
+async def test_filter_reviews_success(monkeypatch):
+    async def fake_get_filtered_reviews(_restaurant_id: int, stars: int | None = None):
+        assert stars is None
+        return {
+            "restaurant_id": 16,
+            "stars_filter": None,
+            "total_reviews": 2,
+            "reviews": [
+                {
+                    "order_id": "abc123",
+                    "submitted_stars": 5,
+                    "review_text": "Amazing!",
+                },
+                {
+                    "order_id": "def456",
+                    "submitted_stars": 3,
+                    "review_text": "Okay",
+                },
+            ],
+        }
+
+    monkeypatch.setattr(
+        RatingService,
+        "get_filtered_reviews",
+        fake_get_filtered_reviews,
+    )
+
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(
+        transport=transport,
+        base_url="http://testserver",
+    ) as client:
+        response = await client.get("/orders/restaurants/16/reviews")
+
+    assert response.status_code == 200
+    assert response.json()["restaurant_id"] == 16
+    assert response.json()["total_reviews"] == 2
+
+
+@pytest.mark.asyncio
+async def test_filter_reviews_by_stars(monkeypatch):
+    async def fake_get_filtered_reviews(_restaurant_id: int, stars: int | None = None):
+        assert stars == 5
+        return {
+            "restaurant_id": 16,
+            "stars_filter": 5,
+            "total_reviews": 1,
+            "reviews": [
+                {
+                    "order_id": "abc123",
+                    "submitted_stars": 5,
+                    "review_text": "Amazing!",
+                }
+            ],
+        }
+
+    monkeypatch.setattr(
+        RatingService,
+        "get_filtered_reviews",
+        fake_get_filtered_reviews,
+    )
+
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(
+        transport=transport,
+        base_url="http://testserver",
+    ) as client:
+        response = await client.get("/orders/restaurants/16/reviews?stars=5")
+
+    assert response.status_code == 200
+    assert response.json()["stars_filter"] == 5
+    assert response.json()["total_reviews"] == 1
+
+
+@pytest.mark.asyncio
+async def test_filter_reviews_restaurant_not_found(monkeypatch):
+    async def fake_get_filtered_reviews(_restaurant_id: int, stars: int | None = None):
+        raise ValueError("Restaurant not found")
+
+    monkeypatch.setattr(
+        RatingService,
+        "get_filtered_reviews",
+        fake_get_filtered_reviews,
+    )
+
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(
+        transport=transport,
+        base_url="http://testserver",
+    ) as client:
+        response = await client.get("/orders/restaurants/9999/reviews")
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Restaurant not found"

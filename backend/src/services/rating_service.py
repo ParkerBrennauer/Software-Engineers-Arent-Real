@@ -3,6 +3,7 @@ from src.schemas.rating_schema import RatingCreate, RatingResponse
 from src.schemas.review_schema import (
     DeleteResponse,
     FeedbackPromptResponse,
+    FilteredReviewsResponse,
     ReviewCreate,
     ReviewEdit,
     ReviewEditResponse,
@@ -129,4 +130,24 @@ class RatingService:
             order_id=order_id,
             prompt_feedback=True,
             message="How was your order? Leave a rating and review!",
+        )
+
+    @staticmethod
+    async def get_filtered_reviews(
+        restaurant_id: int,
+        stars: int | None = None,
+    ) -> FilteredReviewsResponse:
+        reviews = await RatingRepo.get_restaurant_reviews(
+            restaurant_id,
+            stars=stars,
+        )
+
+        if reviews is None:
+            raise ValueError("Restaurant not found")
+
+        return FilteredReviewsResponse(
+            restaurant_id=restaurant_id,
+            stars_filter=stars,
+            total_reviews=len(reviews),
+            reviews=reviews,
         )

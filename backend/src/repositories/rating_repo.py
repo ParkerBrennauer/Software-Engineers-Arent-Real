@@ -120,3 +120,44 @@ class RatingRepo:
             await file.write(json.dumps(reviews, indent=1))
 
         return reviews[order_id]
+
+    @classmethod
+    async def get_restaurant_reviews(
+        cls,
+        restaurant_id: int,
+        stars: int | None = None,
+    ) -> list[dict[str, Any]] | None:
+        restaurants = await cls.read_restaurants()
+        restaurant_data = restaurants.get(str(restaurant_id))
+
+        if restaurant_data is None:
+            return None
+
+        order_ids = restaurant_data.get("order_ids", [])
+        reviews = await cls.read_all()
+        filtered_reviews = []
+
+        for order_id in order_ids:
+            order = reviews.get(order_id)
+            if order is None:
+                continue
+
+            has_feedback = (
+                order.get("submitted_stars") is not None
+                or order.get("review_text") is not None
+            )
+            if not has_feedback:
+                continue
+
+            if stars is not None and order.get("submitted_stars") != stars:
+                continue
+
+            filtered_reviews.append(
+                {
+                    "order_id": order_id,
+                    "submitted_stars": order.get("submitted_stars"),
+                    "review_text": order.get("review_text"),
+                }
+            )
+
+        return filtered_reviews

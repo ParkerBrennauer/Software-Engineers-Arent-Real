@@ -1,9 +1,10 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Query, status
 
 from src.schemas.rating_schema import RatingCreate, RatingResponse
 from src.schemas.review_schema import (
     DeleteResponse,
     FeedbackPromptResponse,
+    FilteredReviewsResponse,
     ReviewCreate,
     ReviewEdit,
     ReviewEditResponse,
@@ -16,7 +17,11 @@ router = APIRouter(prefix="/orders", tags=["ratings"])
 
 def _raise_rating_error(err: ValueError) -> None:
     message = str(err)
-    if message in {"Order not found", "Restaurant not found for this order"}:
+    if message in {
+        "Order not found",
+        "Restaurant not found",
+        "Restaurant not found for this order",
+    }:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=message,
@@ -83,5 +88,20 @@ async def delete_review(order_id: str):
 async def feedback_prompt(order_id: str):
     try:
         return await RatingService.check_feedback_prompt(order_id)
+    except ValueError as err:
+        _raise_rating_error(err)
+
+
+@router.get(
+    "/restaurants/{restaurant_id}/reviews",
+    response_model=FilteredReviewsResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def filter_reviews(
+    restaurant_id: int,
+    stars: int | None = Query(None, ge=1, le=5),
+):
+    try:
+        return await RatingService.get_filtered_reviews(restaurant_id, stars=stars)
     except ValueError as err:
         _raise_rating_error(err)

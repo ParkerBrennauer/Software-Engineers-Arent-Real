@@ -308,3 +308,84 @@ async def test_feedback_prompt_order_not_found(monkeypatch):
 
     with pytest.raises(ValueError, match="Order not found"):
         await RatingService.check_feedback_prompt("FAKE_ID")
+
+
+@pytest.mark.asyncio
+async def test_filter_reviews_no_filter(monkeypatch):
+    fake_reviews = [
+        {"order_id": "abc123", "submitted_stars": 5, "review_text": "Amazing!"},
+        {"order_id": "def456", "submitted_stars": 3, "review_text": "Okay"},
+        {"order_id": "ghi789", "submitted_stars": 1, "review_text": "Bad"},
+    ]
+
+    async def fake_get_restaurant_reviews(_restaurant_id: int, stars: int | None = None):
+        assert stars is None
+        return fake_reviews
+
+    monkeypatch.setattr(
+        RatingRepo,
+        "get_restaurant_reviews",
+        fake_get_restaurant_reviews,
+    )
+
+    result = await RatingService.get_filtered_reviews(16)
+
+    assert result.restaurant_id == 16
+    assert result.stars_filter is None
+    assert result.total_reviews == 3
+    assert len(result.reviews) == 3
+
+
+@pytest.mark.asyncio
+async def test_filter_reviews_by_stars(monkeypatch):
+    fake_reviews = [
+        {"order_id": "abc123", "submitted_stars": 5, "review_text": "Amazing!"},
+    ]
+
+    async def fake_get_restaurant_reviews(_restaurant_id: int, stars: int | None = None):
+        assert stars == 5
+        return fake_reviews
+
+    monkeypatch.setattr(
+        RatingRepo,
+        "get_restaurant_reviews",
+        fake_get_restaurant_reviews,
+    )
+
+    result = await RatingService.get_filtered_reviews(16, stars=5)
+
+    assert result.stars_filter == 5
+    assert result.total_reviews == 1
+    assert result.reviews[0].submitted_stars == 5
+
+
+@pytest.mark.asyncio
+async def test_filter_reviews_empty_result(monkeypatch):
+    async def fake_get_restaurant_reviews(_restaurant_id: int, stars: int | None = None):
+        return []
+
+    monkeypatch.setattr(
+        RatingRepo,
+        "get_restaurant_reviews",
+        fake_get_restaurant_reviews,
+    )
+
+    result = await RatingService.get_filtered_reviews(16, stars=2)
+
+    assert result.total_reviews == 0
+    assert result.reviews == []
+
+
+@pytest.mark.asyncio
+async def test_filter_reviews_restaurant_not_found(monkeypatch):
+    async def fake_get_restaurant_reviews(_restaurant_id: int, stars: int | None = None):
+        return None
+
+    monkeypatch.setattr(
+        RatingRepo,
+        "get_restaurant_reviews",
+        fake_get_restaurant_reviews,
+    )
+
+    with pytest.raises(ValueError, match="Restaurant not found"):
+        await RatingService.get_filtered_reviews(9999)
