@@ -1,16 +1,7 @@
-from typing import Optional, List
 from enum import Enum
+from typing import Optional
+
 from pydantic import BaseModel, Field
-
-
-class RatingCreate(BaseModel):
-    stars: int = Field(..., ge=1, le=5)
-
-
-class RatingResponse(BaseModel):
-    order_id: str
-    stars: int
-
 
 class ReviewCreate(BaseModel):
     review_text: str = Field(..., min_length=1, max_length=1000)
@@ -54,7 +45,7 @@ class FilteredReviewsResponse(BaseModel):
     restaurant_id: int
     stars_filter: Optional[int]
     total_reviews: int
-    reviews: List[FilteredReview]
+    reviews: list[FilteredReview]
 
 
 class ReportReason(str, Enum):
@@ -65,9 +56,7 @@ class ReportReason(str, Enum):
 
 class ReportCreate(BaseModel):
     reason: ReportReason
-    description: Optional[str] = Field(
-        None, max_length=500
-    )
+    description: Optional[str] = Field(None, max_length=500)
 
 
 class ReportResponse(BaseModel):
