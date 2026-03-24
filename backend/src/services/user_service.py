@@ -150,27 +150,3 @@ class UserService:
         )
 
         return True
-
-    @staticmethod
-    async def reassign_user_as_driver(username: str) -> dict:
-        existing_user = await UserRepo.get_by_username(username)
-        if not existing_user:
-            raise ValueError("User not found")
-
-        if UserService._role_value(existing_user) == UserRole.RESTAURANT_OWNER.value:
-            raise ValueError("Cannot assign restaurant owner as driver")
-
-        if UserService._role_value(existing_user) == UserRole.DRIVER.value:
-            return UserInternal.model_validate(existing_user)
-
-        updated_user = await UserRepo.update_by_username(
-            username,
-            {
-                "role": UserRole.DRIVER,
-                "requires_2fa": True,
-            },
-        )
-        if not updated_user:
-            raise ValueError("User not found")
-
-        return UserInternal.model_validate(updated_user)
