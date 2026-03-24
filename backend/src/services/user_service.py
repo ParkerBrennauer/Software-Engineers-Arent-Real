@@ -168,7 +168,6 @@ class UserService:
             {
                 "role": UserRole.DRIVER,
                 "requires_2fa": True,
-                "restaurant_id": None,
             },
         )
         if not updated_user:
