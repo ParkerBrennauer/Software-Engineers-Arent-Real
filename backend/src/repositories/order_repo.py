@@ -62,3 +62,13 @@ class OrderRepo:
     async def get_orders_by_driver(cls, driver: str) -> List[dict]:
         orders = await cls.read_all()
         return [order for order in orders if order.get("driver") == driver]
+
+    @classmethod
+    async def get_order(cls, order_id: int):
+        return await cls.get_by_id(order_id)
+
+    @classmethod
+    async def get_all_orders(cls):
+        orders = await cls.read_all()
+
+        return {str(order["id"]): order for order in orders}
