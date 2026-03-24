@@ -7,13 +7,11 @@ from src.schemas.user_schema import (
     UserTwoFactorResponse,
     UserPasswordReset,
 )
+from src.schemas.driver_schema import DriverRegister
 
 from src.services.user_service import UserService
 
-# Define the prefix for the endpoints
 router = APIRouter(prefix="/users", tags=["users"])
-
-# Input must follow the UserRegister model
 
 
 @router.post(
@@ -22,6 +20,24 @@ router = APIRouter(prefix="/users", tags=["users"])
 async def register_user(user_in: UserRegister):
     new_user = await UserService.create_user(user_in)
     return new_user
+
+
+@router.post(
+    "/register/driver", response_model=UserResponse, status_code=status.HTTP_201_CREATED
+)
+async def register_driver(driver_in: DriverRegister):
+    try:
+        new_driver = await UserService.create_user(driver_in)
+        return new_driver
+    except ValueError as err:
+        message = str(err)
+        if message == "Username already exists":
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail=message
+            ) from err
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=message
+        ) from err
 
 
 @router.patch(
