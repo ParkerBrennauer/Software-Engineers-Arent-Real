@@ -62,10 +62,6 @@ class OrderRepo:
         return max((order.get("id", 0) for order in orders), default=0)
 
     @classmethod
-    async def get_all_orders(cls) -> List[dict]:
-        return await cls.read_all()
-
-    @classmethod
     async def update_order(cls, order_id: int, updated_data: dict) -> Optional[dict]:
         orders = await cls.read_all()
 

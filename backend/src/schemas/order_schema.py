@@ -40,7 +40,7 @@ class Order(BaseModel):
 
 class OrderCreate(BaseModel):
     items: list
-    cost: float
+    cost: float = 0.0
     restaurant: str
     customer: str
     time: int
