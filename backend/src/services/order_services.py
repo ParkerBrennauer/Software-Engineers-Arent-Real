@@ -168,6 +168,9 @@ class OrderService:
         if isinstance(saved, Order):
             saved = saved.model_dump()
 
+        if isinstance(saved, dict) and "id" not in saved:
+            saved["id"] = int(order_id)
+
         return OrderInternal.model_validate(saved)
 
     @staticmethod
