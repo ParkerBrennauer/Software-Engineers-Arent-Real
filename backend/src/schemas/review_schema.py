@@ -25,3 +25,9 @@ class ReviewEditResponse(BaseModel):
 class DeleteResponse(BaseModel):
     order_id: str
     message: str
+
+
+class FeedbackPromptResponse(BaseModel):
+    order_id: str
+    prompt_feedback: bool
+    message: str

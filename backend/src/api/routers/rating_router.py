@@ -3,6 +3,7 @@ from fastapi import APIRouter, HTTPException, status
 from src.schemas.rating_schema import RatingCreate, RatingResponse
 from src.schemas.review_schema import (
     DeleteResponse,
+    FeedbackPromptResponse,
     ReviewCreate,
     ReviewEdit,
     ReviewEditResponse,
@@ -70,5 +71,17 @@ async def edit_review(order_id: str, payload: ReviewEdit):
 async def delete_review(order_id: str):
     try:
         return await RatingService.delete_order_review(order_id)
+    except ValueError as err:
+        _raise_rating_error(err)
+
+
+@router.get(
+    "/{order_id}/feedback-prompt",
+    response_model=FeedbackPromptResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def feedback_prompt(order_id: str):
+    try:
+        return await RatingService.check_feedback_prompt(order_id)
     except ValueError as err:
         _raise_rating_error(err)

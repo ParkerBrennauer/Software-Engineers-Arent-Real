@@ -280,3 +280,31 @@ async def test_delete_review_nothing_to_delete(monkeypatch):
 
     with pytest.raises(ValueError, match="No review exists to delete for this order"):
         await RatingService.delete_order_review("1d8e87M")
+
+
+@pytest.mark.asyncio
+async def test_feedback_prompt_success(monkeypatch):
+    async def fake_get_by_order_id(_order_id: str):
+        return {
+            "submitted_stars": None,
+            "review_text": None,
+        }
+
+    monkeypatch.setattr(RatingRepo, "get_by_order_id", fake_get_by_order_id)
+
+    result = await RatingService.check_feedback_prompt("1d8e87M")
+
+    assert result.order_id == "1d8e87M"
+    assert result.prompt_feedback is True
+    assert "rating and review" in result.message
+
+
+@pytest.mark.asyncio
+async def test_feedback_prompt_order_not_found(monkeypatch):
+    async def fake_get_by_order_id(_order_id: str):
+        return None
+
+    monkeypatch.setattr(RatingRepo, "get_by_order_id", fake_get_by_order_id)
+
+    with pytest.raises(ValueError, match="Order not found"):
+        await RatingService.check_feedback_prompt("FAKE_ID")

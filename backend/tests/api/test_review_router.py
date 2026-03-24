@@ -281,3 +281,55 @@ async def test_delete_review_nothing_to_delete(monkeypatch):
 
     assert response.status_code == 400
     assert response.json()["detail"] == "No review exists to delete for this order"
+
+
+@pytest.mark.asyncio
+async def test_feedback_prompt_success(monkeypatch):
+    async def fake_check_feedback_prompt(_order_id: str):
+        return {
+            "order_id": "1d8e87M",
+            "prompt_feedback": True,
+            "message": "How was your order? Leave a rating and review!",
+        }
+
+    monkeypatch.setattr(
+        RatingService,
+        "check_feedback_prompt",
+        fake_check_feedback_prompt,
+    )
+
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(
+        transport=transport,
+        base_url="http://testserver",
+    ) as client:
+        response = await client.get("/orders/1d8e87M/feedback-prompt")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "order_id": "1d8e87M",
+        "prompt_feedback": True,
+        "message": "How was your order? Leave a rating and review!",
+    }
+
+
+@pytest.mark.asyncio
+async def test_feedback_prompt_order_not_found(monkeypatch):
+    async def fake_check_feedback_prompt(_order_id: str):
+        raise ValueError("Order not found")
+
+    monkeypatch.setattr(
+        RatingService,
+        "check_feedback_prompt",
+        fake_check_feedback_prompt,
+    )
+
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(
+        transport=transport,
+        base_url="http://testserver",
+    ) as client:
+        response = await client.get("/orders/FAKE_ID/feedback-prompt")
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Order not found"

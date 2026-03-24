@@ -2,6 +2,7 @@ from src.repositories.rating_repo import RatingRepo
 from src.schemas.rating_schema import RatingCreate, RatingResponse
 from src.schemas.review_schema import (
     DeleteResponse,
+    FeedbackPromptResponse,
     ReviewCreate,
     ReviewEdit,
     ReviewEditResponse,
@@ -115,4 +116,17 @@ class RatingService:
         return DeleteResponse(
             order_id=order_id,
             message="Review and rating deleted successfully",
+        )
+
+    @staticmethod
+    async def check_feedback_prompt(order_id: str) -> FeedbackPromptResponse:
+        order = await RatingRepo.get_by_order_id(order_id)
+
+        if order is None:
+            raise ValueError("Order not found")
+
+        return FeedbackPromptResponse(
+            order_id=order_id,
+            prompt_feedback=True,
+            message="How was your order? Leave a rating and review!",
         )
