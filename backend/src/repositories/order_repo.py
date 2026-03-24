@@ -47,17 +47,13 @@ class OrderRepo:
             await file.write(json.dumps(orders, indent=4))
 
     @classmethod
-    async def read_all(cls) -> dict[str, dict[str, Any]]:
-        orders = await cls._read_raw()
-        return {
-            str(order_id): cls._with_order_id(str(order_id), order_data)
-            for order_id, order_data in orders.items()
-        }
-
-    @classmethod
     async def get_by_id(cls, order_id: int | str) -> dict[str, Any] | None:
-        orders = await cls.read_all()
-        return orders.get(str(order_id))
+        orders = await cls._read_raw()
+        order_data = orders.get(str(order_id))
+        if order_data is None:
+            return None
+
+        return cls._with_order_id(str(order_id), order_data)
 
     @classmethod
     async def save_order(cls, order_data: dict[str, Any]) -> dict[str, Any]:
@@ -110,10 +106,10 @@ class OrderRepo:
 
     @classmethod
     async def get_orders_by_driver(cls, driver: str) -> list[dict[str, Any]]:
-        orders = await cls.read_all()
+        orders = await cls._read_raw()
         return [
-            order
-            for order in orders.values()
+            cls._with_order_id(str(order_id), order)
+            for order_id, order in orders.items()
             if order.get("driver") == driver
         ]
 
@@ -123,4 +119,8 @@ class OrderRepo:
 
     @classmethod
     async def get_all_orders(cls) -> dict[str, dict[str, Any]]:
-        return await cls.read_all()
+        orders = await cls._read_raw()
+        return {
+            str(order_id): cls._with_order_id(str(order_id), order_data)
+            for order_id, order_data in orders.items()
+        }
