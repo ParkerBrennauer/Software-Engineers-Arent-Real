@@ -28,7 +28,7 @@ async def test_create_order_success():
         return order_data
 
     monkeypatch = pytest.MonkeyPatch()
-    monkeypatch.setattr(OrderRepo, "get_all_orders", fake_get_all_orders)
+    monkeypatch.setattr(OrderRepo, "read_all", fake_get_all_orders)
     monkeypatch.setattr(OrderRepo, "save_order", fake_save_order)
 
     created = await OrderService.create_order(order_in)
