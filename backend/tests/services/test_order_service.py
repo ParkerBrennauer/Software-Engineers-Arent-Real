@@ -163,8 +163,42 @@ async def test_refund_success():
 @pytest.mark.asyncio
 async def test_refund_already_issued():
 
-    fake_order = Order(..., refund_issued=True)
+    fake_order = Order(
+        items=["Spaghetti"],
+        cost=20.0,
+        restaurant="Trevor's pasta",
+        customer="Joe",
+        time=20,
+        cuisine="Italian",
+        distance=2.5,
+        order_status="delayed",
+        payment_status="accepted",
+        refund_issued=True
+    )
 
-    with patch(...):
+    with patch("src.repositories.order_repo.OrderRepo.get_order",
+                new_callable=AsyncMock) as mock_get:
+        mock_get.return_value = fake_order
+        with pytest.raises(ValueError):
+            await OrderService.process_refund("123")
+
+@pytest.mark.asyncio
+async def test_refund_not_applicable():
+
+    fake_order = Order(
+        items=["Spaghetti"],
+        cost=20.0,
+        restaurant="Trevor's pasta",
+        customer="Joe",
+        time=20,
+        cuisine="Italian",
+        distance=2.5,
+        order_status="delivered",
+        payment_status="accepted"
+    )
+
+    with patch("src.repositories.order_repo.OrderRepo.get_order",
+                new_callable=AsyncMock) as mock_get:
+        mock_get.return_value = fake_order
         with pytest.raises(ValueError):
             await OrderService.process_refund("123")
