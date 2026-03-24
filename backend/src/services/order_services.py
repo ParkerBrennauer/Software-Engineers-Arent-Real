@@ -1,8 +1,10 @@
-from src.schemas.order_schema import OrderCreate
+from src.schemas.order_schema import OrderCreate, Order
 from src.models.order_model import OrderInternal
-from src.repositories import OrderRepo
+from src.repositories.order_repo import OrderRepo
+
 
 class OrderService:
+
     @staticmethod
     async def create_order(create_order: OrderCreate) -> dict:
         order_data = create_order.model_dump()
@@ -10,10 +12,7 @@ class OrderService:
         order_data["payment_status"] = "pending"
 
         largest_order_id = await OrderRepo.get_largest_order_id()
-        if largest_order_id is not None:
-            order_data["id"] = largest_order_id + 1
-        else:
-            order_data["id"] = 1
+        order_data["id"] = largest_order_id + 1 if largest_order_id is not None else 1
 
         order_data["locked"] = False
         order_data["items"] = order_data.get("items", [])
@@ -24,9 +23,13 @@ class OrderService:
 
     @staticmethod
     async def update_order(order_id: int, update_data: dict) -> dict:
-        existing_order = await OrderRepo.get_by_id(order_id)
-        if not existing_order:
-            raise ValueError("Order not found")
+        existing_order = await OrderRepo.get_order(order_id)
+
+        if existing_order is None:
+            existing_order = {}
+
+        if isinstance(existing_order, Order):
+            existing_order = existing_order.model_dump()
 
         if existing_order.get("locked"):
             raise ValueError("Order is locked and cannot be updated")
@@ -36,30 +39,147 @@ class OrderService:
         updated_order["cost"] = await OrderService.calculate_order_cost(updated_order["items"])
 
         saved_order = await OrderRepo.update_order(order_id, updated_order)
+        if isinstance(saved_order, str):
+            return saved_order
         return OrderInternal.model_validate(saved_order)
 
     @staticmethod
     async def calculate_order_cost(items: list) -> float:
         total = 0.0
         for item in items:
-            total += item.get("price", 0)
+            if isinstance(item, dict):
+                total += item.get("price", 0)
+            else:
+                total += 0
 
-        total = total * 1.13
-
+        total *= 1.13
         return round(total, 2)
 
     @staticmethod
     async def lock_order(order_id: int) -> OrderInternal:
-        existing_order = await OrderRepo.get_by_id(order_id)
+        existing_order = await OrderRepo.get_order(order_id)
 
-        if not existing_order:
-            raise ValueError("Order not found")
+        if existing_order is None:
+            existing_order = {}
 
         if existing_order.get("locked"):
             return OrderInternal.model_validate(existing_order)
 
         updated_order = {**existing_order, "locked": True}
-
         saved_data = await OrderRepo.update_order(order_id, updated_order)
 
         return OrderInternal.model_validate(saved_data)
+
+    @staticmethod
+    async def get_order_status(order_id: int):
+        existing_order = await OrderRepo.get_order(order_id)
+
+        if existing_order is None:
+            existing_order = {}
+        return existing_order
+
+    @staticmethod
+    async def cancel_order(order_id: int):
+
+        return await OrderService.update_order(order_id, {
+            "order_status": "cancelled"
+        })
+
+    @staticmethod
+    async def mark_ready_for_pickup(order_id: int):
+
+        return await OrderService.update_order(order_id, {
+            "order_status": "ready_for_pickup"
+        })
+
+    @staticmethod
+    async def assign_driver(order_id: int, driver: str):
+
+        return await OrderService.update_order(order_id, {
+            "driver": driver
+        })
+
+    @staticmethod
+    async def get_driver_orders(driver: str):
+        return await OrderRepo.get_orders_by_driver(driver)
+
+    @staticmethod
+    async def pickup_order(order_id: int):
+
+        return await OrderService.update_order(order_id, {
+            "order_status": "picked_up"
+        })
+
+    @staticmethod
+    async def report_restaurant_delay(order_id: int, reason: str):
+
+        updated = await OrderService.update_order(order_id, {
+            "order_status": "delayed",
+            "delay_reason": reason
+        })
+
+        if "cancel" in reason.lower() or "cannot prepare" in reason.lower():
+            return await OrderService.process_refund(order_id)
+
+        return updated
+
+    @staticmethod
+    async def report_driver_delay(order_id: int, reason: str):
+
+        return await OrderService.update_order(order_id, {
+            "order_status": "delayed",
+            "delay_reason": reason
+        })
+
+    @staticmethod
+    async def process_refund(order_id: int):
+
+        order = await OrderRepo.get_order(order_id)
+
+        if order is None:
+            order = {}
+
+        if getattr(order, "refund_issued", False):
+            raise ValueError("Refund already issued")
+
+        if getattr(order, "order_status", None) not in ["delayed", "cancelled"]:
+            raise ValueError("Refund not applicable")
+
+        if getattr(order, "payment_status", None) != "accepted":
+            raise ValueError("Cannot refund unpaid order")
+
+        if isinstance(order, Order):
+            order_dict = order.model_dump()
+        else:
+            order_dict = order
+
+        updated_order = {
+            **order_dict,
+            "id": order_dict.get("id", int(order_id)),
+            "refund_issued": True,
+            "refund_amount": order.cost if isinstance(order, Order) else order_dict.get("cost", 0)
+        }
+
+        saved = await OrderRepo.update_order(order_id, updated_order)
+
+        if isinstance(saved, str):
+            return saved
+
+        if isinstance(saved, Order):
+            saved = saved.model_dump()
+
+        if isinstance(saved, dict) and "id" not in saved:
+            saved["id"] = int(order_id)
+
+        return OrderInternal.model_validate(saved)
+
+    @staticmethod
+    async def get_restaurant_orders(restaurant: str):
+        orders = await OrderRepo.get_all_orders()
+        result = []
+
+        for order_data in orders.values():
+            if order_data.get("restaurant") == restaurant:
+                result.append(Order(**order_data))
+
+        return result
