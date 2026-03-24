@@ -11,7 +11,6 @@ async def test_create_order_success():
         time=30,
         cuisine="testfood",
         distance=2,
-        cost=0,
         items=[
             {"id": 1, "price": 10.0},
             {"id": 2, "price": 5.5},
