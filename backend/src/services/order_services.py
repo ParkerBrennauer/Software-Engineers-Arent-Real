@@ -1,4 +1,4 @@
-from src.schemas.order_schema import OrderCreate
+from src.schemas.order_schema import OrderCreate, Order
 from src.models.order_model import OrderInternal
 from src.repositories.order_repo import OrderRepo
 
@@ -23,8 +23,7 @@ class OrderService:
 
     @staticmethod
     async def update_order(order_id: int, update_data: dict) -> dict:
-        order_id = int(order_id)
-        existing_order = await OrderRepo.get_by_id(order_id)
+        existing_order = await OrderRepo.get_order(order_id)
 
         if existing_order is None:
             existing_order = {}
@@ -37,7 +36,7 @@ class OrderService:
         updated_order["cost"] = await OrderService.calculate_order_cost(updated_order["items"])
 
         saved_order = await OrderRepo.update_order(order_id, updated_order)
-        return OrderInternal.model_validate(saved_order)
+        return saved_order
 
     @staticmethod
     async def calculate_order_cost(items: list) -> float:
@@ -50,8 +49,7 @@ class OrderService:
 
     @staticmethod
     async def lock_order(order_id: int) -> OrderInternal:
-        order_id = int(order_id)
-        existing_order = await OrderRepo.get_by_id(order_id)
+        existing_order = await OrderRepo.get_order(order_id)
 
         if existing_order is None:
             existing_order = {}
@@ -66,8 +64,7 @@ class OrderService:
 
     @staticmethod
     async def get_order_status(order_id: int):
-        order_id = int(order_id)
-        existing_order = await OrderRepo.get_by_id(order_id)
+        existing_order = await OrderRepo.get_order(order_id)
 
         if existing_order is None:
             existing_order = {}
@@ -75,21 +72,21 @@ class OrderService:
 
     @staticmethod
     async def cancel_order(order_id: int):
-        order_id = int(order_id)
+
         return await OrderService.update_order(order_id, {
             "order_status": "cancelled"
         })
 
     @staticmethod
     async def mark_ready_for_pickup(order_id: int):
-        order_id = int(order_id)
+
         return await OrderService.update_order(order_id, {
             "order_status": "ready_for_pickup"
         })
 
     @staticmethod
     async def assign_driver(order_id: int, driver: str):
-        order_id = int(order_id)
+
         return await OrderService.update_order(order_id, {
             "driver": driver
         })
@@ -100,14 +97,14 @@ class OrderService:
 
     @staticmethod
     async def pickup_order(order_id: int):
-        order_id = int(order_id)
+
         return await OrderService.update_order(order_id, {
             "order_status": "picked_up"
         })
 
     @staticmethod
     async def report_restaurant_delay(order_id: int, reason: str):
-        order_id = int(order_id)
+
         updated = await OrderService.update_order(order_id, {
             "order_status": "delayed",
             "delay_reason": reason
@@ -120,7 +117,7 @@ class OrderService:
 
     @staticmethod
     async def report_driver_delay(order_id: int, reason: str):
-        order_id = int(order_id)
+
         return await OrderService.update_order(order_id, {
             "order_status": "delayed",
             "delay_reason": reason
@@ -128,26 +125,37 @@ class OrderService:
 
     @staticmethod
     async def process_refund(order_id: int):
-        order_id = int(order_id)
-        order = await OrderRepo.get_by_id(order_id)
+
+        order = await OrderRepo.get_order(order_id)
 
         if order is None:
             order = {}
 
-        if order.get("refund_issued"):
+        if getattr(order, "refund_issued", False):
             raise ValueError("Refund already issued")
 
-        if order.get("order_status") not in ["delayed", "cancelled"]:
+        if getattr(order, "order_status", None) not in ["delayed", "cancelled"]:
             raise ValueError("Refund not applicable")
 
-        if order.get("payment_status") != "accepted":
+        if getattr(order, "payment_status", None) != "accepted":
             raise ValueError("Cannot refund unpaid order")
 
         updated_order = {
-            **order,
+            **order.__dict__,
             "refund_issued": True,
-            "refund_amount": order.get("cost", 0)
+            "refund_amount": order.cost
         }
 
         saved = await OrderRepo.update_order(order_id, updated_order)
         return OrderInternal.model_validate(saved)
+
+    @staticmethod
+    async def get_restaurant_orders(restaurant: str):
+        orders = await OrderRepo.get_all_orders()
+        result = []
+
+        for order_data in orders.values():
+            if order_data.get("restaurant") == restaurant:
+                result.append(Order(**order_data))
+
+        return result
