@@ -58,14 +58,3 @@ class ItemRepo:
                 results.append(value)
 
         return results
-
-    # @classmethod
-    # async def get_by_item_name(cls, item_name: int) -> List[dict]:
-    #     data = await cls.read_all()
-
-    #     results = []
-    #     for value in data.values():
-    #         if value.get("item_name") == item_name:
-    #             results.append(value)
-
-    #     return results
