@@ -35,11 +35,11 @@ async def test_update_order_success():
     updated = await OrderService.update_order(5, update_data)
 
     assert updated.id == 5
-    assert updated.cost == 25.0
+    assert updated.cost == 16.95
     assert len(updated.items) == 2
 
     payload = captured["payload"]
-    assert payload["cost"] == 25.0
+    assert payload["cost"] == 16.95
     assert payload["items"] == update_data["items"]
 
     monkeypatch.undo()

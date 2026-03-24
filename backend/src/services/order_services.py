@@ -18,7 +18,8 @@ class OrderService:
 
         order_data["locked"] = False
         order_data["items"] = order_data.get("items", [])
-        order_data["total_cost"] = await OrderService.calculate_order_cost(order_data["items"])
+        cost = await OrderService.calculate_order_cost(order_data["items"])
+        order_data["cost"] = cost
 
         saved_data = await OrderRepo.save_order(order_data)
 
@@ -51,7 +52,7 @@ class OrderService:
 
         total = total * 1.13
 
-        return total
+        return round(total, 2)
 
     @staticmethod
     async def lock_order(order_id: int) -> OrderInternal:

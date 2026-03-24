@@ -27,7 +27,7 @@ async def test_create_order_success():
         return order_data
 
     monkeypatch = pytest.MonkeyPatch()
-    monkeypatch.setattr(OrderRepo, "read_all", fake_get_all_orders)
+    monkeypatch.setattr(OrderRepo, "get_largest_order_id", fake_get_all_orders)
     monkeypatch.setattr(OrderRepo, "save_order", fake_save_order)
 
     created = await OrderService.create_order(order_in)
@@ -37,7 +37,7 @@ async def test_create_order_success():
     assert payload["order_status"] == "payment pending"
     assert payload["payment_status"] == "pending"
     assert payload["locked"] is False
-    assert payload["cost"] == 25.5
+    assert payload["cost"] == 17.52
     assert payload["items"] == [
         {"id": 1, "price": 10.0},
         {"id": 2, "price": 5.5},
