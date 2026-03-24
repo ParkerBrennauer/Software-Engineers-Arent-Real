@@ -3,7 +3,6 @@ from src.schemas.item_schema import ItemBase
 from src.schemas.order_schema import Order
 
 class Restaurant(BaseModel):
-    # name: str
     restaurant_id: int
     menu: list[ItemBase]
     cuisine: str
@@ -12,7 +11,6 @@ class Restaurant(BaseModel):
 
 
 class RestaurantCreate(BaseModel):
-    # name: str
     menu: list[ItemBase]
     cuisine: str
     ratings: dict[str, float]
@@ -20,6 +18,5 @@ class RestaurantCreate(BaseModel):
 
 
 class RestaurantUpdate(BaseModel):
-    # name: str
     menu: list[ItemBase] | None = None
     cuisine: str | None = None
