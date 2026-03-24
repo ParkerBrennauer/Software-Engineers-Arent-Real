@@ -60,3 +60,22 @@ class OrderRepo:
     async def get_largest_order_id(cls) -> int:
         orders = await cls.read_all()
         return max((order.get("id", 0) for order in orders), default=0)
+
+    @classmethod
+    async def get_all_orders(cls) -> List[dict]:
+        return await cls.read_all()
+
+    @classmethod
+    async def update_order(cls, order_id: int, updated_data: dict) -> Optional[dict]:
+        orders = await cls.read_all()
+
+        for index, order in enumerate(orders):
+            if order["id"] == order_id:
+                orders[index] = updated_data
+
+                async with aiofiles.open(cls.FilePath, mode='w') as f:
+                    await f.write(json.dumps(orders, indent=4))
+
+                return orders[index]
+
+        return None
