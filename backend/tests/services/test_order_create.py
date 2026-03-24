@@ -19,8 +19,8 @@ async def test_create_order_success():
 
     captured = {}
 
-    async def fake_get_all_orders():
-        return [{"id": 7}]
+    async def fake_get_largest_order_id():
+        return 7
 
     async def fake_save_order(order_data: dict):
         captured["payload"] = order_data

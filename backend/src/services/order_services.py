@@ -5,7 +5,6 @@ from src.repositories import OrderRepo
 class OrderService:
     @staticmethod
     async def create_order(create_order: OrderCreate) -> dict:
-
         order_data = create_order.model_dump()
         order_data["order_status"] = "payment pending"
         order_data["payment_status"] = "pending"
@@ -18,12 +17,9 @@ class OrderService:
 
         order_data["locked"] = False
         order_data["items"] = order_data.get("items", [])
-        cost = await OrderService.calculate_order_cost(order_data["items"])
-        order_data["cost"] = cost
+        order_data["cost"] = await OrderService.calculate_order_cost(order_data["items"])
 
         saved_data = await OrderRepo.save_order(order_data)
-
-
         return OrderInternal.model_validate(saved_data)
 
     @staticmethod
@@ -36,13 +32,11 @@ class OrderService:
             raise ValueError("Order is locked and cannot be updated")
 
         updated_order = {**existing_order, **update_data}
-
         updated_order["items"] = update_data.get("items", existing_order.get("items", []))
-        updated_order["total_cost"] = await OrderService.calculate_order_cost(updated_order["items"])
+        updated_order["cost"] = await OrderService.calculate_order_cost(updated_order["items"])
 
         saved_order = await OrderRepo.update_order(order_id, updated_order)
-
-        return OrderInternal.model_validate(saved_order)
+        return saved_order
 
     @staticmethod
     async def calculate_order_cost(items: list) -> float:
