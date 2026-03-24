@@ -28,6 +28,9 @@ class OrderService:
         if existing_order is None:
             existing_order = {}
 
+        if isinstance(existing_order, Order):
+            existing_order = existing_order.model_dump()
+
         if existing_order.get("locked"):
             raise ValueError("Order is locked and cannot be updated")
 
@@ -36,7 +39,9 @@ class OrderService:
         updated_order["cost"] = await OrderService.calculate_order_cost(updated_order["items"])
 
         saved_order = await OrderRepo.update_order(order_id, updated_order)
-        return saved_order
+        if isinstance(saved_order, str):
+            return saved_order
+        return OrderInternal.model_validate(saved_order)
 
     @staticmethod
     async def calculate_order_cost(items: list) -> float:
@@ -140,13 +145,22 @@ class OrderService:
         if getattr(order, "payment_status", None) != "accepted":
             raise ValueError("Cannot refund unpaid order")
 
+        if isinstance(order, Order):
+            order_dict = order.model_dump()
+        else:
+            order_dict = order
+
         updated_order = {
-            **order.__dict__,
+            **order_dict,
             "refund_issued": True,
-            "refund_amount": order.cost
+            "refund_amount": order.cost if isinstance(order, Order) else order_dict.get("cost", 0)
         }
 
         saved = await OrderRepo.update_order(order_id, updated_order)
+
+        if isinstance(saved, Order):
+            saved = saved.model_dump()
+
         return OrderInternal.model_validate(saved)
 
     @staticmethod
