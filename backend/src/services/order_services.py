@@ -36,7 +36,7 @@ class OrderService:
         updated_order["cost"] = await OrderService.calculate_order_cost(updated_order["items"])
 
         saved_order = await OrderRepo.update_order(order_id, updated_order)
-        return saved_order
+        return OrderInternal.model_validate(saved_order)
 
     @staticmethod
     async def calculate_order_cost(items: list) -> float:
