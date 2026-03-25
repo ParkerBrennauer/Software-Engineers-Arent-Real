@@ -1,5 +1,6 @@
+from src.services.item_services import ItemService
 from src.repositories.restaurant_repo import RestaurantRepo
-
+from src.schemas.restaurant_schema import RestaurantCreate, RestaurantUpdate
 
 class RestaurantService:
     @staticmethod
@@ -50,3 +51,52 @@ class RestaurantService:
             results.sort(key=lambda r: float(r.get("avg_ratings", 0)),
                          reverse=True)
         return results
+
+    @staticmethod
+    async def get_restaurant_menu(restaurant_id: int) -> list:
+        restaurants = await RestaurantRepo.read_all()
+
+        exists = False
+        for r in restaurants:
+            if r.get("restaurant_id") == restaurant_id:
+                exists = True
+                break
+
+        if not exists:
+            raise ValueError("Restaurant not found")
+
+        menu = await ItemService.get_items_by_restaurant_id(restaurant_id)
+        return menu
+
+    @staticmethod
+    async def create_restaurant(restaurant_in: RestaurantCreate) -> dict:
+        restaurant_data = restaurant_in.model_dump()
+
+        restaurant_data["menu"] = [item.model_dump()
+                                   for item in restaurant_in.menu]
+
+        saved = await RestaurantRepo.save_restaurant(restaurant_data)
+        return saved
+
+    @staticmethod
+    async def update_restaurant(restaurant_id: int, restaurant_in: RestaurantUpdate) -> dict:
+        update_data = restaurant_in.model_dump(
+            exclude_unset=True, exclude_none=True)
+
+        if not update_data:
+            restaurants = await RestaurantRepo.read_all()
+            for r in restaurants:
+                if r.get("restaurant_id") == restaurant_id:
+                    return r
+            raise ValueError("Restaurant not found")
+
+        if "menu" in update_data:
+            update_data["menu"] = [item.model_dump()
+                                   for item in restaurant_in.menu]
+
+        updated = await RestaurantRepo.update_by_restaurant_id(restaurant_id, update_data)
+        if not updated:
+            raise ValueError("Restaurant not found")
+
+        return updated
+

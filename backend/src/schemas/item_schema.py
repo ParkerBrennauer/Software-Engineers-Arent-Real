@@ -27,8 +27,9 @@ class ItemCreate(ItemBase):
     restaurant_id: int
     cost: float
     cuisine: str
-    times_ordered: int
-    avg_rating: float
+    times_ordered: float = 0
+    avg_rating: float = 0.0
+    dietary: ItemRestrictions = ItemRestrictions()
 
 
 class ItemUpdate(BaseModel):

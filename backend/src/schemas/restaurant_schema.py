@@ -1,9 +1,9 @@
+from typing import Optional
 from pydantic import BaseModel
 from src.schemas.item_schema import ItemBase
 from src.schemas.order_schema import Order
 
 class Restaurant(BaseModel):
-    # name: str
     restaurant_id: int
     menu: list[ItemBase]
     cuisine: str
@@ -12,14 +12,13 @@ class Restaurant(BaseModel):
 
 
 class RestaurantCreate(BaseModel):
-    # name: str
-    menu: list[ItemBase]
+    menu: list[ItemBase] = []
     cuisine: str
-    ratings: dict[str, float]
-    orders: list[Order]
+    ratings: dict = {"1": 0, "2": 0, "3": 0, "4": 0, "5": 0, }
+    orders: list[Order] = []
 
 
 class RestaurantUpdate(BaseModel):
-    # name: str
-    menu: list[ItemBase] | None = None
-    cuisine: str | None = None
+    menu: Optional[list[ItemBase]] = None
+    cuisine: Optional[str] = None
+
