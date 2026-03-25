@@ -118,3 +118,29 @@ async def test_driver_delay_missing_reason():
     response = client.put("/orders/1/driver-delay")
 
     assert response.status_code == 422
+
+@pytest.mark.asyncio
+@patch("src.services.order_services.OrderService.assign_driver", new_callable=AsyncMock)
+async def test_assign_driver_success(mock_service):
+    mock_service.return_value = {"driver": "john"}
+
+    response = client.put("/orders/1/assign-driver?driver=john")
+
+    assert response.status_code == 200
+    assert response.json()["driver"] == "john"
+
+@pytest.mark.asyncio
+async def test_assign_driver_missing_driver():
+    response = client.put("/orders/1/assign-driver")
+
+    assert response.status_code == 422
+
+@pytest.mark.asyncio
+@patch("src.services.order_services.OrderService.process_refund", new_callable=AsyncMock)
+async def test_refund_order_success(mock_service):
+    mock_service.return_value = {"status": "refunded"}
+
+    response = client.put("/orders/1/refund")
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "refunded"
