@@ -13,3 +13,6 @@
 **/__pycache__/
 *.py[cod]
 /bin/*
+.github\.vscode\pylintrc
+
+.github/.vscode/pylintrc

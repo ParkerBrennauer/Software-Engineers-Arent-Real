@@ -10,12 +10,33 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 class UserService:
     @staticmethod
+    def _role_value(user_data: dict) -> str | None:
+        role = user_data.get("role")
+        if isinstance(role, UserRole):
+            return role.value
+        return role
+
+    @staticmethod
     async def get_password_hash(password: str) -> str:
         return pwd_context.hash(password)
 
     @staticmethod
     async def verify_password(plain_password: str, hashed_password: str) -> bool:
         return pwd_context.verify(plain_password, hashed_password)
+
+    @staticmethod
+    async def login_user(username: str, password: str) -> dict:
+        user = await UserRepo.get_by_username(username)
+        if not user:
+            raise ValueError("Invalid username or password")
+
+        if not await UserService.verify_password(password, user.get("hashed_password", "")):
+            raise ValueError("Invalid username or password")
+
+        if not user.get("is_active"):
+            raise ValueError("User account is inactive")
+
+        return UserInternal.model_validate(user)
 
     @staticmethod
     async def create_user(user_in: UserRegister) -> dict:
@@ -79,7 +100,6 @@ class UserService:
 
     @staticmethod
     async def reset_password(username: str, code: str, new_password: str) -> bool:
-        # verify_2fa_code raises ValueError for invalid/expired codes
         await UserService.verify_2fa_code(username, code)
 
         hashed = await UserService.get_password_hash(new_password)
