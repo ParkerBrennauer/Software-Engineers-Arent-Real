@@ -6,14 +6,14 @@ from src.schemas.user_schema import (
     UserTwoFactorVerify,
     UserTwoFactorResponse,
     UserPasswordReset,
+    UserLogin,
 )
+from src.schemas.customer_schema import CustomerRegister
+from src.schemas.driver_schema import DriverRegister
 
 from src.services.user_service import UserService
 
-# Define the prefix for the endpoints
 router = APIRouter(prefix="/users", tags=["users"])
-
-# Input must follow the UserRegister model
 
 
 @router.post(
@@ -22,6 +22,64 @@ router = APIRouter(prefix="/users", tags=["users"])
 async def register_user(user_in: UserRegister):
     new_user = await UserService.create_user(user_in)
     return new_user
+
+
+@router.post(
+    "/register/customer",
+    response_model=UserResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def register_customer(customer_in: CustomerRegister):
+    try:
+        new_customer = await UserService.create_user(customer_in)
+        return new_customer
+    except ValueError as err:
+        message = str(err)
+        if message == "Username already exists":
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail=message
+            ) from err
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=message
+        ) from err
+
+
+@router.post(
+    "/register/driver", response_model=UserResponse, status_code=status.HTTP_201_CREATED
+)
+async def register_driver(driver_in: DriverRegister):
+    try:
+        new_driver = await UserService.create_user(driver_in)
+        return new_driver
+    except ValueError as err:
+        message = str(err)
+        if message == "Username already exists":
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail=message
+            ) from err
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=message
+        ) from err
+
+
+@router.post("/login", response_model=UserResponse, status_code=status.HTTP_200_OK)
+async def login_user(body: UserLogin):
+    try:
+        user = await UserService.login_user(body.username, body.password)
+        return user
+    except ValueError as err:
+        message = str(err)
+        if "Invalid username or password" in message:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail=message
+            ) from err
+        if message == "User account is inactive":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail=message
+            ) from err
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=message
+        ) from err
 
 
 @router.patch(

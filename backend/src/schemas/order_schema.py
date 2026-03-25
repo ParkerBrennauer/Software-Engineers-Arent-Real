@@ -38,9 +38,12 @@ class Order(BaseModel):
     delay_reason: str | None = None
     driver: str | None = None
 
+    refund_issued: bool = False
+    refund_amount: float | None = None
+
 class OrderCreate(BaseModel):
     items: list
-    cost: float
+    cost: float = 0.0
     restaurant: str
     customer: str
     time: int
