@@ -1,12 +1,26 @@
+import pytest
 from fastapi.testclient import TestClient
 from src.main import app
 
 client = TestClient(app)
 
-def test_create_order_success():
+@pytest.fixture
+def test_customer():
+    customer_data = {
+        "username": "test_customer",
+        "password": "password123",
+        "role": "customer",
+        "payment_type": "credit card",
+        "payment_details": "1234567812345678"
+    }
+    response = client.post("/users/register/customer", json=customer_data)
+    assert response.status_code in [200, 201]
+    return customer_data
+
+def test_create_order_success(test_customer):
     order_data = {
         "restaurant": "Test Restaurant",
-        "customer": "test_customer",
+        "customer": test_customer["username"],
         "time": 30,
         "cuisine": "testfood",
         "distance": 2.0,
@@ -27,10 +41,10 @@ def test_create_order_success():
     assert data["payment_status"] == "pending"
     assert data["locked"] is False
 
-def test_get_order_success():
+def test_get_order_success(test_customer):
     order_data = {
         "restaurant": "Test Restaurant",
-        "customer": "test_customer",
+        "customer": test_customer["username"],
         "time": 30,
         "cuisine": "testfood",
         "distance": 2.0,
@@ -51,10 +65,10 @@ def test_get_order_success():
     assert data["id"] == order_id
     assert data["restaurant"] == "Test Restaurant"
 
-def test_update_order_success():
+def test_update_order_success(test_customer):
     order_data = {
         "restaurant": "Test Restaurant",
-        "customer": "test_customer",
+        "customer": test_customer["username"],
         "time": 30,
         "cuisine": "testfood",
         "distance": 2.0,
@@ -81,10 +95,10 @@ def test_update_order_success():
     assert data["restaurant"] == "Updated Restaurant"
     assert data["cost"] == 22.6
 
-def test_lock_order_success():
+def test_lock_order_success(test_customer):
     order_data = {
         "restaurant": "Test Restaurant",
-        "customer": "test_customer",
+        "customer": test_customer["username"],
         "time": 30,
         "cuisine": "testfood",
         "distance": 2.0,
@@ -103,15 +117,15 @@ def test_lock_order_success():
     data = response.json()
     assert data["locked"] is True
 
-def test_get_order_not_found():
+def test_get_order_not_found(test_customer):
     response = client.get("/orders/99999")
     assert response.status_code == 404
     assert response.json()["detail"] == "Order not found"
 
-def test_update_locked_order_fails():
+def test_update_locked_order_fails(test_customer):
     order_data = {
         "restaurant": "Test Restaurant",
-        "customer": "test_customer",
+        "customer": test_customer["username"],
         "time": 30,
         "cuisine": "testfood",
         "distance": 2.0,
