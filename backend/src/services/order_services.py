@@ -1,6 +1,7 @@
 from src.schemas.order_schema import OrderCreate, Order
 from src.models.order_model import OrderInternal
 from src.repositories.order_repo import OrderRepo
+from src.repositories.user_repo import UserRepo
 
 
 class OrderService:
