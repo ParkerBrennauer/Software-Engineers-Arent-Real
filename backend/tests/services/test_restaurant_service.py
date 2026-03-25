@@ -202,7 +202,6 @@ async def test_update_restaurant_writes_through_repo(monkeypatch):
             ],
         },
     ]
-    captured = {}
 
     async def fake_read_all():
         return [r.copy() for r in existing_restaurants]
