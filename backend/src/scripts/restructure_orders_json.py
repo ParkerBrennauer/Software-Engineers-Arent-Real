@@ -15,7 +15,7 @@ for i, order in enumerate(raw, start=1):
         "time": order["delivery_time_actual"],
         "cuisine" : order["preferred_cuisine"],
         "distance": order["delivery_distance"],
-        "order_satus": "payment pending",
+        "order_status": "payment pending",
         "payment_status": "pending",
         "delay_reason": None,
         "driver": None

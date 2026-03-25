@@ -6,6 +6,7 @@ from src.schemas.user_schema import (
     UserTwoFactorVerify,
     UserTwoFactorResponse,
     UserPasswordReset,
+    UserLogin,
 )
 from src.schemas.customer_schema import CustomerRegister
 from src.schemas.driver_schema import DriverRegister
@@ -55,6 +56,26 @@ async def register_driver(driver_in: DriverRegister):
         if message == "Username already exists":
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT, detail=message
+            ) from err
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=message
+        ) from err
+
+
+@router.post("/login", response_model=UserResponse, status_code=status.HTTP_200_OK)
+async def login_user(body: UserLogin):
+    try:
+        user = await UserService.login_user(body.username, body.password)
+        return user
+    except ValueError as err:
+        message = str(err)
+        if "Invalid username or password" in message:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail=message
+            ) from err
+        if message == "User account is inactive":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail=message
             ) from err
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=message
