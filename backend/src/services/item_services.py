@@ -1,5 +1,5 @@
 from src.repositories.item_repo import ItemRepo
-from src.schemas.item_schema import ItemUpdate, ItemUpdateAnalytics
+from src.schemas.item_schema import ItemUpdate, ItemUpdateAnalytics, ItemCreate
 
 
 class ItemService:
@@ -34,3 +34,23 @@ class ItemService:
             raise ValueError("Item does not exist")
 
         return result
+
+    @staticmethod
+    async def create_item(item_in: ItemCreate) -> dict:
+        item_data = item_in.model_dump(exclude_none=True)
+
+        # ensure dietary is JSON-friendly if it's a Pydantic model
+        if "dietary" in item_data and item_data["dietary"] is not None:
+            dietary_obj = item_in.dietary
+            if hasattr(dietary_obj, "model_dump"):
+                item_data["dietary"] = dietary_obj.model_dump()
+
+        item_key = f"{item_data['item_name']}_{item_data['restaurant_id']}"
+
+        existing = await ItemRepo.get_by_key(item_key)
+        if existing:
+            raise ValueError("Item already exists")
+
+        saved = await ItemRepo.save_item(item_data)
+        return saved
+
