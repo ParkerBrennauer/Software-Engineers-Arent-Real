@@ -208,7 +208,7 @@ async def test_update_restaurant_writes_through_repo(monkeypatch):
         return [r.copy() for r in existing_restaurants]
 
     async def fake_write_restaurant(data):  # pylint: disable=unused-argument
-        None
+        pass
 
     monkeypatch.setattr(RestaurantRepo, "read_all", fake_read_all)
     monkeypatch.setattr(RestaurantRepo, "write_restaurant",
