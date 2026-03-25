@@ -124,3 +124,8 @@ class OrderRepo:
             str(order_id): cls._with_order_id(str(order_id), order_data)
             for order_id, order_data in orders.items()
         }
+
+    @classmethod
+    async def get_by_customer_username(cls, username: str) -> List[dict]:
+        orders = await cls.read_all()
+        return [order for order in orders if order.get("customer_username") == username]

@@ -8,19 +8,19 @@ class OrderService:
     @staticmethod
     async def create_order(create_order: OrderCreate) -> dict:
         order_data = create_order.model_dump()
+
+        customer = await UserRepo.get_by_username(order_data["customer_username"])
+        if not customer:
+            raise ValueError("Customer not found")
+
         order_data["order_status"] = "payment pending"
         order_data["payment_status"] = "pending"
-
-        largest_order_id = await OrderRepo.get_largest_order_id()
-        order_data["id"] = largest_order_id + 1 if largest_order_id is not None else 1
-
         order_data["locked"] = False
         order_data["items"] = order_data.get("items", [])
         order_data["cost"] = await OrderService.calculate_order_cost(order_data["items"])
 
         saved_data = await OrderRepo.save_order(order_data)
         return OrderInternal.model_validate(saved_data)
-
     @staticmethod
     async def update_order(order_id: int, update_data: dict) -> dict:
         existing_order = await OrderRepo.get_order(order_id)

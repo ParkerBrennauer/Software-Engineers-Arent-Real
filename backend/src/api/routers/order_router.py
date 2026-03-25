@@ -1,7 +1,52 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from src.services.order_services import OrderService
+from src.schemas.order_schema import OrderCreate, OrderUpdate
+from src.services.order_services import OrderService
+from src.repositories import OrderRepo
+from src.models.order_model import OrderInternal
 
 router = APIRouter(prefix="/orders", tags=["Orders"])
+
+
+@router.post("/", response_model=OrderInternal)
+async def create_order(order: OrderCreate):
+    try:
+        return await OrderService.create_order(order)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/{order_id}")
+async def get_order(order_id: int):
+    order = await OrderRepo.get_by_id(order_id)
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    return order
+
+
+@router.get("/")
+async def get_all_orders():
+    return await OrderRepo.read_all()
+
+
+@router.put("/{order_id}", response_model=OrderInternal)
+async def update_order(order_id: int, order_update: OrderUpdate):
+    try:
+        update_data = order_update.model_dump(exclude_unset=True)
+        return await OrderService.update_order(order_id, update_data)
+    except ValueError as e:
+        if str(e) == "Order not found":
+            raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.patch("/{order_id}/lock", response_model=OrderInternal)
+async def lock_order(order_id: int):
+    try:
+        return await OrderService.lock_order(order_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
 
 @router.get("/{order_id}")
 async def get_order_status(order_id: str):
@@ -60,3 +105,7 @@ async def assign_driver(order_id: str, driver: str):
 async def refund_order(order_id: str):
 
     return await OrderService.process_refund(order_id)
+
+@router.get("/customer/{username}")
+async def get_orders_for_customer(username: str):
+    return await OrderRepo.get_by_customer_username(username)

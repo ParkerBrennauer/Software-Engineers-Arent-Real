@@ -1,0 +1,135 @@
+from fastapi.testclient import TestClient
+from src.main import app
+
+client = TestClient(app)
+
+def test_create_order_success():
+    order_data = {
+        "restaurant": "Test Restaurant",
+        "customer_username": "test_customer",
+        "time": 30,
+        "cuisine": "testfood",
+        "distance": 2.0,
+        "items": [
+            {"id": 1, "price": 10.0},
+            {"id": 2, "price": 5.0}
+        ]
+    }
+
+    response = client.post("/orders/", json=order_data)
+
+    assert response.status_code == 200
+    data = response.json()
+
+    assert data["restaurant"] == "Test Restaurant"
+    assert data["customer_username"] == "test_customer"
+    assert data["order_status"] == "payment pending"
+    assert data["payment_status"] == "pending"
+    assert data["locked"] is False
+
+def test_get_order_success():
+    order_data = {
+        "restaurant": "Test Restaurant",
+        "customer_username": "test_customer",
+        "time": 30,
+        "cuisine": "testfood",
+        "distance": 2.0,
+        "items": [
+            {"id": 1, "price": 10.0}
+        ]
+    }
+
+    create_response = client.post("/orders/", json=order_data)
+    created_order = create_response.json()
+
+    order_id = created_order["id"]
+
+    response = client.get(f"/orders/{order_id}")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == order_id
+    assert data["restaurant"] == "Test Restaurant"
+
+def test_update_order_success():
+    order_data = {
+        "restaurant": "Test Restaurant",
+        "customer_username": "test_customer",
+        "time": 30,
+        "cuisine": "testfood",
+        "distance": 2.0,
+        "items": [
+            {"id": 1, "price": 10.0}
+        ]
+    }
+
+    create_response = client.post("/orders/", json=order_data)
+    created_order = create_response.json()
+    order_id = created_order["id"]
+
+    update_data = {
+        "restaurant": "Updated Restaurant",
+        "items": [
+            {"id": 1, "price": 20.0}
+        ]
+    }
+
+    response = client.put(f"/orders/{order_id}", json=update_data)
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["restaurant"] == "Updated Restaurant"
+    assert data["cost"] == 22.6
+
+def test_lock_order_success():
+    order_data = {
+        "restaurant": "Test Restaurant",
+        "customer_username": "test_customer",
+        "time": 30,
+        "cuisine": "testfood",
+        "distance": 2.0,
+        "items": [
+            {"id": 1, "price": 10.0}
+        ]
+    }
+
+    create_response = client.post("/orders/", json=order_data)
+    created_order = create_response.json()
+    order_id = created_order["id"]
+
+    response = client.patch(f"/orders/{order_id}/lock")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["locked"] is True
+
+def test_get_order_not_found():
+    response = client.get("/orders/99999")
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Order not found"
+
+def test_update_locked_order_fails():
+    order_data = {
+        "restaurant": "Test Restaurant",
+        "customer_username": "test_customer",
+        "time": 30,
+        "cuisine": "testfood",
+        "distance": 2.0,
+        "items": [
+            {"id": 1, "price": 10.0}
+        ]
+    }
+
+    create_response = client.post("/orders/", json=order_data)
+    created_order = create_response.json()
+    order_id = created_order["id"]
+
+    client.patch(f"/orders/{order_id}/lock")
+
+    response = client.put(
+        f"/orders/{order_id}",
+        json={"restaurant": "Should Fail"}
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Order is locked and cannot be updated"
