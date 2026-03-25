@@ -6,7 +6,7 @@ client = TestClient(app)
 def test_create_order_success():
     order_data = {
         "restaurant": "Test Restaurant",
-        "customer_username": "test_customer",
+        "customer": "test_customer",
         "time": 30,
         "cuisine": "testfood",
         "distance": 2.0,
@@ -22,7 +22,7 @@ def test_create_order_success():
     data = response.json()
 
     assert data["restaurant"] == "Test Restaurant"
-    assert data["customer_username"] == "test_customer"
+    assert data["customer"] == "test_customer"
     assert data["order_status"] == "payment pending"
     assert data["payment_status"] == "pending"
     assert data["locked"] is False
@@ -30,7 +30,7 @@ def test_create_order_success():
 def test_get_order_success():
     order_data = {
         "restaurant": "Test Restaurant",
-        "customer_username": "test_customer",
+        "customer": "test_customer",
         "time": 30,
         "cuisine": "testfood",
         "distance": 2.0,
@@ -54,7 +54,7 @@ def test_get_order_success():
 def test_update_order_success():
     order_data = {
         "restaurant": "Test Restaurant",
-        "customer_username": "test_customer",
+        "customer": "test_customer",
         "time": 30,
         "cuisine": "testfood",
         "distance": 2.0,
@@ -84,7 +84,7 @@ def test_update_order_success():
 def test_lock_order_success():
     order_data = {
         "restaurant": "Test Restaurant",
-        "customer_username": "test_customer",
+        "customer": "test_customer",
         "time": 30,
         "cuisine": "testfood",
         "distance": 2.0,
@@ -111,7 +111,7 @@ def test_get_order_not_found():
 def test_update_locked_order_fails():
     order_data = {
         "restaurant": "Test Restaurant",
-        "customer_username": "test_customer",
+        "customer": "test_customer",
         "time": 30,
         "cuisine": "testfood",
         "distance": 2.0,
