@@ -46,6 +46,7 @@ class OrderRepo:
         async with aiofiles.open(cls._path(), mode="w") as file:
             await file.write(json.dumps(orders, indent=4))
 
+
     @classmethod
     async def get_by_id(cls, order_id: int | str) -> dict[str, Any] | None:
         orders = await cls._read_raw()
@@ -127,5 +128,13 @@ class OrderRepo:
 
     @classmethod
     async def get_by_customer_username(cls, username: str) -> List[dict]:
-        orders = await cls.read_all()
-        return [order for order in orders if order.get("customer_username") == username]
+        orders = await cls._read_raw()
+        return [order for order in orders.values() if order.get("customer") == username]
+
+    @classmethod
+    async def get_order_status(cls, order_id: int):
+        order = await OrderRepo.get_by_id(order_id)
+        if not order:
+            return None
+
+        return {"order_id": str(order_id), "status": order.get("order_status")}

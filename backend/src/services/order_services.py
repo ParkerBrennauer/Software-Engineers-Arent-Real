@@ -10,7 +10,7 @@ class OrderService:
     async def create_order(create_order: OrderCreate) -> dict:
         order_data = create_order.model_dump()
 
-        customer = await UserRepo.get_by_username(order_data["customer_username"])
+        customer = await UserRepo.get_by_username(order_data["customer"])
         if not customer:
             raise ValueError("Customer not found")
 
