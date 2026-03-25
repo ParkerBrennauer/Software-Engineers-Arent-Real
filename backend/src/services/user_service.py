@@ -25,6 +25,20 @@ class UserService:
         return pwd_context.verify(plain_password, hashed_password)
 
     @staticmethod
+    async def login_user(username: str, password: str) -> dict:
+        user = await UserRepo.get_by_username(username)
+        if not user:
+            raise ValueError("Invalid username or password")
+
+        if not await UserService.verify_password(password, user.get("hashed_password", "")):
+            raise ValueError("Invalid username or password")
+
+        if not user.get("is_active"):
+            raise ValueError("User account is inactive")
+
+        return UserInternal.model_validate(user)
+
+    @staticmethod
     async def create_user(user_in: UserRegister) -> dict:
 
         existing_user = await UserRepo.get_by_username(user_in.username)
