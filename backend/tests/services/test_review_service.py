@@ -2,7 +2,12 @@ import pytest
 from pydantic import ValidationError
 
 from src.repositories.rating_repo import RatingRepo
-from src.schemas.review_schema import ReviewCreate, ReviewEdit
+from src.schemas.review_schema import (
+    ReportCreate,
+    ReportReason,
+    ReviewCreate,
+    ReviewEdit,
+)
 from src.services.rating_service import RatingService
 
 
@@ -361,7 +366,11 @@ async def test_filter_reviews_by_stars(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_filter_reviews_empty_result(monkeypatch):
-    async def fake_get_restaurant_reviews(_restaurant_id: int, stars: int | None = None):
+    async def fake_get_restaurant_reviews(
+        _restaurant_id: int,
+        stars: int | None = None,
+    ):
+        assert stars == 2
         return []
 
     monkeypatch.setattr(
@@ -378,7 +387,11 @@ async def test_filter_reviews_empty_result(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_filter_reviews_restaurant_not_found(monkeypatch):
-    async def fake_get_restaurant_reviews(_restaurant_id: int, stars: int | None = None):
+    async def fake_get_restaurant_reviews(
+        _restaurant_id: int,
+        stars: int | None = None,
+    ):
+        assert stars is None
         return None
 
     monkeypatch.setattr(
@@ -389,3 +402,117 @@ async def test_filter_reviews_restaurant_not_found(monkeypatch):
 
     with pytest.raises(ValueError, match="Restaurant not found"):
         await RatingService.get_filtered_reviews(9999)
+
+
+@pytest.mark.asyncio
+async def test_submit_report_success(monkeypatch):
+    order = {
+        "submitted_stars": 5,
+        "review_text": "Buy cheap stuff at spam.com",
+    }
+    captured = {}
+
+    async def fake_get_by_order_id(_order_id: str):
+        return dict(order)
+
+    async def fake_create_report(
+        order_id: str,
+        reason: str,
+        description: str | None = None,
+    ):
+        captured["order_id"] = order_id
+        captured["reason"] = reason
+        captured["description"] = description
+        return {
+            "report_id": 1,
+            "order_id": order_id,
+            "reason": reason,
+            "description": description,
+        }
+
+    monkeypatch.setattr(RatingRepo, "get_by_order_id", fake_get_by_order_id)
+    monkeypatch.setattr(RatingRepo, "create_report", fake_create_report)
+
+    result = await RatingService.submit_report(
+        "1d8e87M",
+        ReportCreate(reason=ReportReason.SPAM),
+    )
+
+    assert result.report_id == 1
+    assert result.order_id == "1d8e87M"
+    assert result.reason == ReportReason.SPAM
+    assert result.message == "Report submitted successfully"
+    assert captured == {
+        "order_id": "1d8e87M",
+        "reason": "spam",
+        "description": None,
+    }
+
+
+@pytest.mark.asyncio
+async def test_submit_report_with_description(monkeypatch):
+    async def fake_get_by_order_id(_order_id: str):
+        return {
+            "submitted_stars": 3,
+            "review_text": "Some review",
+        }
+
+    async def fake_create_report(
+        order_id: str,
+        reason: str,
+        description: str | None = None,
+    ):
+        return {
+            "report_id": 3,
+            "order_id": order_id,
+            "reason": reason,
+            "description": description,
+        }
+
+    monkeypatch.setattr(RatingRepo, "get_by_order_id", fake_get_by_order_id)
+    monkeypatch.setattr(RatingRepo, "create_report", fake_create_report)
+
+    result = await RatingService.submit_report(
+        "1d8e87M",
+        ReportCreate(
+            reason=ReportReason.OTHER,
+            description="This review is for the wrong restaurant",
+        ),
+    )
+
+    assert result.reason == ReportReason.OTHER
+    assert result.description == "This review is for the wrong restaurant"
+
+
+@pytest.mark.asyncio
+async def test_submit_report_order_not_found(monkeypatch):
+    async def fake_get_by_order_id(_order_id: str):
+        return None
+
+    monkeypatch.setattr(RatingRepo, "get_by_order_id", fake_get_by_order_id)
+
+    with pytest.raises(ValueError, match="Order not found"):
+        await RatingService.submit_report(
+            "FAKE_ID",
+            ReportCreate(reason=ReportReason.SPAM),
+        )
+
+
+@pytest.mark.asyncio
+async def test_submit_report_without_existing_review(monkeypatch):
+    async def fake_get_by_order_id(_order_id: str):
+        return {
+            "submitted_stars": None,
+            "review_text": None,
+        }
+
+    monkeypatch.setattr(RatingRepo, "get_by_order_id", fake_get_by_order_id)
+
+    with pytest.raises(
+        ValueError,
+        match="No review exists to report for this order",
+    ):
+        await RatingService.submit_report(
+            "1d8e87M",
+            ReportCreate(reason=ReportReason.SPAM),
+        )

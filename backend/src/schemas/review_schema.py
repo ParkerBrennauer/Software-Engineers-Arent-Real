@@ -1,4 +1,6 @@
-from typing import Optional, List
+from enum import Enum
+from typing import Optional
+
 from pydantic import BaseModel, Field
 
 class ReviewCreate(BaseModel):
@@ -43,4 +45,23 @@ class FilteredReviewsResponse(BaseModel):
     restaurant_id: int
     stars_filter: Optional[int]
     total_reviews: int
-    reviews: List[FilteredReview]
+    reviews: list[FilteredReview]
+
+
+class ReportReason(str, Enum):
+    SPAM = "spam"
+    INAPPROPRIATE = "inappropriate_language"
+    OTHER = "other"
+
+
+class ReportCreate(BaseModel):
+    reason: ReportReason
+    description: Optional[str] = Field(None, max_length=500)
+
+
+class ReportResponse(BaseModel):
+    report_id: int
+    order_id: str
+    reason: ReportReason
+    description: Optional[str]
+    message: str

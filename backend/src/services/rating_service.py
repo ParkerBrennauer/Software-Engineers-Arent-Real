@@ -4,6 +4,8 @@ from src.schemas.review_schema import (
     DeleteResponse,
     FeedbackPromptResponse,
     FilteredReviewsResponse,
+    ReportCreate,
+    ReportResponse,
     ReviewCreate,
     ReviewEdit,
     ReviewEditResponse,
@@ -150,4 +152,35 @@ class RatingService:
             stars_filter=stars,
             total_reviews=len(reviews),
             reviews=reviews,
+        )
+
+    @staticmethod
+    async def submit_report(
+        order_id: str,
+        payload: ReportCreate,
+    ) -> ReportResponse:
+        order = await RatingRepo.get_by_order_id(order_id)
+
+        if order is None:
+            raise ValueError("Order not found")
+
+        has_review = (
+            order.get("submitted_stars") is not None
+            or order.get("review_text") is not None
+        )
+        if not has_review:
+            raise ValueError("No review exists to report for this order")
+
+        report = await RatingRepo.create_report(
+            order_id,
+            reason=payload.reason.value,
+            description=payload.description,
+        )
+
+        return ReportResponse(
+            report_id=report["report_id"],
+            order_id=order_id,
+            reason=payload.reason,
+            description=payload.description,
+            message="Report submitted successfully",
         )

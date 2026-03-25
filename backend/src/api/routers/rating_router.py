@@ -5,6 +5,8 @@ from src.schemas.review_schema import (
     DeleteResponse,
     FeedbackPromptResponse,
     FilteredReviewsResponse,
+    ReportCreate,
+    ReportResponse,
     ReviewCreate,
     ReviewEdit,
     ReviewEditResponse,
@@ -103,5 +105,17 @@ async def filter_reviews(
 ):
     try:
         return await RatingService.get_filtered_reviews(restaurant_id, stars=stars)
+    except ValueError as err:
+        _raise_rating_error(err)
+
+
+@router.post(
+    "/{order_id}/report",
+    response_model=ReportResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def report_review(order_id: str, payload: ReportCreate):
+    try:
+        return await RatingService.submit_report(order_id, payload)
     except ValueError as err:
         _raise_rating_error(err)

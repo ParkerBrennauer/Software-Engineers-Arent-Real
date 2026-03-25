@@ -10,6 +10,7 @@ class RatingRepo:
     RESTAURANTS_FILE_PATH = (
         Path(__file__).resolve().parent.parent / "data" / "restaurants.json"
     )
+    REPORTS_FILE_PATH = Path(__file__).resolve().parent.parent / "data" / "reports.json"
 
     @classmethod
     async def read_all(cls) -> dict[str, dict[str, Any]]:
@@ -57,6 +58,19 @@ class RatingRepo:
             return {}
 
         return json.loads(raw_restaurants)
+
+    @classmethod
+    async def read_reports(cls) -> list[dict[str, Any]]:
+        if not cls.REPORTS_FILE_PATH.exists():
+            return []
+
+        async with aiofiles.open(cls.REPORTS_FILE_PATH, mode="r") as file:
+            raw_reports = await file.read()
+
+        if not raw_reports:
+            return []
+
+        return json.loads(raw_reports)
 
     @classmethod
     async def get_restaurant_id_by_order_id(cls, order_id: str) -> int | None:
@@ -161,3 +175,24 @@ class RatingRepo:
             )
 
         return filtered_reviews
+
+    @classmethod
+    async def create_report(
+        cls,
+        order_id: str,
+        reason: str,
+        description: str | None = None,
+    ) -> dict[str, Any]:
+        reports = await cls.read_reports()
+        report = {
+            "report_id": len(reports) + 1,
+            "order_id": order_id,
+            "reason": reason,
+            "description": description,
+        }
+        reports.append(report)
+
+        async with aiofiles.open(cls.REPORTS_FILE_PATH, mode="w") as file:
+            await file.write(json.dumps(reports, indent=1))
+
+        return report

@@ -4,6 +4,8 @@ import pytest
 from src.main import app
 from src.schemas.review_schema import (
     DeleteResponse,
+    ReportCreate,
+    ReportResponse,
     ReviewCreate,
     ReviewEdit,
     ReviewEditResponse,
@@ -430,3 +432,78 @@ async def test_filter_reviews_restaurant_not_found(monkeypatch):
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Restaurant not found"
+
+
+@pytest.mark.asyncio
+async def test_report_review_success(monkeypatch):
+    async def fake_submit_report(_order_id: str, _payload: ReportCreate):
+        return ReportResponse(
+            report_id=1,
+            order_id="1d8e87M",
+            reason="spam",
+            description=None,
+            message="Report submitted successfully",
+        )
+
+    monkeypatch.setattr(RatingService, "submit_report", fake_submit_report)
+
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(
+        transport=transport,
+        base_url="http://testserver",
+    ) as client:
+        response = await client.post(
+            "/orders/1d8e87M/report",
+            json={"reason": "spam"},
+        )
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "report_id": 1,
+        "order_id": "1d8e87M",
+        "reason": "spam",
+        "description": None,
+        "message": "Report submitted successfully",
+    }
+
+
+@pytest.mark.asyncio
+async def test_report_review_order_not_found(monkeypatch):
+    async def fake_submit_report(_order_id: str, _payload: ReportCreate):
+        raise ValueError("Order not found")
+
+    monkeypatch.setattr(RatingService, "submit_report", fake_submit_report)
+
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(
+        transport=transport,
+        base_url="http://testserver",
+    ) as client:
+        response = await client.post(
+            "/orders/FAKE_ID/report",
+            json={"reason": "spam"},
+        )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Order not found"
+
+
+@pytest.mark.asyncio
+async def test_report_review_without_existing_review(monkeypatch):
+    async def fake_submit_report(_order_id: str, _payload: ReportCreate):
+        raise ValueError("No review exists to report for this order")
+
+    monkeypatch.setattr(RatingService, "submit_report", fake_submit_report)
+
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(
+        transport=transport,
+        base_url="http://testserver",
+    ) as client:
+        response = await client.post(
+            "/orders/1d8e87M/report",
+            json={"reason": "spam"},
+        )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "No review exists to report for this order"
