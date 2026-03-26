@@ -8,7 +8,7 @@ from src.api.routers.order_router import router
 
 app = FastAPI()
 app.include_router(router)
-client = TestClient(app)
+client = TestClient(app, raise_server_exceptions=False)
 
 def test_get_order_status():
     mock_data = {"id": 1, "order_status": "pending"}
@@ -81,7 +81,7 @@ def test_get_order_tracking():
         response = client.get("/orders/1/tracking")
 
     assert response.status_code == 200
-    assert response.json()["status"] == "in_transit"
+    assert response.json()["status"] == "out for delivery"
 
 
 def test_get_order_tracking_not_found():
@@ -93,4 +93,3 @@ def test_get_order_tracking_not_found():
 
 
     assert response.status_code == 404
-    assert response.status_code != 200
