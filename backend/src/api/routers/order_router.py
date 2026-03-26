@@ -17,16 +17,20 @@ async def create_order(order: OrderCreate):
 
 
 @router.get("/{order_id}")
-async def get_order(order_id: int):
-    order = await OrderRepo.get_by_id(order_id)
-    if not order:
-        raise HTTPException(status_code=404, detail="Order not found")
-    return order
+async def get_order_status(order_id: int):
+    order = await OrderService.get_order_status(order_id)
 
+    if not order:
+        return None
+
+    return {
+        "order_id": str(order_id),
+        "status": order.get("order_status")
+    }
 
 @router.get("/")
 async def get_all_orders():
-    return await OrderRepo.read_all()
+    return await OrderRepo._read_raw()
 
 
 @router.put("/{order_id}", response_model=OrderInternal)
