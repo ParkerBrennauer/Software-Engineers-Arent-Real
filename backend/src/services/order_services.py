@@ -45,7 +45,10 @@ class OrderService:
 
         saved_order = await OrderRepo.update_order(order_id, updated_order)
         if isinstance(saved_order, str):
-            raise ValueError(f"Failed to update order: {saved_order}")
+            return saved_order
+
+        if isinstance(saved_order, dict) and "id" not in saved_order:
+            saved_order["id"] = int(order_id)
         return OrderInternal.model_validate(saved_order)
 
     @staticmethod
@@ -76,8 +79,10 @@ class OrderService:
         updated_order = {**existing_order, "locked": True}
         saved_data = await OrderRepo.update_order(order_id, updated_order)
         if isinstance(saved_data, str):
-            raise ValueError(f"Failed to lock order: {saved_data}")
+            return saved_data
 
+        if isinstance(saved_data, dict) and "id" not in saved_data:
+            saved_data["id"] = int(order_id)
         return OrderInternal.model_validate(saved_data)
 
     @staticmethod
@@ -165,7 +170,7 @@ class OrderService:
         saved = await OrderRepo.update_order(order_id, updated_order)
 
         if isinstance(saved, str):
-            raise ValueError(f"Failed to process refund: {saved}")
+            return saved
 
         if isinstance(saved, Order):
             saved = saved.model_dump()
