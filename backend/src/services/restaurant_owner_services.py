@@ -97,3 +97,137 @@ class RestaurantOwnerService:
                 restaurant_orders.append(Order(**order_data))
 
         return restaurant_orders
+
+    @staticmethod
+    async def get_restaurant_orders_by_status(
+        restaurant_id: int, username: str, status: str
+    ) -> list:
+        user = await UserRepo.get_by_username(username)
+        if not user:
+            raise ValueError("User not found")
+
+        user_role = RestaurantOwnerService._role_value(user)
+        user_restaurant_id = user.get("restaurant_id")
+
+        is_owner = (
+            user_role == UserRole.RESTAURANT_OWNER.value
+            and user_restaurant_id == restaurant_id
+        )
+        is_staff = (
+            user_role == UserRole.RESTAURANT_STAFF.value
+            and user_restaurant_id == restaurant_id
+        )
+
+        if not (is_owner or is_staff):
+            raise ValueError(
+                "User does not have permission to view this restaurant's orders"
+            )
+
+        restaurants = await RestaurantRepo.read_all()
+        restaurant_name = None
+        for restaurant in restaurants:
+            if restaurant.get("id") == restaurant_id:
+                restaurant_name = restaurant.get("name")
+                break
+
+        if not restaurant_name:
+            raise ValueError("Restaurant not found")
+
+        orders_by_status = await OrderRepo.get_orders_by_status(status)
+        restaurant_orders = []
+
+        for order_data in orders_by_status:
+            if order_data.get("restaurant") == restaurant_name:
+                restaurant_orders.append(Order(**order_data))
+
+        return restaurant_orders
+
+    @staticmethod
+    async def get_restaurant_orders_by_date_range(
+        restaurant_id: int, username: str, start_time: int, end_time: int
+    ) -> list:
+        user = await UserRepo.get_by_username(username)
+        if not user:
+            raise ValueError("User not found")
+
+        user_role = RestaurantOwnerService._role_value(user)
+        user_restaurant_id = user.get("restaurant_id")
+
+        is_owner = (
+            user_role == UserRole.RESTAURANT_OWNER.value
+            and user_restaurant_id == restaurant_id
+        )
+        is_staff = (
+            user_role == UserRole.RESTAURANT_STAFF.value
+            and user_restaurant_id == restaurant_id
+        )
+
+        if not (is_owner or is_staff):
+            raise ValueError(
+                "User does not have permission to view this restaurant's orders"
+            )
+
+        restaurants = await RestaurantRepo.read_all()
+        restaurant_name = None
+        for restaurant in restaurants:
+            if restaurant.get("id") == restaurant_id:
+                restaurant_name = restaurant.get("name")
+                break
+
+        if not restaurant_name:
+            raise ValueError("Restaurant not found")
+
+        orders_by_date = await OrderRepo.get_orders_by_date_range(start_time, end_time)
+        restaurant_orders = []
+
+        for order_data in orders_by_date:
+            if order_data.get("restaurant") == restaurant_name:
+                restaurant_orders.append(Order(**order_data))
+
+        return restaurant_orders
+
+    @staticmethod
+    async def get_restaurant_orders_by_status_and_date(
+        restaurant_id: int, username: str, status: str, start_time: int, end_time: int
+    ) -> list:
+        user = await UserRepo.get_by_username(username)
+        if not user:
+            raise ValueError("User not found")
+
+        user_role = RestaurantOwnerService._role_value(user)
+        user_restaurant_id = user.get("restaurant_id")
+
+        is_owner = (
+            user_role == UserRole.RESTAURANT_OWNER.value
+            and user_restaurant_id == restaurant_id
+        )
+        is_staff = (
+            user_role == UserRole.RESTAURANT_STAFF.value
+            and user_restaurant_id == restaurant_id
+        )
+
+        if not (is_owner or is_staff):
+            raise ValueError(
+                "User does not have permission to view this restaurant's orders"
+            )
+
+        restaurants = await RestaurantRepo.read_all()
+        restaurant_name = None
+        for restaurant in restaurants:
+            if restaurant.get("id") == restaurant_id:
+                restaurant_name = restaurant.get("name")
+                break
+
+        if not restaurant_name:
+            raise ValueError("Restaurant not found")
+
+        orders_filtered = await OrderRepo.get_orders_by_status_and_date(
+            status, start_time, end_time
+        )
+        restaurant_orders = []
+
+        for order_data in orders_filtered:
+            if order_data.get("restaurant") == restaurant_name:
+                restaurant_orders.append(Order(**order_data))
+
+        return restaurant_orders

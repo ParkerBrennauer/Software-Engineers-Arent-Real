@@ -124,3 +124,38 @@ class OrderRepo:
             str(order_id): cls._with_order_id(str(order_id), order_data)
             for order_id, order_data in orders.items()
         }
+
+    @classmethod
+    async def get_orders_by_status(cls, status: str) -> list[dict[str, Any]]:
+        """Get orders filtered by order status."""
+        orders = await cls._read_raw()
+        return [
+            cls._with_order_id(str(order_id), order)
+            for order_id, order in orders.items()
+            if order.get("order_status") == status
+        ]
+
+    @classmethod
+    async def get_orders_by_date_range(
+        cls, start_time: int, end_time: int
+    ) -> list[dict[str, Any]]:
+        """Get orders filtered by date range (Unix timestamps)."""
+        orders = await cls._read_raw()
+        return [
+            cls._with_order_id(str(order_id), order)
+            for order_id, order in orders.items()
+            if start_time <= order.get("time", 0) <= end_time
+        ]
+
+    @classmethod
+    async def get_orders_by_status_and_date(
+        cls, status: str, start_time: int, end_time: int
+    ) -> list[dict[str, Any]]:
+        """Get orders filtered by both status and date range."""
+        orders = await cls._read_raw()
+        return [
+            cls._with_order_id(str(order_id), order)
+            for order_id, order in orders.items()
+            if order.get("order_status") == status
+            and start_time <= order.get("time", 0) <= end_time
+        ]
