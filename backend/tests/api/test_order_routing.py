@@ -2,6 +2,8 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from unittest.mock import AsyncMock, patch
 
+from src.api.routers.order_router import router
+
 app = FastAPI()
 app.include_router(router)
 client = TestClient(app)
