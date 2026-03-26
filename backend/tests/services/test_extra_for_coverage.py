@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
+from unittest.mock import AsyncMock, patch
 from src.services.order_services import OrderService
 from src.services.payment_service import PaymentService
 from src.services.item_services import ItemService
@@ -103,7 +103,7 @@ async def test_get_order_status_non_existent(mock_get):
 async def test_cancel_order(mock_update):
     mock_update.return_value = {"id": 1, "order_status": "cancelled"}
 
-    result = await OrderService.cancel_order(1)
+    await OrderService.cancel_order(1)
 
     mock_update.assert_called_once_with(1, {"order_status": "cancelled"})
 
@@ -113,7 +113,7 @@ async def test_cancel_order(mock_update):
 async def test_mark_ready_for_pickup(mock_update):
     mock_update.return_value = {"id": 1, "order_status": "ready_for_pickup"}
 
-    result = await OrderService.mark_ready_for_pickup(1)
+    await OrderService.mark_ready_for_pickup(1)
 
     mock_update.assert_called_once_with(1, {"order_status": "ready_for_pickup"})
 
@@ -123,7 +123,7 @@ async def test_mark_ready_for_pickup(mock_update):
 async def test_assign_driver(mock_update):
     mock_update.return_value = {"id": 1, "driver": "driver_001"}
 
-    result = await OrderService.assign_driver(1, "driver_001")
+    await OrderService.assign_driver(1, "driver_001")
 
     mock_update.assert_called_once_with(1, {"driver": "driver_001"})
 

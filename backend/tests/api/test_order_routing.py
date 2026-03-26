@@ -76,11 +76,12 @@ def test_get_order_tracking():
     assert response.status_code == 200
     assert response.json()["status"] == "in_transit"
 
-    def test_get_order_tracking_not_found():
-        with patch(
-            "src.api.routes.order_tracking_routes.OrderTrackingService.get_tracking_info",
-            new=AsyncMock(side_effect=ValueError("Order not found")),
-        ):
-            response = client.get("/orders/999/tracking")
 
-        assert response.status_code != 200
+def test_get_order_tracking_not_found():
+    with patch(
+        "src.api.routes.order_tracking_routes.OrderTrackingService.get_tracking_info",
+            new=AsyncMock(side_effect=ValueError("Order not found")),
+    ):
+        response = client.get("/orders/999/tracking")
+
+    assert response.status_code != 200
