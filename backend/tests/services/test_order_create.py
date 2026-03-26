@@ -1,5 +1,5 @@
 import pytest
-from backend.src.repositories.user_repo import UserRepo
+from src.repositories.user_repo import UserRepo
 from src.schemas import order_schema
 from src.services import OrderService
 from src.repositories import OrderRepo
