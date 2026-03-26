@@ -81,7 +81,7 @@ def test_get_order_tracking():
         response = client.get("/orders/1/tracking")
 
     assert response.status_code == 200
-    assert response.json()["status"] == "out for delivery"
+    assert response.json()["order_status"] == "out for delivery"
 
 
 def test_get_order_tracking_not_found():
