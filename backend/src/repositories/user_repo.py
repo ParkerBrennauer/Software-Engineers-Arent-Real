@@ -15,8 +15,14 @@ class UserRepo:
             return []
 
         async with aiofiles.open(cls.FILE_PATH, mode="r") as f:
-            users = await f.read()
-            return json.loads(users) if users else []
+            content = await f.read()
+            if not content:
+                return []
+
+            data = json.loads(content)
+            if isinstance(data, dict):
+                return list(data.values())
+            return data if isinstance(data, list) else []
 
     @classmethod
     async def save_user(cls, user_data: dict) -> dict:
