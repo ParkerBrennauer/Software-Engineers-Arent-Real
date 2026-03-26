@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
+from unittest.mock import AsyncMock, patch
 from src.services.order_services import OrderService
 from src.services.payment_service import PaymentService
 from src.services.item_services import ItemService
