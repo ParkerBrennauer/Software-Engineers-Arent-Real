@@ -1,14 +1,42 @@
 from fastapi import APIRouter, status
 
+from src.schemas.order_schema import OrderCreate, OrderUpdate
 from src.schemas.order_tracking_schema import (
     OrderTrackingResponse,
     OrderTrackingStatusUpdate,
 )
+from src.models.order_model import OrderInternal
 from src.services.order_services import OrderService
 from src.services.order_tracking_service import OrderTrackingService
 from src.api.dependencies import convert_service_error
 
 router = APIRouter(prefix="/orders", tags=["orders"])
+
+
+@router.post(
+    "/place",
+    response_model=OrderInternal,
+    status_code=status.HTTP_201_CREATED,
+)
+async def place_order(order: OrderCreate):
+    try:
+        return await OrderService.create_order(order)
+    except ValueError as err:
+        raise convert_service_error(err)
+
+
+@router.post(
+    "/{order_id}/items",
+    response_model=OrderInternal,
+    status_code=status.HTTP_200_OK,
+)
+async def add_items_to_order(order_id: str, items_update: OrderUpdate):
+    try:
+        return await OrderService.update_order(
+            int(order_id), {"items": items_update.items}
+        )
+    except ValueError as err:
+        raise convert_service_error(err)
 
 
 @router.get("/{order_id}")
