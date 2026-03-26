@@ -1,55 +1,303 @@
+import pytest
 from fastapi.testclient import TestClient
-
+from unittest.mock import AsyncMock, patch
 from src.main import app
-from src.schemas.order_schema import OrderStatus
-from src.schemas.order_tracking_schema import (
-    OrderTrackingResponse,
-    OrderTrackingStatusUpdate,
-)
-from src.services.order_tracking_service import OrderTrackingService
+
 
 client = TestClient(app)
 
 
-def test_get_order_tracking_returns_tracking_payload(monkeypatch):
-    async def fake_get_tracking_info(_order_id: str):
-        return OrderTrackingResponse(
-            order_id="21",
-            restaurant="Restaurant_1",
-            customer="customer_1",
-            driver="driver_1",
-            order_status=OrderStatus.OUT_FOR_DELIVERY,
-            current_location="with driver",
-            distance_km=4.3,
-            estimated_time_minutes=14,
-            status_message="Your order is on the way to the drop-off location.",
-        )
+@pytest.mark.asyncio
+@patch(
+    "src.services.order_services.OrderService.get_order_status", new_callable=AsyncMock
+)
+async def test_get_order_status_success(mock_service):
+    mock_service.return_value = {"order_id": "1", "status": "processing"}
 
-    monkeypatch.setattr(OrderTrackingService, "get_tracking_info", fake_get_tracking_info)
-
-    response = client.get("/orders/21/tracking")
+    response = client.get("/orders/1")
 
     assert response.status_code == 200
-    assert response.json()["distance_km"] == 4.3
-    assert response.json()["current_location"] == "with driver"
+    assert response.json()["status"] == "processing"
 
 
-def test_update_order_tracking_status_returns_404_for_missing_order(monkeypatch):
-    async def fake_update_tracking_status(
-        _order_id: str, _tracking_update: OrderTrackingStatusUpdate
-    ):
-        raise ValueError("Order not found")
+@pytest.mark.asyncio
+@patch(
+    "src.services.order_services.OrderService.get_order_status", new_callable=AsyncMock
+)
+async def test_get_order_status_not_found(mock_service):
+    mock_service.return_value = None
 
-    monkeypatch.setattr(
-        OrderTrackingService,
-        "update_tracking_status",
-        fake_update_tracking_status,
-    )
+    response = client.get("/orders/999")
 
-    response = client.patch(
-        "/orders/999/tracking/status",
-        json={"order_status": OrderStatus.DELIVERED.value},
-    )
+    assert response.status_code == 200
+    assert response.json() is None
 
-    assert response.status_code == 404
-    assert response.json()["detail"] == "Order not found"
+
+@pytest.mark.asyncio
+@patch(
+    "src.services.order_services.OrderService.get_restaurant_orders",
+    new_callable=AsyncMock,
+)
+async def test_get_restaurant_orders_success(mock_service):
+    mock_service.return_value = [{"order_id": "1"}]
+
+    response = client.get("/orders/restaurant/mcdonalds")
+
+    assert response.status_code == 200
+    assert isinstance(response.json(), list)
+
+
+@pytest.mark.asyncio
+@patch(
+    "src.services.order_services.OrderService.get_restaurant_orders",
+    new_callable=AsyncMock,
+)
+async def test_get_restaurant_orders_empty(mock_service):
+    mock_service.return_value = []
+
+    response = client.get("/orders/restaurant/unknown")
+
+    assert response.status_code == 200
+    assert response.json() == []
+
+
+@pytest.mark.asyncio
+@patch("src.services.order_services.OrderService.cancel_order", new_callable=AsyncMock)
+async def test_cancel_order_success(mock_service):
+    mock_service.return_value = {"status": "cancelled"}
+
+    response = client.put("/orders/1/cancel")
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "cancelled"
+
+
+@pytest.mark.asyncio
+@patch(
+    "src.services.order_services.OrderService.mark_ready_for_pickup",
+    new_callable=AsyncMock,
+)
+async def test_mark_ready_success(mock_service):
+    mock_service.return_value = {"status": "ready"}
+
+    response = client.put("/orders/1/ready")
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "ready"
+
+
+@pytest.mark.asyncio
+@patch(
+    "src.services.order_services.OrderService.report_restaurant_delay",
+    new_callable=AsyncMock,
+)
+async def test_restaurant_delay_success(mock_service):
+    mock_service.return_value = {"status": "delayed"}
+
+    response = client.put("/orders/1/restaurant-delay?reason=busy")
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "delayed"
+
+
+@pytest.mark.asyncio
+async def test_restaurant_delay_missing_reason():
+    response = client.put("/orders/1/restaurant-delay")
+
+    assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+@patch(
+    "src.services.order_services.OrderService.get_driver_orders", new_callable=AsyncMock
+)
+async def test_get_driver_orders_success(mock_service):
+    mock_service.return_value = [{"order_id": "1"}]
+
+    response = client.get("/orders/driver/john")
+
+    assert response.status_code == 200
+    assert isinstance(response.json(), list)
+
+
+@pytest.mark.asyncio
+@patch("src.services.order_services.OrderService.pickup_order", new_callable=AsyncMock)
+async def test_pickup_order_success(mock_service):
+    mock_service.return_value = {"status": "picked_up"}
+
+    response = client.put("/orders/1/pickup")
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "picked_up"
+
+
+@pytest.mark.asyncio
+@patch(
+    "src.services.order_services.OrderService.report_driver_delay",
+    new_callable=AsyncMock,
+)
+async def test_driver_delay_success(mock_service):
+    mock_service.return_value = {"status": "delayed"}
+
+    response = client.put("/orders/1/driver-delay?reason=traffic")
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "delayed"
+
+
+@pytest.mark.asyncio
+async def test_driver_delay_missing_reason():
+    response = client.put("/orders/1/driver-delay")
+
+    assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+@patch("src.services.order_services.OrderService.assign_driver", new_callable=AsyncMock)
+async def test_assign_driver_success(mock_service):
+    mock_service.return_value = {"driver": "john"}
+
+    response = client.put("/orders/1/assign-driver?driver=john")
+
+    assert response.status_code == 200
+    assert response.json()["driver"] == "john"
+
+
+@pytest.mark.asyncio
+async def test_assign_driver_missing_driver():
+    response = client.put("/orders/1/assign-driver")
+
+    assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+@patch(
+    "src.services.order_services.OrderService.process_refund", new_callable=AsyncMock
+)
+async def test_refund_order_success(mock_service):
+    mock_service.return_value = {"status": "refunded"}
+
+    response = client.put("/orders/1/refund")
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "refunded"
+
+
+@pytest.mark.asyncio
+@patch("src.services.order_services.OrderService.create_order", new_callable=AsyncMock)
+async def test_submit_order_success(mock_service):
+    mock_service.return_value = {
+        "id": 1,
+        "order_status": "payment pending",
+        "payment_status": "pending",
+        "items": [{"name": "Burger", "price": 10.99}],
+        "cost": 12.42,
+        "locked": False,
+    }
+
+    order_data = {
+        "items": [{"name": "Burger", "price": 10.99}],
+        "restaurant": "mcdonalds",
+        "customer": "john_doe",
+        "time": 30,
+        "cuisine": "fast_food",
+        "distance": 2.5,
+    }
+
+    response = client.post("/orders/place", json=order_data)
+
+    assert response.status_code == 201
+    assert response.json()["id"] == 1
+    assert response.json()["order_status"] == "payment pending"
+    assert response.json()["payment_status"] == "pending"
+
+
+@pytest.mark.asyncio
+@patch("src.services.order_services.OrderService.create_order", new_callable=AsyncMock)
+async def test_submit_order_error(mock_service):
+    mock_service.side_effect = ValueError("Invalid restaurant")
+
+    order_data = {
+        "items": [{"name": "Burger", "price": 10.99}],
+        "restaurant": "unknown",
+        "customer": "john_doe",
+        "time": 30,
+        "cuisine": "fast_food",
+        "distance": 2.5,
+    }
+
+    response = client.post("/orders/place", json=order_data)
+
+    assert response.status_code == 400
+    assert "Invalid restaurant" in response.json()["detail"]
+
+
+@pytest.mark.asyncio
+async def test_submit_order_missing_required_field():
+    order_data = {
+        "items": [{"name": "Burger", "price": 10.99}],
+        "restaurant": "mcdonalds",
+        "time": 30,
+        "cuisine": "fast_food",
+        "distance": 2.5,
+    }
+
+    response = client.post("/orders/place", json=order_data)
+
+    assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+@patch("src.services.order_services.OrderService.update_order", new_callable=AsyncMock)
+async def test_add_items_to_order_success(mock_service):
+    mock_service.return_value = {
+        "id": 1,
+        "order_status": "payment pending",
+        "payment_status": "pending",
+        "items": [{"name": "Burger", "price": 10.99}, {"name": "Fries", "price": 4.99}],
+        "cost": 18.62,
+        "locked": False,
+    }
+
+    items_data = {
+        "items": [{"name": "Burger", "price": 10.99}, {"name": "Fries", "price": 4.99}]
+    }
+
+    response = client.post("/orders/1/items", json=items_data)
+
+    assert response.status_code == 200
+    assert len(response.json()["items"]) == 2
+    assert response.json()["cost"] == 18.62
+
+
+@pytest.mark.asyncio
+@patch("src.services.order_services.OrderService.update_order", new_callable=AsyncMock)
+async def test_add_items_to_order_locked_error(mock_service):
+    mock_service.side_effect = ValueError("Order is locked and cannot be updated")
+
+    items_data = {"items": [{"name": "Burger", "price": 10.99}]}
+
+    response = client.post("/orders/1/items", json=items_data)
+
+    assert response.status_code == 400
+    assert "Order is locked" in response.json()["detail"]
+
+
+@pytest.mark.asyncio
+@patch("src.services.order_services.OrderService.update_order", new_callable=AsyncMock)
+async def test_add_items_to_order_empty_items(mock_service):
+    mock_service.return_value = {
+        "id": 1,
+        "order_status": "payment pending",
+        "payment_status": "pending",
+        "items": [],
+        "cost": 0.0,
+        "locked": False,
+    }
+
+    items_data = {"items": []}
+
+    response = client.post("/orders/1/items", json=items_data)
+
+    assert response.status_code == 200
+    assert response.json()["items"] == []
