@@ -4,7 +4,6 @@ from src.repositories.order_repo import OrderRepo
 
 
 class OrderService:
-
     @staticmethod
     async def create_order(create_order: OrderCreate) -> dict:
         order_data = create_order.model_dump()
@@ -16,17 +15,19 @@ class OrderService:
 
         order_data["locked"] = False
         order_data["items"] = order_data.get("items", [])
-        order_data["cost"] = await OrderService.calculate_order_cost(order_data["items"])
+        order_data["cost"] = await OrderService.calculate_order_cost(
+            order_data["items"]
+        )
 
         saved_data = await OrderRepo.save_order(order_data)
         return OrderInternal.model_validate(saved_data)
 
     @staticmethod
-    async def update_order(order_id: int, update_data: dict) -> dict:
+    async def update_order(order_id: int, update_data: dict) -> OrderInternal:
         existing_order = await OrderRepo.get_order(order_id)
 
         if existing_order is None:
-            existing_order = {}
+            raise ValueError("Order not found")
 
         if isinstance(existing_order, Order):
             existing_order = existing_order.model_dump()
@@ -35,12 +36,16 @@ class OrderService:
             raise ValueError("Order is locked and cannot be updated")
 
         updated_order = {**existing_order, **update_data}
-        updated_order["items"] = update_data.get("items", existing_order.get("items", []))
-        updated_order["cost"] = await OrderService.calculate_order_cost(updated_order["items"])
+        updated_order["items"] = update_data.get(
+            "items", existing_order.get("items", [])
+        )
+        updated_order["cost"] = await OrderService.calculate_order_cost(
+            updated_order["items"]
+        )
 
         saved_order = await OrderRepo.update_order(order_id, updated_order)
         if isinstance(saved_order, str):
-            return saved_order
+            raise ValueError(f"Failed to update order: {saved_order}")
         return OrderInternal.model_validate(saved_order)
 
     @staticmethod
@@ -60,13 +65,18 @@ class OrderService:
         existing_order = await OrderRepo.get_order(order_id)
 
         if existing_order is None:
-            existing_order = {}
+            raise ValueError("Order not found")
+
+        if isinstance(existing_order, Order):
+            existing_order = existing_order.model_dump()
 
         if existing_order.get("locked"):
             return OrderInternal.model_validate(existing_order)
 
         updated_order = {**existing_order, "locked": True}
         saved_data = await OrderRepo.update_order(order_id, updated_order)
+        if isinstance(saved_data, str):
+            raise ValueError(f"Failed to lock order: {saved_data}")
 
         return OrderInternal.model_validate(saved_data)
 
@@ -75,29 +85,25 @@ class OrderService:
         existing_order = await OrderRepo.get_order(order_id)
 
         if existing_order is None:
-            existing_order = {}
+            raise ValueError("Order not found")
         return existing_order
 
     @staticmethod
     async def cancel_order(order_id: int):
 
-        return await OrderService.update_order(order_id, {
-            "order_status": "cancelled"
-        })
+        return await OrderService.update_order(order_id, {"order_status": "cancelled"})
 
     @staticmethod
     async def mark_ready_for_pickup(order_id: int):
 
-        return await OrderService.update_order(order_id, {
-            "order_status": "ready_for_pickup"
-        })
+        return await OrderService.update_order(
+            order_id, {"order_status": "ready_for_pickup"}
+        )
 
     @staticmethod
     async def assign_driver(order_id: int, driver: str):
 
-        return await OrderService.update_order(order_id, {
-            "driver": driver
-        })
+        return await OrderService.update_order(order_id, {"driver": driver})
 
     @staticmethod
     async def get_driver_orders(driver: str):
@@ -106,17 +112,14 @@ class OrderService:
     @staticmethod
     async def pickup_order(order_id: int):
 
-        return await OrderService.update_order(order_id, {
-            "order_status": "picked_up"
-        })
+        return await OrderService.update_order(order_id, {"order_status": "picked_up"})
 
     @staticmethod
     async def report_restaurant_delay(order_id: int, reason: str):
 
-        updated = await OrderService.update_order(order_id, {
-            "order_status": "delayed",
-            "delay_reason": reason
-        })
+        updated = await OrderService.update_order(
+            order_id, {"order_status": "delayed", "delay_reason": reason}
+        )
 
         if "cancel" in reason.lower() or "cannot prepare" in reason.lower():
             return await OrderService.process_refund(order_id)
@@ -126,10 +129,9 @@ class OrderService:
     @staticmethod
     async def report_driver_delay(order_id: int, reason: str):
 
-        return await OrderService.update_order(order_id, {
-            "order_status": "delayed",
-            "delay_reason": reason
-        })
+        return await OrderService.update_order(
+            order_id, {"order_status": "delayed", "delay_reason": reason}
+        )
 
     @staticmethod
     async def process_refund(order_id: int):
@@ -137,33 +139,33 @@ class OrderService:
         order = await OrderRepo.get_order(order_id)
 
         if order is None:
-            order = {}
-
-        if getattr(order, "refund_issued", False):
-            raise ValueError("Refund already issued")
-
-        if getattr(order, "order_status", None) not in ["delayed", "cancelled"]:
-            raise ValueError("Refund not applicable")
-
-        if getattr(order, "payment_status", None) != "accepted":
-            raise ValueError("Cannot refund unpaid order")
+            raise ValueError("Order not found")
 
         if isinstance(order, Order):
             order_dict = order.model_dump()
         else:
             order_dict = order
 
+        if order_dict.get("refund_issued", False):
+            raise ValueError("Refund already issued")
+
+        if order_dict.get("order_status") not in ["delayed", "cancelled"]:
+            raise ValueError("Refund not applicable")
+
+        if order_dict.get("payment_status") != "accepted":
+            raise ValueError("Cannot refund unpaid order")
+
         updated_order = {
             **order_dict,
             "id": order_dict.get("id", int(order_id)),
             "refund_issued": True,
-            "refund_amount": order.cost if isinstance(order, Order) else order_dict.get("cost", 0)
+            "refund_amount": order_dict.get("cost", 0),
         }
 
         saved = await OrderRepo.update_order(order_id, updated_order)
 
         if isinstance(saved, str):
-            return saved
+            raise ValueError(f"Failed to process refund: {saved}")
 
         if isinstance(saved, Order):
             saved = saved.model_dump()
