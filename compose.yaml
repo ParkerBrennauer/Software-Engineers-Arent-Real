@@ -1,13 +1,15 @@
 services:
   backend:
-    build: 
+    build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: food_delivery_backend
     ports:
       - "8000:8000"
+    volumes:
+      - ./backend/src/data:/app/src/data
   frontend:
-    build: 
+    build:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: food_delivery_frontend
