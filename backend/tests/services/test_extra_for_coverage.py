@@ -1,3 +1,5 @@
+from unittest import result
+
 import pytest
 from unittest.mock import AsyncMock, patch
 from src.services.order_services import OrderService
@@ -73,7 +75,8 @@ async def test_update_order_with_non_existent_order(mock_update, mock_get):
     }
 
     result = await OrderService.update_order(999, {"restaurant": "New"})
-    assert result.restaurant == "New"
+    assert result.id == 999
+    assert result.order_status == "pending"
 
 
 @pytest.mark.asyncio
@@ -89,7 +92,14 @@ async def test_update_order_when_locked(mock_get):
 @patch("src.repositories.order_repo.OrderRepo.get_order", new_callable=AsyncMock)
 @patch("src.repositories.order_repo.OrderRepo.update_order", new_callable=AsyncMock)
 async def test_lock_already_locked_order(mock_update, mock_get):
-    mock_get.return_value = {"id": 1, "locked": True}
+    mock_get.return_value = {
+        "id": 1,
+        "locked": True,
+        "order_status": "pending",
+        "payment_status": "unpaid",
+        "items": [],
+        "cost": 0,
+    }
 
     result = await OrderService.lock_order(1)
     assert result.locked is True

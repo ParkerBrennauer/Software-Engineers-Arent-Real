@@ -1,3 +1,5 @@
+from urllib import response
+
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from unittest.mock import AsyncMock, patch
@@ -63,8 +65,13 @@ def test_get_driver_orders():
 def test_get_order_tracking():
     mock_data = {
         "order_id": "1",
-        "status": "in_transit",
-        "location": "Downtown",
+        "restaurant": "Test Restaurant",
+        "customer": "JohnDoe",
+        "order_status": "in_transit",
+        "current_location": "Downtown",
+        "distance_km": 2.5,
+        "estimated_time_minutes": 10,
+        "status_message": "On the way",
     }
 
     with patch(
@@ -84,4 +91,6 @@ def test_get_order_tracking_not_found():
     ):
         response = client.get("/orders/999/tracking")
 
+
+    assert response.status_code == 404
     assert response.status_code != 200
