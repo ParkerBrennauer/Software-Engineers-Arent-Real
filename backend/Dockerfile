@@ -12,6 +12,7 @@ RUN python -m pip install --no-cache-dir --upgrade pip \
 COPY src ./src
 
 RUN adduser --uid 5678 --disabled-password --gecos "" appuser \
+    && mkdir -p /app/src/data \
     && chown -R appuser /app
 
 USER appuser
