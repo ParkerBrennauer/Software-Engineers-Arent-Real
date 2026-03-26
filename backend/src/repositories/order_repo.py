@@ -1,24 +1,20 @@
 import json
-from pathlib import Path
 from typing import Any
 
 import aiofiles
 
+from src.core.config import ORDERS_FILE
+
 
 class OrderRepo:
-    FILE_PATH = Path(__file__).resolve().parent.parent / "data" / "orders.json"
-
-    @classmethod
-    def _path(cls) -> Path:
-        return Path(cls.FILE_PATH)
+    FILE_PATH = ORDERS_FILE
 
     @classmethod
     async def _read_raw(cls) -> dict[str, dict[str, Any]]:
-        file_path = cls._path()
-        if not file_path.exists():
+        if not cls.FILE_PATH.exists():
             return {}
 
-        async with aiofiles.open(file_path, mode="r") as file:
+        async with aiofiles.open(cls.FILE_PATH, mode="r") as file:
             raw_orders = await file.read()
 
         if not raw_orders:
@@ -43,7 +39,7 @@ class OrderRepo:
 
     @classmethod
     async def _write_raw(cls, orders: dict[str, dict[str, Any]]) -> None:
-        async with aiofiles.open(cls._path(), mode="w") as file:
+        async with aiofiles.open(cls.FILE_PATH, mode="w") as file:
             await file.write(json.dumps(orders, indent=4))
 
     @classmethod
