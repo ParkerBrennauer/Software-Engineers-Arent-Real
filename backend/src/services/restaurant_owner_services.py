@@ -4,23 +4,17 @@ from src.repositories.order_repo import OrderRepo
 from src.models.user_model import UserInternal
 from src.schemas.user_schema import UserRole
 from src.schemas.order_schema import Order
+from src.core.utils import get_role_value
 
 
 class RestaurantOwnerService:
-    @staticmethod
-    def _role_value(user_data: dict) -> str | None:
-        role = user_data.get("role")
-        if isinstance(role, UserRole):
-            return role.value
-        return role
-
     @staticmethod
     async def assign_user_as_staff(owner_username: str, staff_username: str) -> dict:
         owner = await UserRepo.get_by_username(owner_username)
         if not owner:
             raise ValueError("Owner not found")
 
-        if RestaurantOwnerService._role_value(owner) != UserRole.RESTAURANT_OWNER.value:
+        if get_role_value(owner) != UserRole.RESTAURANT_OWNER.value:
             raise ValueError("User is not a restaurant owner")
 
         owner_restaurant_id = owner.get("restaurant_id")
@@ -31,16 +25,10 @@ class RestaurantOwnerService:
         if not target_user:
             raise ValueError("User not found")
 
-        if (
-            RestaurantOwnerService._role_value(target_user)
-            == UserRole.RESTAURANT_OWNER.value
-        ):
+        if get_role_value(target_user) == UserRole.RESTAURANT_OWNER.value:
             raise ValueError("Cannot assign restaurant owner as staff")
 
-        if (
-            RestaurantOwnerService._role_value(target_user)
-            == UserRole.RESTAURANT_STAFF.value
-        ):
+        if get_role_value(target_user) == UserRole.RESTAURANT_STAFF.value:
             return UserInternal.model_validate(target_user)
 
         updated_user = await UserRepo.update_by_username(
@@ -62,7 +50,7 @@ class RestaurantOwnerService:
         if not user:
             raise ValueError("User not found")
 
-        user_role = RestaurantOwnerService._role_value(user)
+        user_role = get_role_value(user)
         user_restaurant_id = user.get("restaurant_id")
 
         is_owner = (
@@ -106,7 +94,7 @@ class RestaurantOwnerService:
         if not user:
             raise ValueError("User not found")
 
-        user_role = RestaurantOwnerService._role_value(user)
+        user_role = get_role_value(user)
         user_restaurant_id = user.get("restaurant_id")
 
         is_owner = (
@@ -150,7 +138,7 @@ class RestaurantOwnerService:
         if not user:
             raise ValueError("User not found")
 
-        user_role = RestaurantOwnerService._role_value(user)
+        user_role = get_role_value(user)
         user_restaurant_id = user.get("restaurant_id")
 
         is_owner = (
@@ -194,7 +182,7 @@ class RestaurantOwnerService:
         if not user:
             raise ValueError("User not found")
 
-        user_role = RestaurantOwnerService._role_value(user)
+        user_role = get_role_value(user)
         user_restaurant_id = user.get("restaurant_id")
 
         is_owner = (
