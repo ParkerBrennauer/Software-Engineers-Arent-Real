@@ -12,7 +12,6 @@ from src.api.dependencies import setup_exception_handlers
 
 @pytest.fixture
 def app():
-    """Create a FastAPI app with all routers for testing"""
     app = FastAPI()
     setup_exception_handlers(app)
     app.include_router(user_router)
