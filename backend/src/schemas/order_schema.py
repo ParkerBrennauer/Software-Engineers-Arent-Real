@@ -41,6 +41,7 @@ class Order(BaseModel):
     refund_issued: bool = False
     refund_amount: float | None = None
 
+
 class OrderCreate(BaseModel):
     items: list
     cost: float = 0.0
