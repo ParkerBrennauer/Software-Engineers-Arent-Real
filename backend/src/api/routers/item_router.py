@@ -1,18 +1,20 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, status
 from src.schemas.item_schema import ItemUpdate, ItemCreate
 from src.services.item_services import ItemService
+from src.api.dependencies import convert_service_error
 
 router = APIRouter(prefix="/items", tags=["items"])
 
 
 @router.get("/{item_key}", status_code=status.HTTP_200_OK)
 async def get_item_by_key(item_key: str):
-    item = await ItemService.get_items_by_key(item_key)
-    if not item:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Item not found"
-        )
-    return item
+    try:
+        item = await ItemService.get_items_by_key(item_key)
+        if not item:
+            raise ValueError("Item not found")
+        return item
+    except ValueError as err:
+        raise convert_service_error(err)
 
 
 @router.get("/restaurant/{restaurant_id}", status_code=status.HTTP_200_OK)
@@ -27,14 +29,7 @@ async def update_item(item_key: str, item_in: ItemUpdate):
         updated_item = await ItemService.update_item_by_key(item_key, item_in)
         return updated_item
     except ValueError as err:
-        message = str(err)
-        if message == "Item does not exist":
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail=message
-            ) from err
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=message
-        ) from err
+        raise convert_service_error(err)
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
@@ -42,10 +37,4 @@ async def create_item(item_in: ItemCreate):
     try:
         return await ItemService.create_item(item_in)
     except ValueError as err:
-        message = str(err)
-
-        status_code = status.HTTP_400_BAD_REQUEST
-        if message == "Item already exists":
-            status_code = status.HTTP_409_CONFLICT
-
-        raise HTTPException(status_code=status_code, detail=message) from err
+        raise convert_service_error(err)
