@@ -1,19 +1,20 @@
-import os
 import json
 from typing import List, Optional
 import aiofiles
 
+from src.core.config import USERS_FILE
+
 
 class UserRepo:
-    FILE_PATH = "../data/users.json"
+    FILE_PATH = USERS_FILE
 
     @classmethod
     async def read_all(cls) -> List[dict]:
 
-        if not os.path.exists(cls.FILE_PATH):
+        if not cls.FILE_PATH.exists():
             return []
 
-        async with aiofiles.open(cls.FILE_PATH, mode='r') as f:
+        async with aiofiles.open(cls.FILE_PATH, mode="r") as f:
             users = await f.read()
             return json.loads(users) if users else []
 
@@ -25,7 +26,7 @@ class UserRepo:
         user_data["id"] = new_id
         users.append(user_data)
 
-        async with aiofiles.open(cls.FILE_PATH, mode='w') as f:
+        async with aiofiles.open(cls.FILE_PATH, mode="w") as f:
             await f.write(json.dumps(users, indent=4))
 
         return user_data
@@ -47,7 +48,7 @@ class UserRepo:
             if user["username"] == username:
                 users[index].update(updates)
 
-                async with aiofiles.open(cls.FILE_PATH, mode='w') as f:
+                async with aiofiles.open(cls.FILE_PATH, mode="w") as f:
                     await f.write(json.dumps(users, indent=4))
 
                 return users[index]
