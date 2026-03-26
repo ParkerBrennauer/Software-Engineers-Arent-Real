@@ -62,7 +62,15 @@ async def test_calculate_order_cost_empty_list(mock_get_order):
 @patch("src.repositories.order_repo.OrderRepo.update_order", new_callable=AsyncMock)
 async def test_update_order_with_non_existent_order(mock_update, mock_get):
     mock_get.return_value = None
-    mock_update.return_value = {"id": 999, "restaurant": "New", "locked": False}
+    mock_update.return_value = mock_update.return_value = {
+        "id": 999,
+        "restaurant": "New",
+        "locked": False,
+        "order_status": "pending",
+        "payment_status": "unpaid",
+        "items": [],
+        "cost": 0,
+    }
 
     result = await OrderService.update_order(999, {"restaurant": "New"})
     assert result.restaurant == "New"
@@ -220,7 +228,9 @@ async def test_create_item_success(mock_save, mock_get):
         item_name="Burger",
         restaurant_id=1,
         price=9.99,
-        description="Classic burger"
+        description="Classic burger",
+        cost=9.99,
+        cuisine="American"
     )
 
     result = await ItemService.create_item(item_create)
@@ -238,7 +248,9 @@ async def test_create_item_already_exists(mock_get):
         item_name="Burger",
         restaurant_id=1,
         price=9.99,
-        description="Classic burger"
+        description="Classic burger",
+        cost=9.99,
+        cuisine="American"
     )
 
     with pytest.raises(ValueError, match="Item already exists"):
