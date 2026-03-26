@@ -38,7 +38,7 @@ def test_get_item_by_key_success(monkeypatch):
     assert data["restaurant_id"] == 2
 
 
-def test_get_item_by_key_returns_404_when_not_found(monkeypatch):
+def test_get_item_by_key_returns_not_found(monkeypatch):
     async def fake_get_items_by_key(_item_key: str):
         return None
 
@@ -155,7 +155,7 @@ def test_update_item_success(monkeypatch):
     assert data["avg_rating"] == 4.8
 
 
-def test_update_item_returns_404_when_not_found(monkeypatch):
+def test_update_item_returns_not_found(monkeypatch):
     async def fake_update_item_by_key(_item_key: str, _item_in):
         raise ValueError("Item not found")
 
@@ -223,7 +223,7 @@ def test_create_item_success(monkeypatch):
     assert data["restaurant_id"] == 2
 
 
-def test_create_item_returns_400_when_value_error(monkeypatch):
+def test_create_item_returns_value_error(monkeypatch):
     async def fake_create_item(_item_in):
         raise ValueError("Item already exists")
 
@@ -250,5 +250,5 @@ def test_create_item_returns_400_when_value_error(monkeypatch):
         },
     )
 
-    assert response.status_code == 400
+    assert response.status_code == 409
     assert response.json()["detail"] == "Item already exists"
