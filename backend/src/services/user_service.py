@@ -10,13 +10,6 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 class UserService:
     @staticmethod
-    def _role_value(user_data: dict) -> str | None:
-        role = user_data.get("role")
-        if isinstance(role, UserRole):
-            return role.value
-        return role
-
-    @staticmethod
     async def get_password_hash(password: str) -> str:
         return pwd_context.hash(password)
 
@@ -30,7 +23,9 @@ class UserService:
         if not user:
             raise ValueError("Invalid username or password")
 
-        if not await UserService.verify_password(password, user.get("hashed_password", "")):
+        if not await UserService.verify_password(
+            password, user.get("hashed_password", "")
+        ):
             raise ValueError("Invalid username or password")
 
         if not user.get("is_active"):
