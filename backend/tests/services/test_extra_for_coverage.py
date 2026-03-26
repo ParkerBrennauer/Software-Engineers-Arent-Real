@@ -123,7 +123,7 @@ async def test_mark_ready_for_pickup(mock_update):
 async def test_assign_driver(mock_update):
     mock_update.return_value = {"id": 1, "driver": "driver_001"}
 
-    result = await OrderService.assign_driver(1, "driver_001")
+    await OrderService.assign_driver(1, "driver_001")
 
     mock_update.assert_called_once_with(1, {"driver": "driver_001"})
 
