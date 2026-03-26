@@ -1,25 +1,26 @@
 import json
 from typing import List, Optional
-import os
 import aiofiles
+
+from src.core.config import RESTAURANTS_FILE
 
 
 class RestaurantRepo:
-    FILE_PATH = "../data/restaurants.json"
+    FILE_PATH = RESTAURANTS_FILE
 
     @classmethod
     async def read_all(cls) -> List[dict]:
 
-        if not os.path.exists(cls.FILE_PATH):
+        if not cls.FILE_PATH.exists():
             return []
 
-        async with aiofiles.open(cls.FILE_PATH, mode='r') as f:
+        async with aiofiles.open(cls.FILE_PATH, mode="r") as f:
             restaurants = await f.read()
             return json.loads(restaurants) if restaurants else []
 
     @classmethod
-    async def write_restaurant(cls, data:dict) -> None:
-        async with aiofiles.open(cls.FILE_PATH, mode='w') as f:
+    async def write_restaurant(cls, data: dict) -> None:
+        async with aiofiles.open(cls.FILE_PATH, mode="w") as f:
             await f.write(json.dumps(data, indent=1))
 
     @classmethod
@@ -40,10 +41,10 @@ class RestaurantRepo:
 
     @classmethod
     async def get_restaurant_by_id(cls) -> dict:
-        if not os.path.exists(cls.FILE_PATH):
+        if not cls.FILE_PATH.exists():
             return {}
 
-        async with aiofiles.open(cls.FILE_PATH, mode='r') as f:
+        async with aiofiles.open(cls.FILE_PATH, mode="r") as f:
             items = await f.read()
             if not items:
                 return {}
@@ -51,7 +52,9 @@ class RestaurantRepo:
             return json.loads(items) if items else {}
 
     @classmethod
-    async def update_by_restaurant_id(cls, restaurant_id: int, updates: dict) -> Optional[dict]:
+    async def update_by_restaurant_id(
+        cls, restaurant_id: int, updates: dict
+    ) -> Optional[dict]:
         restaurants = await cls.read_all()
 
         for index, r in enumerate(restaurants):
