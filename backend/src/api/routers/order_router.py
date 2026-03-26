@@ -48,7 +48,7 @@ async def lock_order(order_id: int):
         raise HTTPException(status_code=404, detail=str(e))
 
 
-@router.get("/orders/{order_id}")
+@router.get("/{order_id}/status")
 async def get_order_status(order_id: int):
     order = await OrderService.get_order_status(order_id)
 
