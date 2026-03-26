@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, status
 from src.schemas.user_schema import (
     UserRegister,
     UserResponse,
@@ -12,6 +12,7 @@ from src.schemas.customer_schema import CustomerRegister
 from src.schemas.driver_schema import DriverRegister
 
 from src.services.user_service import UserService
+from src.api.dependencies import convert_service_error
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -34,14 +35,7 @@ async def register_customer(customer_in: CustomerRegister):
         new_customer = await UserService.create_user(customer_in)
         return new_customer
     except ValueError as err:
-        message = str(err)
-        if message == "Username already exists":
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT, detail=message
-            ) from err
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=message
-        ) from err
+        raise convert_service_error(err)
 
 
 @router.post(
@@ -52,14 +46,7 @@ async def register_driver(driver_in: DriverRegister):
         new_driver = await UserService.create_user(driver_in)
         return new_driver
     except ValueError as err:
-        message = str(err)
-        if message == "Username already exists":
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT, detail=message
-            ) from err
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=message
-        ) from err
+        raise convert_service_error(err)
 
 
 @router.post("/login", response_model=UserResponse, status_code=status.HTTP_200_OK)
@@ -68,18 +55,7 @@ async def login_user(body: UserLogin):
         user = await UserService.login_user(body.username, body.password)
         return user
     except ValueError as err:
-        message = str(err)
-        if "Invalid username or password" in message:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail=message
-            ) from err
-        if message == "User account is inactive":
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail=message
-            ) from err
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=message
-        ) from err
+        raise convert_service_error(err)
 
 
 @router.patch(
@@ -90,18 +66,7 @@ async def update_user(username: str, user_in: UserUpdate):
         updated_user = await UserService.update_user(username, user_in)
         return updated_user
     except ValueError as err:
-        message = str(err)
-        if message == "User not found":
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail=message
-            ) from err
-        if message == "Username already exists":
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT, detail=message
-            ) from err
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=message
-        ) from err
+        raise convert_service_error(err)
 
 
 @router.post(
@@ -114,14 +79,7 @@ async def generate_2fa_code(username: str):
         code = await UserService.generate_2fa_code(username)
         return UserTwoFactorResponse(message=f"2FA code generated: {code}")
     except ValueError as err:
-        message = str(err)
-        if message == "User not found":
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail=message
-            ) from err
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=message
-        ) from err
+        raise convert_service_error(err)
 
 
 @router.post(
@@ -137,14 +95,7 @@ async def verify_2fa_code(username: str, body: UserTwoFactorVerify):
             requires_2fa=False,
         )
     except ValueError as err:
-        message = str(err)
-        if message == "User not found":
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail=message
-            ) from err
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=message
-        ) from err
+        raise convert_service_error(err)
 
 
 @router.post("/{username}/reset-password", status_code=status.HTTP_200_OK)
@@ -153,11 +104,4 @@ async def reset_password(username: str, body: UserPasswordReset):
         await UserService.reset_password(username, body.code, body.new_password)
         return {"message": "Password reset successful"}
     except ValueError as err:
-        message = str(err)
-        if message == "User not found":
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail=message
-            ) from err
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=message
-        ) from err
+        raise convert_service_error(err)
