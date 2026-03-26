@@ -71,11 +71,11 @@ async def get_restaurant_orders(restaurant_id: int, username: str):
     status_code=status.HTTP_200_OK,
 )
 async def get_restaurant_orders_by_status(
-    restaurant_id: int, username: str, status: str
+    restaurant_id: int, username: str, order_status: str
 ):
     try:
         orders = await RestaurantOwnerService.get_restaurant_orders_by_status(
-            restaurant_id, username, status
+            restaurant_id, username, order_status
         )
         return orders
     except ValueError as err:
@@ -127,11 +127,11 @@ async def get_restaurant_orders_by_date_range(
     status_code=status.HTTP_200_OK,
 )
 async def get_restaurant_orders_by_status_and_date(
-    restaurant_id: int, username: str, status: str, start_time: int, end_time: int
+    restaurant_id: int, username: str, order_status: str, start_time: int, end_time: int
 ):
     try:
         orders = await RestaurantOwnerService.get_restaurant_orders_by_status_and_date(
-            restaurant_id, username, status, start_time, end_time
+            restaurant_id, username, order_status, start_time, end_time
         )
         return orders
     except ValueError as err:
