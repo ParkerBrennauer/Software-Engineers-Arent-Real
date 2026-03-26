@@ -11,7 +11,7 @@ app.include_router(router)
 client = TestClient(app, raise_server_exceptions=False)
 
 def test_get_order_status():
-    mock_data = {"id": 1, "order_status": "in_transit"}
+    mock_data = {"id": 1, "order_status": "out for delivery"}
 
     with patch(
         "src.api.routers.order_router.OrderService.get_order_status",
@@ -67,7 +67,7 @@ def test_get_order_tracking():
         "order_id": "1",
         "restaurant": "Test Restaurant",
         "customer": "JohnDoe",
-        "order_status": "in_transit",
+        "order_status": "out for delivery",
         "current_location": "Downtown",
         "distance_km": 2.5,
         "estimated_time_minutes": 10,
