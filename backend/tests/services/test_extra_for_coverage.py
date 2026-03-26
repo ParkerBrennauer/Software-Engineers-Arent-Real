@@ -113,7 +113,7 @@ async def test_cancel_order(mock_update):
 async def test_mark_ready_for_pickup(mock_update):
     mock_update.return_value = {"id": 1, "order_status": "ready_for_pickup"}
 
-    result = await OrderService.mark_ready_for_pickup(1)
+    await OrderService.mark_ready_for_pickup(1)
 
     mock_update.assert_called_once_with(1, {"order_status": "ready_for_pickup"})
 
