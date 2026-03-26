@@ -1,19 +1,20 @@
 import json
 from typing import List, Optional
-import os
 import aiofiles
+
+from src.core.config import ITEMS_FILE
 
 
 class ItemRepo:
-    FILE_PATH = "backend/src/data/items.json"
+    FILE_PATH = ITEMS_FILE
 
     @classmethod
     async def read_all(cls) -> dict:
 
-        if not os.path.exists(cls.FILE_PATH):
+        if not cls.FILE_PATH.exists():
             return {}
 
-        async with aiofiles.open(cls.FILE_PATH, mode='r') as f:
+        async with aiofiles.open(cls.FILE_PATH, mode="r") as f:
             items = await f.read()
             if not items:
                 return {}
@@ -84,4 +85,3 @@ class ItemRepo:
                 results.append(value)
 
         return results
-
