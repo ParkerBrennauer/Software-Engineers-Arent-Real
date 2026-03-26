@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, Query, status
 
 from src.schemas.rating_schema import RatingCreate, RatingResponse
 from src.schemas.review_schema import (
@@ -13,25 +13,9 @@ from src.schemas.review_schema import (
     ReviewResponse,
 )
 from src.services.rating_service import RatingService
+from src.api.dependencies import convert_service_error
 
 router = APIRouter(prefix="/orders", tags=["ratings"])
-
-
-def _raise_rating_error(err: ValueError) -> None:
-    message = str(err)
-    if message in {
-        "Order not found",
-        "Restaurant not found",
-        "Restaurant not found for this order",
-    }:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=message,
-        ) from err
-    raise HTTPException(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        detail=message,
-    ) from err
 
 
 @router.post(
@@ -43,7 +27,7 @@ async def rate_order(order_id: str, payload: RatingCreate):
     try:
         return await RatingService.submit_rating(order_id, payload)
     except ValueError as err:
-        _raise_rating_error(err)
+        raise convert_service_error(err)
 
 
 @router.post(
@@ -55,7 +39,7 @@ async def review_order(order_id: str, payload: ReviewCreate):
     try:
         return await RatingService.submit_review(order_id, payload)
     except ValueError as err:
-        _raise_rating_error(err)
+        raise convert_service_error(err)
 
 
 @router.put(
@@ -67,7 +51,7 @@ async def edit_review(order_id: str, payload: ReviewEdit):
     try:
         return await RatingService.edit_order_review(order_id, payload)
     except ValueError as err:
-        _raise_rating_error(err)
+        raise convert_service_error(err)
 
 
 @router.delete(
@@ -79,7 +63,7 @@ async def delete_review(order_id: str):
     try:
         return await RatingService.delete_order_review(order_id)
     except ValueError as err:
-        _raise_rating_error(err)
+        raise convert_service_error(err)
 
 
 @router.get(
@@ -91,7 +75,7 @@ async def feedback_prompt(order_id: str):
     try:
         return await RatingService.check_feedback_prompt(order_id)
     except ValueError as err:
-        _raise_rating_error(err)
+        raise convert_service_error(err)
 
 
 @router.get(
@@ -106,7 +90,7 @@ async def filter_reviews(
     try:
         return await RatingService.get_filtered_reviews(restaurant_id, stars=stars)
     except ValueError as err:
-        _raise_rating_error(err)
+        raise convert_service_error(err)
 
 
 @router.post(
@@ -118,4 +102,4 @@ async def report_review(order_id: str, payload: ReportCreate):
     try:
         return await RatingService.submit_report(order_id, payload)
     except ValueError as err:
-        _raise_rating_error(err)
+        raise convert_service_error(err)

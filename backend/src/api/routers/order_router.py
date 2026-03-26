@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, status
 
 from src.schemas.order_tracking_schema import (
     OrderTrackingResponse,
@@ -6,22 +6,9 @@ from src.schemas.order_tracking_schema import (
 )
 from src.services.order_services import OrderService
 from src.services.order_tracking_service import OrderTrackingService
+from src.api.dependencies import convert_service_error
 
 router = APIRouter(prefix="/orders", tags=["orders"])
-
-
-def _raise_tracking_error(err: ValueError) -> None:
-    message = str(err)
-    if message == "Order not found":
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=message,
-        ) from err
-
-    raise HTTPException(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        detail=message,
-    ) from err
 
 
 @router.get("/{order_id}")
@@ -83,7 +70,7 @@ async def get_order_tracking(order_id: str):
     try:
         return await OrderTrackingService.get_tracking_info(order_id)
     except ValueError as err:
-        _raise_tracking_error(err)
+        raise convert_service_error(err)
 
 
 @router.post(
@@ -95,7 +82,7 @@ async def refresh_order_tracking(order_id: str):
     try:
         return await OrderTrackingService.refresh_tracking(order_id)
     except ValueError as err:
-        _raise_tracking_error(err)
+        raise convert_service_error(err)
 
 
 @router.patch(
@@ -113,4 +100,4 @@ async def update_order_tracking_status(
             tracking_update,
         )
     except ValueError as err:
-        _raise_tracking_error(err)
+        raise convert_service_error(err)
