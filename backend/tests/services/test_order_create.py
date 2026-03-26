@@ -25,6 +25,7 @@ async def test_create_order_success():
 
     async def fake_save_order(order_data: dict):
         captured["payload"] = order_data
+        order_data["id"] = 6
         return order_data
 
     async def fake_get_by_username(username: str):
