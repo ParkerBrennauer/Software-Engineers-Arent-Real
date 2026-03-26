@@ -1,6 +1,5 @@
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
-from typing import List
 from src.schemas.restaurant_schema import RestaurantCreate, RestaurantUpdate, RestaurantSearchAdvanced
 
 from src.services.restaurant_services import RestaurantService
