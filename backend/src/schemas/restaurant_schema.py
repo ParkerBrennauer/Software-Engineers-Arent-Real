@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 from pydantic import BaseModel
 from src.schemas.item_schema import ItemBase
 from src.schemas.order_schema import Order
@@ -22,3 +22,8 @@ class RestaurantUpdate(BaseModel):
     menu: Optional[list[ItemBase]] = None
     cuisine: Optional[str] = None
 
+
+class RestaurantSearchAdvanced(BaseModel):
+    query: str
+    filters: List[str] = []
+    sort: str = ""

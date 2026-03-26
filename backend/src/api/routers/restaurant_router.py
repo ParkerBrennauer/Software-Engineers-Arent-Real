@@ -1,6 +1,6 @@
-from typing import List
-from fastapi import APIRouter, status
+from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
+from typing import List
 from src.schemas.restaurant_schema import RestaurantCreate, RestaurantUpdate
 
 from src.services.restaurant_services import RestaurantService
@@ -13,7 +13,6 @@ class RestaurantSearchAdvancedBody(BaseModel):
     query: str
     filters: List[str] = []
     sort: str = ""
-
 
 @router.get("", status_code=status.HTTP_200_OK)
 async def get_all_restaurants():
@@ -28,7 +27,7 @@ async def search_restaurants(query: str):
 
 
 @router.post("/search/advanced", status_code=status.HTTP_200_OK)
-async def search_restaurants_advanced(body: RestaurantSearchAdvancedBody):
+async def search_restaurants_advanced(body: RestaurantSearchAdvanced):
     results = await RestaurantService.get_restaurants_search_advance(
         body.query, body.filters, body.sort
     )
@@ -61,4 +60,11 @@ async def update_restaurant(restaurant_id: int, restaurant_in: RestaurantUpdate)
         )
         return updated
     except ValueError as err:
-        raise convert_service_error(err)
+        message = str(err)
+        if message == "Restaurant not found":
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail=message
+            ) from err
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=message
+        ) from err
