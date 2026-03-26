@@ -103,7 +103,7 @@ async def test_get_order_status_non_existent(mock_get):
 async def test_cancel_order(mock_update):
     mock_update.return_value = {"id": 1, "order_status": "cancelled"}
 
-    result = await OrderService.cancel_order(1)
+    await OrderService.cancel_order(1)
 
     mock_update.assert_called_once_with(1, {"order_status": "cancelled"})
 
