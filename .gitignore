@@ -16,3 +16,11 @@
 .github\.vscode\pylintrc
 
 .github/.vscode/pylintrc
+
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
