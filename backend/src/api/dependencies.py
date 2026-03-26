@@ -18,7 +18,7 @@ def setup_exception_handlers(app: FastAPI) -> None:
         )
 
 
-def convert_service_error(err: ValueError, default_status: int = 404) -> AppException:
+def convert_service_error(err: ValueError) -> AppException:
     message = str(err)
 
     if message in {
