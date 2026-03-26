@@ -70,7 +70,7 @@ def test_create_restaurant_success(monkeypatch):
     assert data["cuisine"] == "Thai"
 
 
-def test_create_restaurant_returns_400_when_already_exists(monkeypatch):
+def test_create_restaurant_returns_exists(monkeypatch):
     async def fake_create_restaurant(_restaurant_in):
         raise ValueError("Restaurant already exists")
 
@@ -104,7 +104,7 @@ def test_create_restaurant_returns_400_when_already_exists(monkeypatch):
         },
     )
 
-    assert response.status_code == 400
+    assert response.status_code == 409
     assert response.json()["detail"] == "Restaurant already exists"
 
 
@@ -174,7 +174,7 @@ def test_update_restaurant_success(monkeypatch):
     assert data["cuisine"] == "Thai"
 
 
-def test_update_restaurant_returns_404_when_not_found(monkeypatch):
+def test_update_restaurant_returns_not_found(monkeypatch):
     async def fake_update_restaurant(_restaurant_id: int, _restaurant_in):
         raise ValueError("Restaurant not found")
 
@@ -212,7 +212,7 @@ def test_update_restaurant_returns_404_when_not_found(monkeypatch):
     assert response.json()["detail"] == "Restaurant not found"
 
 
-def test_update_restaurant_returns_400_for_other_value_error(monkeypatch):
+def test_update_restaurant_returns_value_error(monkeypatch):
     async def fake_update_restaurant(_restaurant_id: int, _restaurant_in):
         raise ValueError("Invalid menu data")
 
