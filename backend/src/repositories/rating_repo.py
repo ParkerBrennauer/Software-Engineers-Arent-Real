@@ -1,16 +1,15 @@
 import json
-from pathlib import Path
 from typing import Any
 
 import aiofiles
 
+from src.core.config import REVIEWS_FILE, RESTAURANTS_FILE, REPORTS_FILE
+
 
 class RatingRepo:
-    FILE_PATH = Path(__file__).resolve().parent.parent / "data" / "reviews.json"
-    RESTAURANTS_FILE_PATH = (
-        Path(__file__).resolve().parent.parent / "data" / "restaurants.json"
-    )
-    REPORTS_FILE_PATH = Path(__file__).resolve().parent.parent / "data" / "reports.json"
+    FILE_PATH = REVIEWS_FILE
+    RESTAURANTS_FILE_PATH = RESTAURANTS_FILE
+    REPORTS_FILE_PATH = REPORTS_FILE
 
     @classmethod
     async def read_all(cls) -> dict[str, dict[str, Any]]:
