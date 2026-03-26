@@ -1,18 +1,12 @@
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel
 from typing import List
-from src.schemas.restaurant_schema import RestaurantCreate, RestaurantUpdate
+from src.schemas.restaurant_schema import RestaurantCreate, RestaurantUpdate, RestaurantSearchAdvanced
 
 from src.services.restaurant_services import RestaurantService
 from src.api.dependencies import convert_service_error
 
 router = APIRouter(prefix="/restaurants", tags=["restaurants"])
-
-
-class RestaurantSearchAdvancedBody(BaseModel):
-    query: str
-    filters: List[str] = []
-    sort: str = ""
 
 @router.get("", status_code=status.HTTP_200_OK)
 async def get_all_restaurants():
