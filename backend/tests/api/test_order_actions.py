@@ -10,6 +10,8 @@ def test_customer():
         "username": "test_customer",
         "password": "password123",
         "role": "customer",
+        "email": "test@test.com",
+        "name": "test_customer_name",
         "payment_type": "credit card",
         "payment_details": "1234567812345678"
     }

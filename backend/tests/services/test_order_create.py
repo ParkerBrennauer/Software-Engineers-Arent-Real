@@ -1,4 +1,5 @@
 import pytest
+from backend.src.repositories.user_repo import UserRepo
 from src.schemas import order_schema
 from src.services import OrderService
 from src.repositories import OrderRepo
@@ -26,7 +27,15 @@ async def test_create_order_success():
         captured["payload"] = order_data
         return order_data
 
+    async def fake_get_by_username(username: str):
+        return {
+            "id": 1,
+            "username": username,
+            "role": "customer"
+        }
+
     monkeypatch = pytest.MonkeyPatch()
+    monkeypatch.setattr(UserRepo, "get_by_username", fake_get_by_username)
     monkeypatch.setattr(OrderRepo, "get_largest_order_id", fake_get_largest_order_id)
     monkeypatch.setattr(OrderRepo, "save_order", fake_save_order)
 

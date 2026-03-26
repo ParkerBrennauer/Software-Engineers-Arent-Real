@@ -73,10 +73,11 @@ class OrderService:
 
     @staticmethod
     async def get_order_status(order_id: int):
-        existing_order = await OrderRepo.get_order_status(order_id)
+        existing_order = await OrderRepo.get_order(order_id)
 
         if existing_order is None:
             raise ValueError("Order not found")
+
         return existing_order
 
     @staticmethod
