@@ -1,10 +1,7 @@
-"""Centralized configuration for data file paths."""
 from pathlib import Path
 
-# Base data directory
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 
-# Individual file paths
 USERS_FILE = DATA_DIR / "users.json"
 ITEMS_FILE = DATA_DIR / "items.json"
 ORDERS_FILE = DATA_DIR / "orders.json"
