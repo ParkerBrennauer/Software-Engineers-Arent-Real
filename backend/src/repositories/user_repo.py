@@ -11,19 +11,23 @@ class UserRepo:
     async def read_all(cls) -> List[dict]:
 
         if not os.path.exists(cls.FILE_PATH):
-            return []
+            return {}
 
         async with aiofiles.open(cls.FILE_PATH, mode='r') as f:
             users = await f.read()
-            return json.loads(users) if users else []
+            return json.loads(users) if users else {}
 
     @classmethod
     async def save_user(cls, user_data: dict) -> dict:
         users = await cls.read_all()
 
-        new_id = max((u.get("id", 0) for u in users), default=0) + 1
+        if not isinstance(users, dict):
+            users = {}
+
+        new_id = max((int(user_id) for user_id in users.keys()), default=0) + 1
         user_data["id"] = new_id
-        users.append(user_data)
+
+        users[str(new_id)] = user_data
 
         async with aiofiles.open(cls.FILE_PATH, mode='w') as f:
             await f.write(json.dumps(users, indent=4))
@@ -34,7 +38,7 @@ class UserRepo:
     async def get_by_username(cls, username: str) -> Optional[dict]:
         users = await cls.read_all()
 
-        for user in users:
+        for user in users.values():
             if user["username"] == username:
                 return user
         return None
