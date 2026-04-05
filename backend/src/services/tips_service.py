@@ -1,4 +1,5 @@
 from src.services.driver_service import DriverService
+from src.services.order_services import OrderService
 
 class TipService:
 
@@ -20,19 +21,23 @@ class TipService:
         raise ValueError("Must provide tip_percent or tip_amount")
 
     @staticmethod
-    async def apply_tip(order_id: int, tip_percent: float):
-        from src.services.order_services import OrderService
+    async def apply_tip(order_id: int, tip_percent: float = None, tip_amount: float = None):
 
         order = await OrderService.get_order_status(order_id)
 
+        if not order:
+            raise ValueError("Order not found")
+
         subtotal = order["cost"]
-        tip_amount = TipService.calculate_tip(subtotal, tip_percent)
+        final_tip = TipService.calculate_tip(
+            subtotal, tip_percent=tip_percent, tip_amount=tip_amount
+            )
 
         updated = await OrderService.update_order(
             order_id,
             {
                 "tip_percent": tip_percent,
-                "tip_amount": tip_amount
+                "tip_amount": final_tip
             }
         )
 
