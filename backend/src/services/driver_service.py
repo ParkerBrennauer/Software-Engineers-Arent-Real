@@ -17,11 +17,16 @@ class DriverService():
 
         if tip <= 0:
             raise ValueError("No tip to pay out")
+        
+        if order.get("tip paid"):
+            raise ValueError("Tip already paid")
 
         driver = order.get("driver")
 
         if not driver:
             raise ValueError("No driver assigned to order")
+
+        await OrderService.update_order(order_id, {"tip_paid": True})
 
         return {
             "status": "paid",
