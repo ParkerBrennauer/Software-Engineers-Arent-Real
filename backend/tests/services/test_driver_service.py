@@ -43,3 +43,23 @@ async def test_tip_driver_already_paid(mock_order_service):
 
     with pytest.raises(ValueError):
         await DriverService.tip_driver(1)
+
+@pytest.mark.asyncio
+@patch("src.services.driver_service.OrderService")
+async def test_tip_driver_no_driver(mock_order_service):
+    mock_order_service.get_order_status = AsyncMock(return_value={
+        "tip_amount": 10,
+        "driver": None,
+        "tip_paid": False
+    })
+
+    with pytest.raises(ValueError):
+        await DriverService.tip_driver(1)
+
+@pytest.mark.asyncio
+@patch("src.services.driver_service.OrderService")
+async def test_tip_driver_order_not_found(mock_order_service):
+    mock_order_service.get_order_status = AsyncMock(return_value=None)
+
+    with pytest.raises(ValueError):
+        await DriverService.tip_driver(1)
