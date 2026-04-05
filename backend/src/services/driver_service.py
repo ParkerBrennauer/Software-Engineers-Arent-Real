@@ -17,7 +17,7 @@ class DriverService():
 
         if tip <= 0:
             raise ValueError("No tip to pay out")
-        
+
         if order.get("tip paid"):
             raise ValueError("Tip already paid")
 

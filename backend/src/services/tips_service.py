@@ -37,7 +37,8 @@ class TipService:
             order_id,
             {
                 "tip_percent": tip_percent,
-                "tip_amount": final_tip
+                "tip_amount": final_tip,
+                "tip_paid": False
             }
         )
 
