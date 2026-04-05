@@ -41,6 +41,9 @@ async def test_tip_driver_already_paid(mock_order_service):
         "tip_paid": True
     })
 
+    mock_order_service.update_order = AsyncMock()
+    mock_order_service.update_order.assert_not_called()
+
     with pytest.raises(ValueError):
         await DriverService.tip_driver(1)
 
