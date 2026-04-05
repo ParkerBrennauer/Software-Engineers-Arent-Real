@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import AsyncMock, patch
-from backend.src.services.discount_services import DiscountServices
+from src.services.discount_services import DiscountServices
 
 
 @pytest.mark.asyncio
