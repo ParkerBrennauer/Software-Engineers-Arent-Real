@@ -1,3 +1,5 @@
+from src.services.driver_service import DriverService
+
 class TipService:
 
     @staticmethod
@@ -23,5 +25,7 @@ class TipService:
                 "tip_amount": tip_amount
             }
         )
+
+        await DriverService.tip_driver(order_id)
 
         return updated

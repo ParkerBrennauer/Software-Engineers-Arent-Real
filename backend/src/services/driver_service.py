@@ -1,11 +1,11 @@
 from src.schemas.order_schema import Order
-from src.repositories.order_repo import OrderRepo
+from src.services.order_services import OrderService
 
 class DriverService():
 
     @staticmethod
     async def tip_driver(order_id: int):
-        order = await OrderRepo.get_order(order_id)
+        order = await OrderService.get_order_status(order_id)
 
         if not order:
             raise ValueError("Order not found")
@@ -18,6 +18,13 @@ class DriverService():
         if tip <= 0:
             raise ValueError("No tip to pay out")
 
-        print(f"Paying driver {order.get('driver')} tip: {tip}")
+        driver = order.get("driver")
 
-        return {"status": "paid", "driver": order.get("driver"), "amount": tip}
+        if not driver:
+            raise ValueError("No driver assigned to order")
+
+        return {
+            "status": "paid",
+            "driver": driver,
+            "amount": tip
+        }
