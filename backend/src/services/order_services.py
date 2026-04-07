@@ -190,3 +190,17 @@ class OrderService:
                 result.append(Order(**order_data))
 
         return result
+
+    @staticmethod
+    async def get_previous_orders_by_user(username: str):
+        orders = await OrderRepo._read_raw()
+        results = []
+
+        if not username:
+            raise ValueError("No username submitted")
+
+        for order in orders.values():
+            if (order["customer"] == username):
+                results.append(order)
+
+        return results

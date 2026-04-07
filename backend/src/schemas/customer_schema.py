@@ -1,5 +1,6 @@
 from pydantic import field_validator
 from src.schemas.user_schema import UserRegister, UserUpdate, UserRole
+from src.schemas.item_schema import ItemBase
 
 
 class CustomerRegister(UserRegister):
