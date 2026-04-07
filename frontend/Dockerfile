@@ -1,5 +1,12 @@
-#Switch to node.js docker template once frontend is implemented
-FROM alpine:latest
-LABEL Name=softwareengineersarentreal Version=0.0.1
-RUN apk add --no-cache fortune
-ENTRYPOINT ["sh", "-c", "fortune -a | cat"]
+FROM node:22-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install
+
+COPY . .
+
+EXPOSE 3000
+
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0", "--port", "3000"]
