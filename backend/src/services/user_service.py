@@ -31,7 +31,20 @@ class UserService:
         if not user.get("is_active"):
             raise ValueError("User account is inactive")
 
+        update_data = {
+            "is_logged_in": True,
+            "last_login": datetime.now(timezone.utc).isoformat(),
+        }
+        await UserRepo.update_by_username(username, update_data)
+        user.update(update_data)
+
         return UserInternal.model_validate(user)
+
+    @staticmethod
+    async def logout_user(username: str) -> bool:
+        update_data = {"is_logged_in": False}
+        updated = await UserRepo.update_by_username(username, update_data)
+        return bool(updated)
 
     @staticmethod
     async def create_user(user_in: UserRegister) -> dict:
