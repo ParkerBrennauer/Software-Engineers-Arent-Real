@@ -22,7 +22,7 @@ async def apply_discount(payload: DiscountApply):
 async def create_discount(payload: DiscountCreate):
     result = await DiscountServices.createDiscount(
         payload.discount_rate,
-        payload.discount_name,
+        payload.discount_code,
         payload.restaurant_id
     )
 

@@ -13,7 +13,7 @@ def test_create_discount_success(mock_create_discount):
         "/discounts/",
         json={
             "discount_rate": 0.10,
-            "discount_name": "SAVE10",
+            "discount_code": "SAVE10",
             "restaurant_id": 1
         }
     )
@@ -31,7 +31,7 @@ def test_create_discount_invalid(mock_create_discount):
         "/discounts/",
         json={
             "discount_rate": 0.10,
-            "discount_name": "SAVE10",
+            "discount_code": "SAVE10",
             "restaurant_id": 1
         }
     )

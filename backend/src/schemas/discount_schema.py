@@ -3,7 +3,7 @@ from pydantic import BaseModel
 
 class DiscountCreate(BaseModel):
     discount_rate: float
-    discount_name: str
+    discount_code: str
     restaurant_id: int
 
 
