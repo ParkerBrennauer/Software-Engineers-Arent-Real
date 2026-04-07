@@ -9,14 +9,14 @@ class RestaurantRepo:
     FILE_PATH = RESTAURANTS_FILE
 
     @classmethod
-    async def read_all(cls) -> List[dict]:
+    async def read_all(cls) -> dict:
 
         if not cls.FILE_PATH.exists():
             return []
 
         async with aiofiles.open(cls.FILE_PATH, mode="r") as f:
             restaurants = await f.read()
-            return json.loads(restaurants) if restaurants else []
+            return json.loads(restaurants) if restaurants else {}
 
     @classmethod
     async def write_restaurant(cls, data: dict) -> None:
@@ -30,39 +30,33 @@ class RestaurantRepo:
         if restaurant_data.get("restaurant_id") is not None:
             new_id = restaurant_data["restaurant_id"]
         else:
-            new_id = max((r.get("id", 0) for r in restaurants), default=0) + 1
+            new_id = max((int(key) for key in restaurants.keys()), default=0) + 1
 
-        restaurant_data["id"] = new_id
-        restaurants.append(restaurant_data)
+        restaurant_data["restaurant_id"] = new_id
+        restaurants[str(new_id)] = restaurant_data
 
         await cls.write_restaurant(restaurants)
-
         return restaurant_data
 
     @classmethod
-    async def get_restaurant_by_id(cls) -> dict:
-        if not cls.FILE_PATH.exists():
-            return {}
+    async def get_restaurant_by_id(cls, restaurant_id: int) -> Optional[dict]:
+        restaurants = await cls.read_all()
+        key = str(restaurant_id)
 
-        async with aiofiles.open(cls.FILE_PATH, mode="r") as f:
-            items = await f.read()
-            if not items:
-                return {}
+        if key not in restaurants:
+            return None
 
-            return json.loads(items) if items else {}
+        return restaurants.get(key, {})
 
     @classmethod
-    async def update_by_restaurant_id(
-        cls, restaurant_id: int, updates: dict
-    ) -> Optional[dict]:
+    async def update_by_restaurant_id(cls, restaurant_id: int, updates: dict) -> Optional[dict]:
         restaurants = await cls.read_all()
+        key = str(restaurant_id)
 
-        for index, r in enumerate(restaurants):
-            if r.get("restaurant_id") == restaurant_id:
-                restaurants[index].update(updates)
+        if key not in restaurants:
+            return None
 
-                await cls.write_restaurant(restaurants)
+        restaurants[key].update(updates)
+        await cls.write_restaurant(restaurants)
 
-                return restaurants[index]
-
-        return None
+        return restaurants[key]

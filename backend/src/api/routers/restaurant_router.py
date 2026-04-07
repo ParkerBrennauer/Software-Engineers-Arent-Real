@@ -15,6 +15,7 @@ async def get_all_restaurants():
 
 @router.get("/search/{query}", status_code=status.HTTP_200_OK)
 async def search_restaurants(query: str):
+    
     results = await RestaurantService.get_restaurants_search(query)
     return results
 
