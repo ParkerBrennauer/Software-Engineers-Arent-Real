@@ -1,5 +1,3 @@
-from urllib import response
-
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from unittest.mock import AsyncMock, patch

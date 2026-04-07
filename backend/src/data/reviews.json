@@ -13,7 +13,8 @@
   "food_freshness": 3,
   "packaging_quality": 2,
   "food_condition": "Fair",
-  "customer_satisfaction": 5
+  "customer_satisfaction": 5,
+  "submitted_stars": 1
  },
  "5a6006W": {
   "customer_rating": 5,

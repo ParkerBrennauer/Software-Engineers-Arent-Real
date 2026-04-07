@@ -86,6 +86,16 @@ export async function createOrder(orderPayload) {
   });
 }
 
+export async function applyDiscountCode({ orderTotal, discountCode }) {
+  return request('/discounts/apply', {
+    method: 'POST',
+    body: JSON.stringify({
+      order_total: orderTotal,
+      discount_code: discountCode,
+    }),
+  });
+}
+
 export async function getOrderStatus(orderId) {
   return request(`/orders/${orderId}`);
 }

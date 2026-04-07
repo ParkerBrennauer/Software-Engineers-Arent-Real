@@ -59,6 +59,22 @@ async def login_user(body: UserLogin):
         raise convert_service_error(err)
 
 
+@router.post("/logout", status_code=status.HTTP_200_OK)
+async def logout_user(username: str):
+    success = await UserService.logout_user(username)
+    if not success:
+        return {"message": "User not found or log out failed"}
+    return {"message": "Successfully logged out"}
+
+
+@router.get("/current-user", status_code=status.HTTP_200_OK)
+async def get_current_user():
+    username = UserService.get_current_user()
+    if not username:
+        return {"message": "No user currently logged in", "username": None}
+    return {"message": "User is logged in", "username": username}
+
+
 @router.patch(
     "/{username}", response_model=UserResponse, status_code=status.HTTP_200_OK
 )
