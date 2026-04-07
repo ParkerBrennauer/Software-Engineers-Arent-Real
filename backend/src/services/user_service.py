@@ -177,3 +177,11 @@ class UserService:
             raise ValueError("User not found")
 
         return UserInternal.model_validate(updated_user)
+
+    @staticmethod
+    async def get_addresses(username: str) -> list[str]:
+        user = await UserRepo.get_by_username(username)
+        if not user:
+            raise ValueError("User not found")
+
+        return user.get("saved_addresses", [])
