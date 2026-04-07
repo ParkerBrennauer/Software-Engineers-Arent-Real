@@ -61,22 +61,11 @@ async def test_calculate_order_cost_empty_list(mock_get_order):
 
 @pytest.mark.asyncio
 @patch("src.repositories.order_repo.OrderRepo.get_order", new_callable=AsyncMock)
-@patch("src.repositories.order_repo.OrderRepo.update_order", new_callable=AsyncMock)
-async def test_update_order_with_non_existent_order(mock_update, mock_get):
+async def test_get_order_status_non_existent(mock_get):
     mock_get.return_value = None
-    mock_update.return_value = mock_update.return_value = {
-        "id": 999,
-        "restaurant": "New",
-        "locked": False,
-        "order_status": "pending",
-        "payment_status": "unpaid",
-        "items": [],
-        "cost": 0,
-    }
 
-    result = await OrderService.update_order(999, {"restaurant": "New"})
-    assert result.id == 999
-    assert result.order_status == "pending"
+    with pytest.raises(ValueError, match="Order not found"):
+        await OrderService.get_order_status(999)
 
 
 @pytest.mark.asyncio
