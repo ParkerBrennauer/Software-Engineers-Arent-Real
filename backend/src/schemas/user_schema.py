@@ -50,3 +50,8 @@ class UserTwoFactorResponse(BaseModel):
 class UserResponse(BaseModel):
     id: int
     requires_2fa: bool = False
+    saved_addresses: list[str] = []
+
+
+class AddressAdd(BaseModel):
+    address: str

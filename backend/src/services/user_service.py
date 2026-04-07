@@ -159,3 +159,21 @@ class UserService:
         )
 
         return True
+
+    @staticmethod
+    async def add_address(username: str, address: str) -> dict:
+        user = await UserRepo.get_by_username(username)
+        if not user:
+            raise ValueError("User not found")
+
+        addresses = user.get("saved_addresses", [])
+        if address not in addresses:
+            addresses.append(address)
+
+        updated_user = await UserRepo.update_by_username(
+            username, {"saved_addresses": addresses}
+        )
+        if not updated_user:
+            raise ValueError("User not found")
+
+        return UserInternal.model_validate(updated_user)
