@@ -14,6 +14,8 @@ from src.schemas.driver_schema import DriverRegister
 from src.services.user_service import UserService
 from src.api.dependencies import convert_service_error
 
+from src.services.customer_service import CustomerService
+
 router = APIRouter(prefix="/users", tags=["users"])
 
 
