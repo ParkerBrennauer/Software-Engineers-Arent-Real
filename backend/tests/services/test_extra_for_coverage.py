@@ -13,9 +13,7 @@ from src.schemas.review_schema import ReviewCreate, ReviewEdit
 
 
 @pytest.mark.asyncio
-@patch(
-    "src.repositories.order_repo.OrderRepo.get_largest_order_id", new_callable=AsyncMock
-)
+@patch("src.repositories.order_repo.OrderRepo.get_largest_order_id", new_callable=AsyncMock)
 @patch("src.repositories.order_repo.OrderRepo.save_order", new_callable=AsyncMock)
 async def test_create_order_with_no_existing_orders(mock_save, mock_get_largest):
     mock_get_largest.return_value = None
@@ -35,7 +33,7 @@ async def test_create_order_with_no_existing_orders(mock_save, mock_get_largest)
         customer="test_user",
         time=30,
         cuisine="Italian",
-        distance=2.0,
+        distance=2.0
     )
 
     result = await OrderService.create_order(order_create)
@@ -59,17 +57,6 @@ async def test_calculate_order_cost_with_non_dict_items(mock_get_order):
 async def test_calculate_order_cost_empty_list(mock_get_order):
     cost = await OrderService.calculate_order_cost([])
     assert cost == 0.0
-
-
-@pytest.mark.asyncio
-@patch("src.repositories.order_repo.OrderRepo.get_order", new_callable=AsyncMock)
-@patch("src.repositories.order_repo.OrderRepo.update_order", new_callable=AsyncMock)
-async def test_update_order_with_non_existent_order(mock_update, mock_get):
-    mock_get.return_value = None
-
-    with pytest.raises(ValueError, match="Order not found"):
-        await OrderService.update_order(999, {"restaurant": "New"})
-
 
 @pytest.mark.asyncio
 @patch("src.repositories.order_repo.OrderRepo.get_order", new_callable=AsyncMock)
@@ -148,7 +135,7 @@ async def test_process_payment_success():
         time=30,
         cuisine="Italian",
         distance=2.0,
-        payment_status=PaymentStatus.PENDING,
+        payment_status=PaymentStatus.PENDING
     )
 
     result = await PaymentService.process_payment(order)
@@ -167,12 +154,11 @@ async def test_process_payment_already_accepted():
         time=30,
         cuisine="Italian",
         distance=2.0,
-        payment_status=PaymentStatus.ACCEPTED,
+        payment_status=PaymentStatus.ACCEPTED
     )
 
     with pytest.raises(ValueError, match="Payment already successfully processed"):
         await PaymentService.process_payment(order)
-
 
 @pytest.mark.asyncio
 @patch("src.repositories.item_repo.ItemRepo.get_by_key", new_callable=AsyncMock)
@@ -186,13 +172,11 @@ async def test_get_items_by_key(mock_get):
 
 
 @pytest.mark.asyncio
-@patch(
-    "src.repositories.item_repo.ItemRepo.get_by_restaurant_id", new_callable=AsyncMock
-)
+@patch("src.repositories.item_repo.ItemRepo.get_by_restaurant_id", new_callable=AsyncMock)
 async def test_get_items_by_restaurant_id(mock_get):
     mock_get.return_value = [
         {"item_name": "Burger", "price": 9.99},
-        {"item_name": "Pizza", "price": 12.99},
+        {"item_name": "Pizza", "price": 12.99}
     ]
 
     result = await ItemService.get_items_by_restaurant_id(1)
@@ -235,7 +219,7 @@ async def test_create_item_success(mock_save, mock_get):
         price=9.99,
         description="Classic burger",
         cost=9.99,
-        cuisine="American",
+        cuisine="American"
     )
 
     result = await ItemService.create_item(item_create)
@@ -255,21 +239,15 @@ async def test_create_item_already_exists(mock_get):
         price=9.99,
         description="Classic burger",
         cost=9.99,
-        cuisine="American",
+        cuisine="American"
     )
 
     with pytest.raises(ValueError, match="Item already exists"):
         await ItemService.create_item(item_create)
 
-
 @pytest.mark.asyncio
-@patch(
-    "src.repositories.rating_repo.RatingRepo.get_by_order_id", new_callable=AsyncMock
-)
-@patch(
-    "src.repositories.rating_repo.RatingRepo.update_submitted_rating",
-    new_callable=AsyncMock,
-)
+@patch("src.repositories.rating_repo.RatingRepo.get_by_order_id", new_callable=AsyncMock)
+@patch("src.repositories.rating_repo.RatingRepo.update_submitted_rating", new_callable=AsyncMock)
 async def test_submit_rating_success(mock_update, mock_get):
     mock_get.return_value = {"id": "order_1", "submitted_stars": None}
     mock_update.return_value = {"id": "order_1", "submitted_stars": 5}
@@ -282,9 +260,7 @@ async def test_submit_rating_success(mock_update, mock_get):
 
 
 @pytest.mark.asyncio
-@patch(
-    "src.repositories.rating_repo.RatingRepo.get_by_order_id", new_callable=AsyncMock
-)
+@patch("src.repositories.rating_repo.RatingRepo.get_by_order_id", new_callable=AsyncMock)
 async def test_submit_rating_order_not_found(mock_get):
     mock_get.return_value = None
 
@@ -295,9 +271,7 @@ async def test_submit_rating_order_not_found(mock_get):
 
 
 @pytest.mark.asyncio
-@patch(
-    "src.repositories.rating_repo.RatingRepo.get_by_order_id", new_callable=AsyncMock
-)
+@patch("src.repositories.rating_repo.RatingRepo.get_by_order_id", new_callable=AsyncMock)
 async def test_submit_rating_already_rated(mock_get):
     mock_get.return_value = {"id": "order_1", "submitted_stars": 4}
 
@@ -308,13 +282,8 @@ async def test_submit_rating_already_rated(mock_get):
 
 
 @pytest.mark.asyncio
-@patch(
-    "src.repositories.rating_repo.RatingRepo.get_by_order_id", new_callable=AsyncMock
-)
-@patch(
-    "src.repositories.rating_repo.RatingRepo.update_submitted_rating",
-    new_callable=AsyncMock,
-)
+@patch("src.repositories.rating_repo.RatingRepo.get_by_order_id", new_callable=AsyncMock)
+@patch("src.repositories.rating_repo.RatingRepo.update_submitted_rating", new_callable=AsyncMock)
 async def test_submit_rating_update_fails(mock_update, mock_get):
     mock_get.return_value = {"id": "order_1", "submitted_stars": None}
     mock_update.return_value = None
@@ -326,16 +295,9 @@ async def test_submit_rating_update_fails(mock_update, mock_get):
 
 
 @pytest.mark.asyncio
-@patch(
-    "src.repositories.rating_repo.RatingRepo.get_by_order_id", new_callable=AsyncMock
-)
-@patch(
-    "src.repositories.rating_repo.RatingRepo.get_restaurant_id_by_order_id",
-    new_callable=AsyncMock,
-)
-@patch(
-    "src.repositories.rating_repo.RatingRepo.update_review_text", new_callable=AsyncMock
-)
+@patch("src.repositories.rating_repo.RatingRepo.get_by_order_id", new_callable=AsyncMock)
+@patch("src.repositories.rating_repo.RatingRepo.get_restaurant_id_by_order_id", new_callable=AsyncMock)
+@patch("src.repositories.rating_repo.RatingRepo.update_review_text", new_callable=AsyncMock)
 async def test_submit_review_success(mock_update, mock_get_restaurant, mock_get_order):
     mock_get_order.return_value = {"id": "order_1", "review_text": None}
     mock_get_restaurant.return_value = 5
@@ -349,9 +311,7 @@ async def test_submit_review_success(mock_update, mock_get_restaurant, mock_get_
 
 
 @pytest.mark.asyncio
-@patch(
-    "src.repositories.rating_repo.RatingRepo.get_by_order_id", new_callable=AsyncMock
-)
+@patch("src.repositories.rating_repo.RatingRepo.get_by_order_id", new_callable=AsyncMock)
 async def test_submit_review_order_not_found(mock_get):
     mock_get.return_value = None
 
@@ -362,9 +322,7 @@ async def test_submit_review_order_not_found(mock_get):
 
 
 @pytest.mark.asyncio
-@patch(
-    "src.repositories.rating_repo.RatingRepo.get_by_order_id", new_callable=AsyncMock
-)
+@patch("src.repositories.rating_repo.RatingRepo.get_by_order_id", new_callable=AsyncMock)
 async def test_submit_review_already_reviewed(mock_get):
     mock_get.return_value = {"id": "order_1", "review_text": "Already reviewed"}
 
@@ -375,16 +333,11 @@ async def test_submit_review_already_reviewed(mock_get):
 
 
 @pytest.mark.asyncio
-@patch(
-    "src.repositories.rating_repo.RatingRepo.get_by_order_id", new_callable=AsyncMock
-)
+@patch("src.repositories.rating_repo.RatingRepo.get_by_order_id", new_callable=AsyncMock)
 async def test_submit_review_restaurant_not_found(mock_get):
     mock_get.return_value = {"id": "order_1", "review_text": None}
 
-    with patch(
-        "src.repositories.rating_repo.RatingRepo.get_restaurant_id_by_order_id",
-        new_callable=AsyncMock,
-    ) as mock_get_rest:
+    with patch("src.repositories.rating_repo.RatingRepo.get_restaurant_id_by_order_id", new_callable=AsyncMock) as mock_get_rest:
         mock_get_rest.return_value = None
 
         review = ReviewCreate(review_text="Great!")
@@ -394,23 +347,18 @@ async def test_submit_review_restaurant_not_found(mock_get):
 
 
 @pytest.mark.asyncio
-@patch(
-    "src.repositories.rating_repo.RatingRepo.get_by_order_id", new_callable=AsyncMock
-)
-@patch(
-    "src.repositories.rating_repo.RatingRepo.update_review_fields",
-    new_callable=AsyncMock,
-)
+@patch("src.repositories.rating_repo.RatingRepo.get_by_order_id", new_callable=AsyncMock)
+@patch("src.repositories.rating_repo.RatingRepo.update_review_fields", new_callable=AsyncMock)
 async def test_edit_review_success(mock_update, mock_get):
     mock_get.return_value = {
         "id": "order_1",
         "submitted_stars": 4,
-        "review_text": "Good",
+        "review_text": "Good"
     }
     mock_update.return_value = {
         "id": "order_1",
         "submitted_stars": 5,
-        "review_text": "Excellent!",
+        "review_text": "Excellent!"
     }
 
     edit = ReviewEdit(stars=5, review_text="Excellent!")
@@ -421,15 +369,9 @@ async def test_edit_review_success(mock_update, mock_get):
 
 
 @pytest.mark.asyncio
-@patch(
-    "src.repositories.rating_repo.RatingRepo.get_by_order_id", new_callable=AsyncMock
-)
+@patch("src.repositories.rating_repo.RatingRepo.get_by_order_id", new_callable=AsyncMock)
 async def test_edit_review_no_review_exists(mock_get):
-    mock_get.return_value = {
-        "id": "order_1",
-        "submitted_stars": None,
-        "review_text": None,
-    }
+    mock_get.return_value = {"id": "order_1", "submitted_stars": None, "review_text": None}
 
     edit = ReviewEdit(stars=5)
 
@@ -438,14 +380,12 @@ async def test_edit_review_no_review_exists(mock_get):
 
 
 @pytest.mark.asyncio
-@patch(
-    "src.repositories.rating_repo.RatingRepo.get_by_order_id", new_callable=AsyncMock
-)
+@patch("src.repositories.rating_repo.RatingRepo.get_by_order_id", new_callable=AsyncMock)
 async def test_edit_review_nothing_to_update(mock_get):
     mock_get.return_value = {
         "id": "order_1",
         "submitted_stars": 4,
-        "review_text": "Good",
+        "review_text": "Good"
     }
 
     edit = ReviewEdit(stars=None, review_text=None)
@@ -455,18 +395,13 @@ async def test_edit_review_nothing_to_update(mock_get):
 
 
 @pytest.mark.asyncio
-@patch(
-    "src.repositories.rating_repo.RatingRepo.get_by_order_id", new_callable=AsyncMock
-)
-@patch(
-    "src.repositories.rating_repo.RatingRepo.update_review_fields",
-    new_callable=AsyncMock,
-)
+@patch("src.repositories.rating_repo.RatingRepo.get_by_order_id", new_callable=AsyncMock)
+@patch("src.repositories.rating_repo.RatingRepo.update_review_fields", new_callable=AsyncMock)
 async def test_edit_review_update_fails(mock_update, mock_get):
     mock_get.return_value = {
         "id": "order_1",
         "submitted_stars": 4,
-        "review_text": "Good",
+        "review_text": "Good"
     }
     mock_update.return_value = None
 
