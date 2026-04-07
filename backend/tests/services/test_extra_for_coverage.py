@@ -58,16 +58,6 @@ async def test_calculate_order_cost_empty_list(mock_get_order):
     cost = await OrderService.calculate_order_cost([])
     assert cost == 0.0
 
-
-@pytest.mark.asyncio
-@patch("src.repositories.order_repo.OrderRepo.get_order", new_callable=AsyncMock)
-async def test_get_order_status_non_existent(mock_get):
-    mock_get.return_value = None
-
-    with pytest.raises(ValueError, match="Order not found"):
-        await OrderService.get_order_status(999)
-
-
 @pytest.mark.asyncio
 @patch("src.repositories.order_repo.OrderRepo.get_order", new_callable=AsyncMock)
 async def test_update_order_when_locked(mock_get):
@@ -101,8 +91,8 @@ async def test_lock_already_locked_order(mock_update, mock_get):
 async def test_get_order_status_non_existent(mock_get):
     mock_get.return_value = None
 
-    result = await OrderService.get_order_status(999)
-    assert result == {}
+    with pytest.raises(ValueError, match="Order not found"):
+        await OrderService.get_order_status(999)
 
 
 @pytest.mark.asyncio
