@@ -7,6 +7,7 @@ from src.schemas.user_schema import (
     UserTwoFactorResponse,
     UserPasswordReset,
     UserLogin,
+    AddressAdd,
 )
 from src.schemas.customer_schema import CustomerRegister
 from src.schemas.driver_schema import DriverRegister
@@ -121,5 +122,27 @@ async def reset_password(username: str, body: UserPasswordReset):
     try:
         await UserService.reset_password(username, body.code, body.new_password)
         return {"message": "Password reset successful"}
+    except ValueError as err:
+        raise convert_service_error(err)
+
+
+@router.post(
+    "/{username}/addresses", response_model=UserResponse, status_code=status.HTTP_200_OK
+)
+async def add_address(username: str, address_in: AddressAdd):
+    try:
+        updated_user = await UserService.add_address(username, address_in.address)
+        return updated_user
+    except ValueError as err:
+        raise convert_service_error(err)
+
+
+@router.get(
+    "/{username}/addresses", response_model=list[str], status_code=status.HTTP_200_OK
+)
+async def get_addresses(username: str):
+    try:
+        addresses = await UserService.get_addresses(username)
+        return addresses
     except ValueError as err:
         raise convert_service_error(err)
