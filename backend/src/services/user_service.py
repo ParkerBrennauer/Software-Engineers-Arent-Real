@@ -9,6 +9,8 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 class UserService:
+    _current_logged_in_user: str | None = None
+
     @staticmethod
     async def get_password_hash(password: str) -> str:
         return pwd_context.hash(password)
@@ -31,6 +33,16 @@ class UserService:
         if not user.get("is_active"):
             raise ValueError("User account is inactive")
 
+        if (
+            UserService._current_logged_in_user is not None
+            and UserService._current_logged_in_user != username
+        ):
+            raise ValueError(
+                f"Another user ({UserService._current_logged_in_user}) is already logged in."
+            )
+
+        UserService._current_logged_in_user = username
+
         update_data = {
             "is_logged_in": True,
             "last_login": datetime.now(timezone.utc).isoformat(),
@@ -42,9 +54,16 @@ class UserService:
 
     @staticmethod
     async def logout_user(username: str) -> bool:
+        if UserService._current_logged_in_user == username:
+            UserService._current_logged_in_user = None
+
         update_data = {"is_logged_in": False}
         updated = await UserRepo.update_by_username(username, update_data)
         return bool(updated)
+
+    @staticmethod
+    def get_current_user() -> str | None:
+        return UserService._current_logged_in_user
 
     @staticmethod
     async def create_user(user_in: UserRegister) -> dict:
