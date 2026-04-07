@@ -38,6 +38,7 @@ def convert_service_error(err: ValueError) -> AppException:
         "Username already exists",
         "Item already exists",
         "Restaurant already exists",
+        "Restaurant is already in favorites",
     }:
         return ConflictError(message)
 
