@@ -6,15 +6,14 @@ class RestaurantService:
     @staticmethod
     async def get_all_restaurants() -> list:
         restaurants = await RestaurantRepo.read_all()
-        return restaurants
+        return list(restaurants.values())
 
     @staticmethod
     async def get_restaurants_search(query: str) -> list:
         restaurants = await RestaurantRepo.read_all()
         results = []
 
-        for restaurant in restaurants:
-            # will change to name once added
+        for restaurant in restaurants.values():
             if query in str(restaurant["restaurant_id"]):
                 results.append(restaurant)
         return results
@@ -25,7 +24,7 @@ class RestaurantService:
         query = query.casefold()
         results = []
 
-        for restaurant in restaurants:
+        for restaurant in restaurants.values():
             # will update with more filters once added
             attributes = [restaurant["cuisine"]]
             matches_filter = False
@@ -56,13 +55,7 @@ class RestaurantService:
     async def get_restaurant_menu(restaurant_id: int) -> list:
         restaurants = await RestaurantRepo.read_all()
 
-        exists = False
-        for r in restaurants:
-            if r.get("restaurant_id") == restaurant_id:
-                exists = True
-                break
-
-        if not exists:
+        if str(restaurant_id) not in restaurants:
             raise ValueError("Restaurant not found")
 
         menu = await ItemService.get_items_by_restaurant_id(restaurant_id)
@@ -84,10 +77,9 @@ class RestaurantService:
             exclude_unset=True, exclude_none=True)
 
         if not update_data:
-            restaurants = await RestaurantRepo.read_all()
-            for r in restaurants:
-                if r.get("restaurant_id") == restaurant_id:
-                    return r
+            existing = await RestaurantRepo.get_restaurant_by_id(restaurant_id)
+            if existing:
+                return existing
             raise ValueError("Restaurant not found")
 
         if "menu" in update_data:
