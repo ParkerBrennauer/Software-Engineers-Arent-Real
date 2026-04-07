@@ -171,7 +171,9 @@ class OrderTrackingService:
         if not saved_order:
             raise ValueError("Order not found")
 
-        tracked_order = await cls._sync_tracking_state(order_id, saved_order, refresh=True)
+        tracked_order = await cls._sync_tracking_state(
+            order_id, saved_order, refresh=True
+        )
         return cls._build_tracking_response(order_id, tracked_order)
 
     @classmethod
@@ -233,6 +235,7 @@ class OrderTrackingService:
             customer=order.get("customer", ""),
             driver=order.get("driver"),
             order_status=status,
+            delivery_instructions=order.get("delivery_instructions"),
             current_location=current_location,
             distance_km=cls._coerce_distance(order.get("distance")),
             estimated_time_minutes=cls._coerce_time(order.get("time")),
