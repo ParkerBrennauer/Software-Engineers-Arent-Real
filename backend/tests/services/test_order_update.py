@@ -2,6 +2,7 @@ import pytest
 from src.services import OrderService
 from src.repositories import OrderRepo
 
+
 async def test_update_order_success():
     existing_order = {
         "id": 5,
@@ -44,11 +45,9 @@ async def test_update_order_success():
 
     monkeypatch.undo()
 
+
 async def test_update_order_locked():
-    existing_order = {
-        "id": 5,
-        "locked": True
-    }
+    existing_order = {"id": 5, "locked": True}
 
     async def fake_get_by_id(_id: int):
         return existing_order
@@ -58,5 +57,39 @@ async def test_update_order_locked():
 
     with pytest.raises(ValueError, match="locked"):
         await OrderService.update_order(5, {"items": []})
+
+    monkeypatch.undo()
+
+
+async def test_update_order_delivery_instructions():
+    existing_order = {
+        "id": 5,
+        "order_status": "payment pending",
+        "payment_status": "pending",
+        "items": [],
+        "cost": 0.0,
+        "locked": False,
+    }
+
+    update_data = {"delivery_instructions": "Call upon arrival"}
+
+    captured = {}
+
+    async def fake_get_by_id(_id: int):
+        return existing_order
+
+    async def fake_update_order(_id: int, data: dict):
+        captured["payload"] = data
+        return data
+
+    monkeypatch = pytest.MonkeyPatch()
+    monkeypatch.setattr(OrderRepo, "get_by_id", fake_get_by_id)
+    monkeypatch.setattr(OrderRepo, "update_order", fake_update_order)
+
+    updated = await OrderService.update_order(5, update_data)
+
+    payload = captured["payload"]
+    assert payload["delivery_instructions"] == "Call upon arrival"
+    assert updated.delivery_instructions == "Call upon arrival"
 
     monkeypatch.undo()
