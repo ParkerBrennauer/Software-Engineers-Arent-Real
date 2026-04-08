@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { api } from "../api/client";
 import { useAuth } from "../state/AuthContext";
 
@@ -7,6 +7,8 @@ export default function OperationsPage() {
   const [restaurantId, setRestaurantId] = useState("");
   const [discountCode, setDiscountCode] = useState("SAVE10");
   const [staffUsername, setStaffUsername] = useState("");
+  const [startTime, setStartTime] = useState("0");
+  const [endTime, setEndTime] = useState("9999999999");
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
 
@@ -27,6 +29,12 @@ export default function OperationsPage() {
         <input placeholder="Restaurant ID" value={restaurantId} onChange={(e) => setRestaurantId(e.target.value)} />
         <button onClick={() => run(() => api.restaurantAdministration.orders(restaurantId))}>Owner orders</button>
         <button onClick={() => run(() => api.restaurantAdministration.ordersByStatus(restaurantId, "delayed"))}>Owner orders by status</button>
+        <button onClick={() => run(() => api.restaurantAdministration.ordersByDate(restaurantId, Number(startTime), Number(endTime)))}>Orders by date</button>
+        <button onClick={() => run(() => api.restaurantAdministration.ordersByStatusAndDate(restaurantId, "delayed", Number(startTime), Number(endTime)))}>Status + date</button>
+      </div>
+      <div className="row">
+        <input placeholder="Start unix time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
+        <input placeholder="End unix time" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
       </div>
       <div className="row">
         <input placeholder="Staff username" value={staffUsername} onChange={(e) => setStaffUsername(e.target.value)} />

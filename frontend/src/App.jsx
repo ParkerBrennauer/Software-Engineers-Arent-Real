@@ -1,3 +1,4 @@
+import React from "react";
 import { Link, Route, Routes } from "react-router-dom";
 import { useAuth } from "./state/AuthContext";
 import RequireAuth from "./components/RequireAuth";
@@ -17,6 +18,20 @@ function HomePage() {
         Unified frontend mapped directly to the available FastAPI backend routes for
         customers, restaurant teams, and drivers.
       </p>
+      <div className="grid cards">
+        <article className="panel">
+          <h3>Customer</h3>
+          <p>Browse restaurants, build cart, place and track orders, leave reviews.</p>
+        </article>
+        <article className="panel">
+          <h3>Driver</h3>
+          <p>View assigned orders, pickup actions, delay reporting, tip payout.</p>
+        </article>
+        <article className="panel">
+          <h3>Owner / Staff</h3>
+          <p>View restaurant orders, filter by date/status, assign staff and manage discounts.</p>
+        </article>
+      </div>
     </section>
   );
 }

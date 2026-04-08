@@ -1,15 +1,19 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { createElement } from "react";
 import { MemoryRouter } from "react-router-dom";
 import { AuthProvider } from "../state/AuthContext";
+import { CartProvider } from "../state/CartContext";
 import LoginPage from "../pages/LoginPage";
 import RestaurantsPage from "../pages/RestaurantsPage";
 import OrdersPage from "../pages/OrdersPage";
 
 function wrap(ui) {
   return render(
-    <MemoryRouter>
-      <AuthProvider>{ui}</AuthProvider>
-    </MemoryRouter>
+    createElement(
+      MemoryRouter,
+      null,
+      createElement(AuthProvider, null, createElement(CartProvider, null, ui))
+    )
   );
 }
 
@@ -24,14 +28,14 @@ describe("frontend endpoint flows", () => {
       ok: true,
       json: async () => [{ restaurant_id: 7, cuisine: "thai", avg_ratings: 4.8 }],
     });
-    wrap(<RestaurantsPage />);
+    wrap(createElement(RestaurantsPage));
     expect(screen.getByText(/Loading restaurants/i)).toBeInTheDocument();
     await screen.findByText(/Restaurant 7/i);
   });
 
   it("handles empty restaurant state", async () => {
     fetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
-    wrap(<RestaurantsPage />);
+    wrap(createElement(RestaurantsPage));
     await screen.findByText(/No restaurants returned/i);
   });
 
@@ -41,7 +45,7 @@ describe("frontend endpoint flows", () => {
       status: 500,
       json: async () => ({ detail: "Boom" }),
     });
-    wrap(<RestaurantsPage />);
+    wrap(createElement(RestaurantsPage));
     await screen.findByText("Boom");
   });
 
@@ -58,7 +62,7 @@ describe("frontend endpoint flows", () => {
       }
       return Promise.resolve({ ok: true, json: async () => ({}) });
     });
-    wrap(<LoginPage />);
+    wrap(createElement(LoginPage));
     fireEvent.change(screen.getByPlaceholderText("Username"), { target: { value: "demo" } });
     fireEvent.change(screen.getByPlaceholderText("Password"), { target: { value: "secret" } });
     fireEvent.click(screen.getByText("Sign in"));
@@ -73,7 +77,7 @@ describe("frontend endpoint flows", () => {
       status: 401,
       json: async () => ({ detail: "Not authenticated" }),
     });
-    wrap(<OrdersPage />);
+    wrap(createElement(OrdersPage));
     fireEvent.change(screen.getByPlaceholderText("Order ID"), { target: { value: "1" } });
     fireEvent.click(screen.getByText("Load order"));
     await screen.findByText("Not authenticated");
@@ -85,7 +89,7 @@ describe("frontend endpoint flows", () => {
       status: 400,
       json: async () => ({ detail: "Order not found" }),
     });
-    wrap(<OrdersPage />);
+    wrap(createElement(OrdersPage));
     fireEvent.change(screen.getByPlaceholderText("Order ID"), { target: { value: "999999" } });
     fireEvent.click(screen.getByText("Cancel"));
     await screen.findByText("Order not found");
