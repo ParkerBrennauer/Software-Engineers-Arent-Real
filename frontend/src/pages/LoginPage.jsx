@@ -14,6 +14,10 @@ export default function LoginPage() {
   async function onSubmit(e) {
     e.preventDefault();
     setError("");
+    if (!form.username.trim() || !form.password.trim()) {
+      setError("Username and password are required.");
+      return;
+    }
     try {
       const result = await login(form);
       if (result?.requires_2fa) {
@@ -43,7 +47,9 @@ export default function LoginPage() {
       <form className="grid" onSubmit={onSubmit}>
         <input placeholder="Username" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} />
         <input type="password" placeholder="Password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
-        <button disabled={loading}>{loading ? "Signing in..." : "Sign in"}</button>
+        <button disabled={loading || !form.username.trim() || !form.password.trim()}>
+          {loading ? "Signing in..." : "Sign in"}
+        </button>
       </form>
       {needs2FA && (
         <div className="panel">

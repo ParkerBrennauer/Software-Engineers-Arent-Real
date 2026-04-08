@@ -4,8 +4,10 @@ import { MemoryRouter } from "react-router-dom";
 import { AuthProvider } from "../state/AuthContext";
 import { CartProvider } from "../state/CartContext";
 import LoginPage from "../pages/LoginPage";
+import RegisterPage from "../pages/RegisterPage";
 import RestaurantsPage from "../pages/RestaurantsPage";
 import OrdersPage from "../pages/OrdersPage";
+import ProfilePage from "../pages/ProfilePage";
 
 function wrap(ui) {
   return render(
@@ -93,6 +95,27 @@ describe("frontend endpoint flows", () => {
     fireEvent.change(screen.getByPlaceholderText("Order ID"), { target: { value: "999999" } });
     fireEvent.click(screen.getByText("Cancel"));
     await screen.findByText("Order not found");
+  });
+
+  it("blocks customer signup with invalid card number before API call", async () => {
+    wrap(createElement(RegisterPage));
+    fireEvent.change(screen.getByPlaceholderText("Email"), { target: { value: "a@a.com" } });
+    fireEvent.change(screen.getByPlaceholderText("Name"), { target: { value: "A" } });
+    fireEvent.change(screen.getByPlaceholderText("Username"), { target: { value: "aa" } });
+    fireEvent.change(screen.getByPlaceholderText("Password"), { target: { value: "pass123" } });
+    fireEvent.change(screen.getByPlaceholderText("Card number (15-16 digits)"), { target: { value: "123" } });
+    fireEvent.click(screen.getByRole("button", { name: "Create account" }));
+    expect(await screen.findByText("Card number must be 15 or 16 digits.")).toBeInTheDocument();
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("disables empty address save on profile page", async () => {
+    fetch
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ username: "demo" }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => [] });
+    wrap(createElement(ProfilePage));
+    await waitFor(() => expect(fetch).toHaveBeenCalled());
+    expect(screen.getByRole("button", { name: "Save address" })).toBeDisabled();
   });
 });
 

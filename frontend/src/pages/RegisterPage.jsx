@@ -18,6 +18,10 @@ export default function RegisterPage() {
     e.preventDefault();
     setMessage("");
     setError("");
+    if (!form.email.trim() || !form.name.trim() || !form.username.trim() || !form.password.trim()) {
+      setError("Please fill in all required fields.");
+      return;
+    }
     try {
       const payload = { ...form };
       if (form.role === "customer") {
@@ -71,7 +75,11 @@ export default function RegisterPage() {
             />
           </>
         )}
-        <button>Create account</button>
+        <button
+          disabled={!form.email.trim() || !form.name.trim() || !form.username.trim() || !form.password.trim()}
+        >
+          Create account
+        </button>
       </form>
       {message && <p className="success">{message}</p>}
       {error && <p className="error">{error}</p>}

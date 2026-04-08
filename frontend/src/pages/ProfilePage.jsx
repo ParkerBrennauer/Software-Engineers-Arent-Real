@@ -18,13 +18,33 @@ export default function ProfilePage() {
   }
 
   useEffect(() => {
-    load();
+    let active = true;
+    async function init() {
+      setError("");
+      try {
+        const current = await api.users.currentUser();
+        const addr = await api.users.getAddresses();
+        if (!active) return;
+        setCurrentUser(current);
+        setAddresses(Array.isArray(addr) ? addr : []);
+      } catch (err) {
+        if (active) setError(err.message);
+      }
+    }
+    init();
+    return () => {
+      active = false;
+    };
   }, []);
 
   async function addAddress() {
     setError("");
+    if (!addressInput.trim()) {
+      setError("Address is required.");
+      return;
+    }
     try {
-      await api.users.addAddress(addressInput);
+      await api.users.addAddress(addressInput.trim());
       setAddressInput("");
       await load();
     } catch (err) {
@@ -39,7 +59,7 @@ export default function ProfilePage() {
       {currentUser && <pre className="json">{JSON.stringify(currentUser, null, 2)}</pre>}
       <div className="row">
         <input placeholder="Add address" value={addressInput} onChange={(e) => setAddressInput(e.target.value)} />
-        <button onClick={addAddress}>Save address</button>
+        <button disabled={!addressInput.trim()} onClick={addAddress}>Save address</button>
       </div>
       <h3>Saved addresses</h3>
       <ul>

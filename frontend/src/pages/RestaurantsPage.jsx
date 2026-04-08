@@ -25,7 +25,23 @@ export default function RestaurantsPage() {
   }
 
   useEffect(() => {
-    loadAll();
+    let active = true;
+    async function init() {
+      setLoading(true);
+      setError("");
+      try {
+        const data = await api.restaurants.getAll();
+        if (active) setRestaurants(Array.isArray(data) ? data : []);
+      } catch (err) {
+        if (active) setError(err.message);
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+    init();
+    return () => {
+      active = false;
+    };
   }, []);
 
   async function runSearch() {
@@ -59,8 +75,13 @@ export default function RestaurantsPage() {
                 const menu = await api.restaurants.menu(r.restaurant_id);
                 setMenuItems(Array.isArray(menu) ? menu : []);
               } catch {
-                const fallback = await api.items.byRestaurant(r.restaurant_id);
-                setMenuItems(Array.isArray(fallback) ? fallback : []);
+                try {
+                  const fallback = await api.items.byRestaurant(r.restaurant_id);
+                  setMenuItems(Array.isArray(fallback) ? fallback : []);
+                } catch (err) {
+                  setMenuItems([]);
+                  setError(err.message);
+                }
               }
             }}
           >

@@ -27,6 +27,14 @@ export default function OrdersPage() {
     }
   }
 
+  function requireOrderId() {
+    if (!orderId.trim()) {
+      setError("Order ID is required.");
+      return false;
+    }
+    return true;
+  }
+
   async function checkoutOrder() {
     if (!items.length || !restaurant?.restaurant_id) {
       setError("Add menu items to cart before checkout.");
@@ -73,23 +81,23 @@ export default function OrdersPage() {
       </div>
       <div className="row">
         <input placeholder="Order ID" value={orderId} onChange={(e) => setOrderId(e.target.value)} />
-        <button disabled={busy} onClick={() => run(() => api.orders.get(orderId))}>Load order</button>
-        <button disabled={busy} onClick={() => run(() => api.orders.cancel(orderId))}>Cancel</button>
-        <button disabled={busy} onClick={() => run(() => api.orders.tracking(orderId))}>Tracking</button>
-        <button disabled={busy} onClick={() => run(() => api.orders.refreshTracking(orderId))}>Refresh tracking</button>
+        <button disabled={busy || !orderId.trim()} onClick={() => requireOrderId() && run(() => api.orders.get(orderId))}>Load order</button>
+        <button disabled={busy || !orderId.trim()} onClick={() => requireOrderId() && run(() => api.orders.cancel(orderId))}>Cancel</button>
+        <button disabled={busy || !orderId.trim()} onClick={() => requireOrderId() && run(() => api.orders.tracking(orderId))}>Tracking</button>
+        <button disabled={busy || !orderId.trim()} onClick={() => requireOrderId() && run(() => api.orders.refreshTracking(orderId))}>Refresh tracking</button>
       </div>
       <div className="row">
-        <button disabled={busy} onClick={() => run(() => api.orders.ready(orderId))}>Mark ready</button>
-        <button disabled={busy} onClick={() => run(() => api.orders.pickup(orderId))}>Pickup</button>
-        <button disabled={busy} onClick={() => run(() => api.orders.refund(orderId))}>Refund</button>
-        <button disabled={busy} onClick={() => run(() => api.orders.tip(orderId, { tip_percent: 15 }))}>Add 15% tip</button>
-        <button disabled={busy} onClick={() => run(() => api.orders.payoutTip(orderId))}>Payout tip</button>
+        <button disabled={busy || !orderId.trim()} onClick={() => requireOrderId() && run(() => api.orders.ready(orderId))}>Mark ready</button>
+        <button disabled={busy || !orderId.trim()} onClick={() => requireOrderId() && run(() => api.orders.pickup(orderId))}>Pickup</button>
+        <button disabled={busy || !orderId.trim()} onClick={() => requireOrderId() && run(() => api.orders.refund(orderId))}>Refund</button>
+        <button disabled={busy || !orderId.trim()} onClick={() => requireOrderId() && run(() => api.orders.tip(orderId, { tip_percent: 15 }))}>Add 15% tip</button>
+        <button disabled={busy || !orderId.trim()} onClick={() => requireOrderId() && run(() => api.orders.payoutTip(orderId))}>Payout tip</button>
       </div>
       <div className="row">
         <input placeholder="Driver username" value={driverName} onChange={(e) => setDriverName(e.target.value)} />
-        <button disabled={busy} onClick={() => run(() => api.orders.byDriver(driverName))}>Driver orders</button>
-        <button disabled={busy} onClick={() => run(() => api.orders.assignDriver(orderId, driverName))}>Assign driver</button>
-        <button disabled={busy} onClick={() => run(() => api.orders.driverDelay(orderId, "Traffic delay"))}>Report driver delay</button>
+        <button disabled={busy || !driverName.trim()} onClick={() => run(() => api.orders.byDriver(driverName))}>Driver orders</button>
+        <button disabled={busy || !orderId.trim() || !driverName.trim()} onClick={() => requireOrderId() && run(() => api.orders.assignDriver(orderId, driverName))}>Assign driver</button>
+        <button disabled={busy || !orderId.trim()} onClick={() => requireOrderId() && run(() => api.orders.driverDelay(orderId, "Traffic delay"))}>Report driver delay</button>
       </div>
       <CartPanel />
       {history.length > 0 && (
