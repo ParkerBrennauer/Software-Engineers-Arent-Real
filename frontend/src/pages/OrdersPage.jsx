@@ -38,6 +38,9 @@ export default function OrdersPage() {
   const [placementSuccess, setPlacementSuccess] = useState(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [tipMode, setTipMode] = useState("percent");
+  const [tipPercentInput, setTipPercentInput] = useState("15");
+  const [tipFixedInput, setTipFixedInput] = useState("");
 
   useEffect(() => {
     if (resolvedRole === "driver" && user?.username) {
@@ -71,6 +74,26 @@ export default function OrdersPage() {
       return null;
     }
     return value;
+  }
+
+  function applyCustomerTip() {
+    const valid = requireOrderId();
+    if (!valid) return;
+    if (tipMode === "percent") {
+      const p = parseFloat(tipPercentInput);
+      if (!Number.isFinite(p) || p < 0) {
+        setError("Enter a valid tip percentage (0 or greater).");
+        return;
+      }
+      run(() => api.orders.tip(valid, { tip_percent: p }));
+      return;
+    }
+    const amount = parseFloat(tipFixedInput);
+    if (!Number.isFinite(amount) || amount < 0) {
+      setError("Enter a valid tip amount in dollars (0 or greater).");
+      return;
+    }
+    run(() => api.orders.tip(valid, { tip_amount: amount }));
   }
 
   async function checkoutOrder() {
@@ -166,6 +189,57 @@ export default function OrdersPage() {
               Look up an order by number. Some actions may not be available depending on order status.
             </p>
             <OrderIdFields orderId={orderId} setOrderId={setOrderId} disabled={busy} idPrefix="customer" />
+            <fieldset className="tip-fieldset" disabled={busy}>
+              <legend className="tip-legend">Tip on this order</legend>
+              <p className="muted small-print">
+                Choose a percentage of the order total or a fixed dollar amount. Only one applies per request.
+              </p>
+              <div className="row tip-mode-row">
+                <label className="tip-mode-label">
+                  <input
+                    type="radio"
+                    name="customer-tip-mode"
+                    checked={tipMode === "percent"}
+                    onChange={() => setTipMode("percent")}
+                  />
+                  Percent of total
+                </label>
+                <label className="tip-mode-label">
+                  <input
+                    type="radio"
+                    name="customer-tip-mode"
+                    checked={tipMode === "fixed"}
+                    onChange={() => setTipMode("fixed")}
+                  />
+                  Fixed amount ($)
+                </label>
+              </div>
+              <div className="row">
+                {tipMode === "percent" ? (
+                  <input
+                    id="customer-tip-percent"
+                    type="number"
+                    min={0}
+                    step="0.1"
+                    placeholder="e.g. 15"
+                    value={tipPercentInput}
+                    onChange={(e) => setTipPercentInput(e.target.value)}
+                    aria-label="Tip percentage"
+                  />
+                ) : (
+                  <input
+                    id="customer-tip-fixed"
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    placeholder="e.g. 5.00"
+                    value={tipFixedInput}
+                    onChange={(e) => setTipFixedInput(e.target.value)}
+                    aria-label="Tip amount in dollars"
+                  />
+                )}
+              </div>
+            </fieldset>
             <div className="row action-toolbar">
               <button
                 type="button"
@@ -217,15 +291,8 @@ export default function OrdersPage() {
               >
                 Request refund
               </button>
-              <button
-                type="button"
-                disabled={busy || !orderId.trim()}
-                onClick={() => {
-                  const valid = requireOrderId();
-                  if (valid) run(() => api.orders.tip(valid, { tip_percent: 15 }));
-                }}
-              >
-                Add 15% tip
+              <button type="button" disabled={busy || !orderId.trim()} onClick={applyCustomerTip}>
+                Apply tip
               </button>
             </div>
           </article>
