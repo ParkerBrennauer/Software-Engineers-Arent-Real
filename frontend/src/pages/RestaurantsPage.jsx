@@ -1,6 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getRestaurants } from '../lib/api';
+import {
+  addFavoriteRestaurant,
+  getFavoriteRestaurants,
+  getRestaurants,
+  removeFavoriteRestaurant,
+} from '../lib/api';
+import {
+  loadPreferredCustomerId,
+  savePreferredCustomerId,
+} from '../lib/demoData';
+import { useAuth } from '../state/AuthContext';
 
 function normalizeRestaurants(payload) {
   if (Array.isArray(payload)) {
@@ -40,10 +50,21 @@ function averageRating(ratings) {
 }
 
 export default function RestaurantsPage() {
+  const { user } = useAuth();
+  const [customerId, setCustomerId] = useState(() =>
+    loadPreferredCustomerId(user?.username),
+  );
   const [restaurants, setRestaurants] = useState([]);
+  const [favoriteIds, setFavoriteIds] = useState([]);
   const [query, setQuery] = useState('');
   const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [pendingRestaurantId, setPendingRestaurantId] = useState(null);
+
+  useEffect(() => {
+    savePreferredCustomerId(customerId);
+  }, [customerId]);
 
   useEffect(() => {
     let isMounted = true;
@@ -51,11 +72,16 @@ export default function RestaurantsPage() {
     const loadRestaurants = async () => {
       setIsLoading(true);
       setError('');
+      setMessage('');
 
       try {
-        const payload = await getRestaurants();
+        const [payload, favoritesPayload] = await Promise.all([
+          getRestaurants(),
+          getFavoriteRestaurants(customerId),
+        ]);
         if (isMounted) {
           setRestaurants(normalizeRestaurants(payload));
+          setFavoriteIds(favoritesPayload.favorite_restaurants || []);
         }
       } catch (err) {
         if (isMounted) {
@@ -73,7 +99,7 @@ export default function RestaurantsPage() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [customerId]);
 
   const filteredRestaurants = useMemo(() => {
     const lowered = query.trim().toLowerCase();
@@ -88,10 +114,38 @@ export default function RestaurantsPage() {
     });
   }, [restaurants, query]);
 
+  const toggleFavorite = async (restaurantId) => {
+    setPendingRestaurantId(restaurantId);
+    setError('');
+    setMessage('');
+
+    try {
+      const response = favoriteIds.includes(restaurantId)
+        ? await removeFavoriteRestaurant(customerId, restaurantId)
+        : await addFavoriteRestaurant(customerId, restaurantId);
+
+      setFavoriteIds(response.favorite_restaurants || []);
+      setMessage(response.message);
+    } catch (err) {
+      setError(err.message || 'Could not update favorite restaurants.');
+    } finally {
+      setPendingRestaurantId(null);
+    }
+  };
+
   return (
     <section className="card">
       <h2>Restaurants</h2>
-      <p>Browse available restaurants from the backend API.</p>
+      <p>Browse available restaurants from the backend API and save favorites.</p>
+
+      <label className="search-input">
+        Customer id for favorites
+        <input
+          value={customerId}
+          onChange={(event) => setCustomerId(event.target.value)}
+          placeholder="Paste a customer id from customers.json"
+        />
+      </label>
 
       <label className="search-input">
         Search by cuisine or restaurant id
@@ -104,6 +158,7 @@ export default function RestaurantsPage() {
 
       {isLoading && <p>Loading restaurants...</p>}
       {error && <p className="error">{error}</p>}
+      {message && <p className="success">{message}</p>}
 
       {!isLoading && !error && filteredRestaurants.length === 0 && (
         <p>No restaurants matched your search.</p>
@@ -120,9 +175,23 @@ export default function RestaurantsPage() {
               <strong>Average rating:</strong>{' '}
               {averageRating(restaurant.ratings) ?? 'No ratings yet'}
             </p>
-            <Link to={`/restaurants/${restaurant.restaurant_id}/order`}>
-              View menu and order
-            </Link>
+            <div className="button-row">
+              <Link to={`/restaurants/${restaurant.restaurant_id}/order`}>
+                View menu and order
+              </Link>
+              <button
+                type="button"
+                className="secondary-button"
+                disabled={pendingRestaurantId === Number(restaurant.restaurant_id)}
+                onClick={() => toggleFavorite(Number(restaurant.restaurant_id))}
+              >
+                {pendingRestaurantId === Number(restaurant.restaurant_id)
+                  ? 'Updating...'
+                  : favoriteIds.includes(Number(restaurant.restaurant_id))
+                    ? 'Unfavorite'
+                    : 'Favorite'}
+              </button>
+            </div>
           </article>
         ))}
       </div>

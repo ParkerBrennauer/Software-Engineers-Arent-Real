@@ -7,3 +7,4 @@ class OrderInternal(BaseModel):
     items: list
     cost: float
     locked: bool = False
+    delivery_instructions: str | None = None

@@ -1,35 +1,18 @@
 from fastapi import APIRouter, status
-from src.schemas.user_schema import (
-    UserRegister,
-    UserResponse,
-    UserUpdate,
-    UserTwoFactorVerify,
-    UserTwoFactorResponse,
-    UserPasswordReset,
-    UserLogin,
-)
+from src.schemas.user_schema import UserRegister, UserResponse, UserUpdate, UserTwoFactorVerify, UserTwoFactorResponse, UserPasswordReset, UserLogin, AddressAdd
 from src.schemas.customer_schema import CustomerRegister
 from src.schemas.driver_schema import DriverRegister
-
 from src.services.user_service import UserService
 from src.api.dependencies import convert_service_error
+from src.services.customer_service import CustomerService
+router = APIRouter(prefix='/users', tags=['users'])
 
-router = APIRouter(prefix="/users", tags=["users"])
-
-
-@router.post(
-    "/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED
-)
+@router.post('/register', response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register_user(user_in: UserRegister):
     new_user = await UserService.create_user(user_in)
     return new_user
 
-
-@router.post(
-    "/register/customer",
-    response_model=UserResponse,
-    status_code=status.HTTP_201_CREATED,
-)
+@router.post('/register/customer', response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register_customer(customer_in: CustomerRegister):
     try:
         new_customer = await UserService.create_user(customer_in)
@@ -37,10 +20,7 @@ async def register_customer(customer_in: CustomerRegister):
     except ValueError as err:
         raise convert_service_error(err)
 
-
-@router.post(
-    "/register/driver", response_model=UserResponse, status_code=status.HTTP_201_CREATED
-)
+@router.post('/register/driver', response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register_driver(driver_in: DriverRegister):
     try:
         new_driver = await UserService.create_user(driver_in)
@@ -48,8 +28,7 @@ async def register_driver(driver_in: DriverRegister):
     except ValueError as err:
         raise convert_service_error(err)
 
-
-@router.post("/login", response_model=UserResponse, status_code=status.HTTP_200_OK)
+@router.post('/login', response_model=UserResponse, status_code=status.HTTP_200_OK)
 async def login_user(body: UserLogin):
     try:
         user = await UserService.login_user(body.username, body.password)
@@ -57,10 +36,21 @@ async def login_user(body: UserLogin):
     except ValueError as err:
         raise convert_service_error(err)
 
+@router.post('/{username}/logout', status_code=status.HTTP_200_OK)
+async def logout_user(username: str):
+    success = await UserService.logout_user(username)
+    if not success:
+        return {'message': 'User not found or log out failed'}
+    return {'message': 'Successfully logged out'}
 
-@router.patch(
-    "/{username}", response_model=UserResponse, status_code=status.HTTP_200_OK
-)
+@router.get('/current-user', status_code=status.HTTP_200_OK)
+async def read_login_session():
+    username = UserService.get_current_user()
+    if not username:
+        return {'message': 'No user currently logged in', 'username': None}
+    return {'message': 'User is logged in', 'username': username}
+
+@router.patch('/{username}', response_model=UserResponse, status_code=status.HTTP_200_OK)
 async def update_user(username: str, user_in: UserUpdate):
     try:
         updated_user = await UserService.update_user(username, user_in)
@@ -68,40 +58,42 @@ async def update_user(username: str, user_in: UserUpdate):
     except ValueError as err:
         raise convert_service_error(err)
 
-
-@router.post(
-    "/{username}/2fa/generate",
-    response_model=UserTwoFactorResponse,
-    status_code=status.HTTP_200_OK,
-)
+@router.post('/{username}/2fa/generate', response_model=UserTwoFactorResponse, status_code=status.HTTP_200_OK)
 async def generate_2fa_code(username: str):
     try:
         code = await UserService.generate_2fa_code(username)
-        return UserTwoFactorResponse(message=f"2FA code generated: {code}")
+        return UserTwoFactorResponse(message=f'2FA code generated: {code}')
     except ValueError as err:
         raise convert_service_error(err)
 
-
-@router.post(
-    "/{username}/2fa/verify",
-    response_model=UserTwoFactorResponse,
-    status_code=status.HTTP_200_OK,
-)
+@router.post('/{username}/2fa/verify', response_model=UserTwoFactorResponse, status_code=status.HTTP_200_OK)
 async def verify_2fa_code(username: str, body: UserTwoFactorVerify):
     try:
         await UserService.verify_2fa_code(username, body.code)
-        return UserTwoFactorResponse(
-            message="2FA verification successful",
-            requires_2fa=False,
-        )
+        return UserTwoFactorResponse(message='2FA verification successful', requires_2fa=False)
     except ValueError as err:
         raise convert_service_error(err)
 
-
-@router.post("/{username}/reset-password", status_code=status.HTTP_200_OK)
+@router.post('/{username}/reset-password', status_code=status.HTTP_200_OK)
 async def reset_password(username: str, body: UserPasswordReset):
     try:
         await UserService.reset_password(username, body.code, body.new_password)
-        return {"message": "Password reset successful"}
+        return {'message': 'Password reset successful'}
+    except ValueError as err:
+        raise convert_service_error(err)
+
+@router.post('/{username}/addresses', response_model=UserResponse, status_code=status.HTTP_200_OK)
+async def add_address(username: str, address_in: AddressAdd):
+    try:
+        updated_user = await UserService.add_address(username, address_in.address)
+        return updated_user
+    except ValueError as err:
+        raise convert_service_error(err)
+
+@router.get('/{username}/addresses', response_model=list[str], status_code=status.HTTP_200_OK)
+async def get_addresses(username: str):
+    try:
+        addresses = await UserService.get_addresses(username)
+        return addresses
     except ValueError as err:
         raise convert_service_error(err)
