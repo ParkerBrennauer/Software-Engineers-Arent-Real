@@ -50,7 +50,7 @@ class OrderCreate(BaseModel):
     customer: str
     time: int
     cuisine: str
-    distance: float
+    distance: float | None = None
     delivery_instructions: str | None = None
 
 

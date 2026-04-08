@@ -42,7 +42,6 @@ export default function OrderPage() {
 
   const [menuItems, setMenuItems] = useState([]);
   const [selectedItemKeys, setSelectedItemKeys] = useState([]);
-  const [distance, setDistance] = useState('3');
   const [checkoutStep, setCheckoutStep] = useState('items');
   const [tipAmountInput, setTipAmountInput] = useState('0');
   const [discountCodeInput, setDiscountCodeInput] = useState('');
@@ -158,12 +157,6 @@ export default function OrderPage() {
       return false;
     }
 
-    const numericDistance = Number(distance);
-    if (!Number.isFinite(numericDistance) || numericDistance < 0) {
-      setError('Please provide a valid distance.');
-      return false;
-    }
-
     setCheckoutStep('adjustments');
     return true;
   };
@@ -249,7 +242,6 @@ export default function OrderPage() {
         customer: user?.username || '',
         time: 0,
         cuisine: primaryCuisine,
-        distance: Number(distance),
       };
 
       const created = await createOrder(payload);
@@ -295,18 +287,6 @@ export default function OrderPage() {
                   );
                 })}
               </div>
-
-              <label>
-                Estimated distance (km)
-                <input
-                  type="number"
-                  min="0"
-                  step="0.1"
-                  value={distance}
-                  onChange={(event) => setDistance(event.target.value)}
-                  required
-                />
-              </label>
 
               <p>
                 <strong>Food subtotal:</strong> ${estimatedSubtotal.toFixed(2)}

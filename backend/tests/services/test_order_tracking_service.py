@@ -49,10 +49,10 @@ async def test_get_tracking_info_generates_metrics_for_restaurant_stage(monkeypa
 
     assert tracking.order_id == "12"
     assert tracking.current_location == "at restaurant"
-    assert tracking.distance_km == 7.25
+    assert tracking.distance_km == 0.0
     assert tracking.estimated_time_minutes == 18
     assert saved_updates["order_id"] == "12"
-    assert saved_updates["updates"] == {"distance": 7.25, "time": 18}
+    assert saved_updates["updates"] == {"time": 18}
 
 
 @pytest.mark.asyncio
