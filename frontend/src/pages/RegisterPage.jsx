@@ -1,109 +1,51 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { registerCustomer } from '../lib/api';
+import { useState } from "react";
+import { api } from "../api/client";
 
 export default function RegisterPage() {
   const [form, setForm] = useState({
-    name: '',
-    email: '',
-    username: '',
-    password: '',
-    paymentType: 'credit card',
-    paymentDetails: '',
+    email: "",
+    name: "",
+    role: "customer",
+    username: "",
+    password: "",
   });
-  const [error, setError] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
 
-  const navigate = useNavigate();
-
-  const updateField = (key, value) => {
-    setForm((current) => ({ ...current, [key]: value }));
-  };
-
-  const onSubmit = async (event) => {
-    event.preventDefault();
-    setError('');
-    setIsSubmitting(true);
-
+  async function submit(e) {
+    e.preventDefault();
+    setMessage("");
+    setError("");
     try {
-      await registerCustomer(form);
-      navigate('/login', {
-        replace: true,
-        state: { successMessage: 'Registration complete. Please log in.' },
-      });
+      const payload = { ...form };
+      if (form.role === "customer") await api.users.registerCustomer(payload);
+      else if (form.role === "driver") await api.users.registerDriver(payload);
+      else await api.users.register(payload);
+      setMessage("Account created. You can now log in.");
     } catch (err) {
-      setError(err.message || 'Registration failed.');
-    } finally {
-      setIsSubmitting(false);
+      setError(err.message);
     }
-  };
+  }
 
   return (
     <section className="card">
       <h2>Create account</h2>
-      <p>Register as a customer so you can sign in and place orders.</p>
-      <form onSubmit={onSubmit} className="form-grid">
-        <label>
-          Full name
-          <input
-            value={form.name}
-            onChange={(event) => updateField('name', event.target.value)}
-            required
-          />
-        </label>
-        <label>
-          Email
-          <input
-            type="email"
-            value={form.email}
-            onChange={(event) => updateField('email', event.target.value)}
-            required
-          />
-        </label>
-        <label>
-          Username
-          <input
-            value={form.username}
-            onChange={(event) => updateField('username', event.target.value)}
-            required
-          />
-        </label>
-        <label>
-          Password
-          <input
-            type="password"
-            value={form.password}
-            onChange={(event) => updateField('password', event.target.value)}
-            required
-          />
-        </label>
-        <label>
-          Payment type
-          <select
-            value={form.paymentType}
-            onChange={(event) => updateField('paymentType', event.target.value)}
-          >
-            <option value="credit card">Credit card</option>
-            <option value="debit card">Debit card</option>
-          </select>
-        </label>
-        <label>
-          Card number (15 or 16 digits)
-          <input
-            inputMode="numeric"
-            value={form.paymentDetails}
-            onChange={(event) => updateField('paymentDetails', event.target.value)}
-            required
-          />
-        </label>
-        <button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Registering...' : 'Register'}
-        </button>
+      <form className="grid" onSubmit={submit}>
+        <input placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+        <input placeholder="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+        <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>
+          <option value="customer">Customer</option>
+          <option value="driver">Driver</option>
+          <option value="owner">Owner</option>
+          <option value="staff">Staff</option>
+        </select>
+        <input placeholder="Username" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} />
+        <input type="password" placeholder="Password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+        <button>Create account</button>
       </form>
+      {message && <p className="success">{message}</p>}
       {error && <p className="error">{error}</p>}
-      <p>
-        Already registered? <Link to="/login">Go to login</Link>.
-      </p>
     </section>
   );
 }
+

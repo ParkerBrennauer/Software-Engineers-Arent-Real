@@ -1,139 +1,71 @@
-import { NavLink, Navigate, Route, Routes } from 'react-router-dom';
-import RequireAuth from './components/RequireAuth';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import RestaurantsPage from './pages/RestaurantsPage';
-import OrderPage from './pages/OrderPage';
-import OrderStatusPage from './pages/OrderStatusPage';
-import FavoritesPage from './pages/FavoritesPage';
-import TrackingPage from './pages/TrackingPage';
-import ReviewsPage from './pages/ReviewsPage';
-import DiscountsPage from './pages/DiscountsPage';
-import FavouritesPage from './pages/FavouritesPage';
-import OrderHistoryPage from './pages/OrderHistoryPage';
-import { useAuth } from './state/AuthContext';
+import { Link, Route, Routes } from "react-router-dom";
+import { useAuth } from "./state/AuthContext";
+import RequireAuth from "./components/RequireAuth";
+import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
+import RestaurantsPage from "./pages/RestaurantsPage";
+import OrdersPage from "./pages/OrdersPage";
+import ReviewsPage from "./pages/ReviewsPage";
+import OperationsPage from "./pages/OperationsPage";
+import ProfilePage from "./pages/ProfilePage";
 
-function AppShell() {
-  const { user, logout, isAuthenticated } = useAuth();
-
+function HomePage() {
   return (
-    <div className="app-shell">
-      <header>
-        <h1>Food Delivery</h1>
-        <nav>
-          {!isAuthenticated && (
-            <>
-              <NavLink to="/login">Login</NavLink>
-              <NavLink to="/register">Register</NavLink>
-            </>
-          )}
-          {isAuthenticated && (
-            <>
-              <NavLink to="/restaurants">Restaurants</NavLink>
-              <NavLink to="/favorites">Favorites</NavLink>
-              <NavLink to="/tracking">Tracking</NavLink>
-              <NavLink to="/reviews">Reviews</NavLink>
-              <NavLink to="/discounts">Discounts</NavLink>
-              <NavLink to="/order-history">Order History</NavLink>
-              <NavLink to="/favourites">Favourites</NavLink>
-              <button className="link-button" onClick={logout} type="button">
-                Logout
-              </button>
-            </>
-          )}
-        </nav>
-        {isAuthenticated && (
-          <p className="auth-label">Logged in as user #{user?.id}</p>
+    <section className="card hero">
+      <h1>FoodHub Control Center</h1>
+      <p>
+        Unified frontend mapped directly to the available FastAPI backend routes for
+        customers, restaurant teams, and drivers.
+      </p>
+    </section>
+  );
+}
+
+function Nav() {
+  const { user, logout } = useAuth();
+  return (
+    <header className="topbar">
+      <div className="brand">SEAR Delivery</div>
+      <nav>
+        <Link to="/">Home</Link>
+        <Link to="/restaurants">Restaurants</Link>
+        <Link to="/orders">Orders</Link>
+        <Link to="/reviews">Reviews</Link>
+        <Link to="/operations">Operations</Link>
+        <Link to="/profile">Profile</Link>
+      </nav>
+      <div className="auth-chip">
+        {user ? (
+          <>
+            <span>{user.username} ({user.role})</span>
+            <button onClick={logout}>Logout</button>
+          </>
+        ) : (
+          <>
+            <Link to="/login">Login</Link>
+            <Link to="/register">Register</Link>
+          </>
         )}
-      </header>
-      <main>
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route
-            path="/restaurants"
-            element={
-              <RequireAuth>
-                <RestaurantsPage />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/restaurants/:restaurantId/order"
-            element={
-              <RequireAuth>
-                <OrderPage />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/orders/:orderId"
-            element={
-              <RequireAuth>
-                <OrderStatusPage />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/favorites"
-            element={
-              <RequireAuth>
-                <FavoritesPage />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/tracking"
-            element={
-              <RequireAuth>
-                <TrackingPage />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/reviews"
-            element={
-              <RequireAuth>
-                <ReviewsPage />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/discounts"
-            element={
-              <RequireAuth>
-                <DiscountsPage />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/order-history"
-            element={
-              <RequireAuth>
-                <OrderHistoryPage />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/favourites"
-            element={
-              <RequireAuth>
-                <FavouritesPage />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="*"
-            element={
-              <Navigate to={isAuthenticated ? '/restaurants' : '/login'} replace />
-            }
-          />
-        </Routes>
-      </main>
-    </div>
+      </div>
+    </header>
   );
 }
 
 export default function App() {
-  return <AppShell />;
+  return (
+    <main className="app-shell">
+      <Nav />
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/restaurants" element={<RestaurantsPage />} />
+        <Route path="/orders" element={<RequireAuth><OrdersPage /></RequireAuth>} />
+        <Route path="/reviews" element={<ReviewsPage />} />
+        <Route path="/operations" element={<RequireAuth><OperationsPage /></RequireAuth>} />
+        <Route path="/profile" element={<RequireAuth><ProfilePage /></RequireAuth>} />
+      </Routes>
+    </main>
+  );
 }
+
