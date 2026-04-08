@@ -5,6 +5,10 @@ import RegisterPage from './pages/RegisterPage';
 import RestaurantsPage from './pages/RestaurantsPage';
 import OrderPage from './pages/OrderPage';
 import OrderStatusPage from './pages/OrderStatusPage';
+import FavoritesPage from './pages/FavoritesPage';
+import TrackingPage from './pages/TrackingPage';
+import ReviewsPage from './pages/ReviewsPage';
+import DiscountsPage from './pages/DiscountsPage';
 import { useAuth } from './state/AuthContext';
 
 function AppShell() {
@@ -24,6 +28,10 @@ function AppShell() {
           {isAuthenticated && (
             <>
               <NavLink to="/restaurants">Restaurants</NavLink>
+              <NavLink to="/favorites">Favorites</NavLink>
+              <NavLink to="/tracking">Tracking</NavLink>
+              <NavLink to="/reviews">Reviews</NavLink>
+              <NavLink to="/discounts">Discounts</NavLink>
               <button className="link-button" onClick={logout} type="button">
                 Logout
               </button>
@@ -59,6 +67,38 @@ function AppShell() {
             element={
               <RequireAuth>
                 <OrderStatusPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/favorites"
+            element={
+              <RequireAuth>
+                <FavoritesPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/tracking"
+            element={
+              <RequireAuth>
+                <TrackingPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/reviews"
+            element={
+              <RequireAuth>
+                <ReviewsPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/discounts"
+            element={
+              <RequireAuth>
+                <DiscountsPage />
               </RequireAuth>
             }
           />

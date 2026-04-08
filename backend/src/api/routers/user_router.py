@@ -11,10 +11,8 @@ from src.schemas.user_schema import (
 )
 from src.schemas.customer_schema import CustomerRegister
 from src.schemas.driver_schema import DriverRegister
-
 from src.services.user_service import UserService
 from src.api.dependencies import convert_service_error
-
 from src.services.customer_service import CustomerService
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -62,11 +60,7 @@ async def login_user(body: UserLogin):
 
 
 @router.post("/logout", status_code=status.HTTP_200_OK)
-async def logout_user():
-    username = UserService.get_current_user()
-    if not username:
-        raise convert_service_error(ValueError("No user currently logged in"))
-
+async def logout_user(username: str):
     success = await UserService.logout_user(username)
     if not success:
         raise convert_service_error(ValueError("Log out failed"))
@@ -81,11 +75,10 @@ async def get_current_user():
     return {"message": "User is logged in", "username": username}
 
 
-@router.patch("", response_model=UserResponse, status_code=status.HTTP_200_OK)
-async def update_user(user_in: UserUpdate):
-    username = UserService.get_current_user()
-    if not username:
-        raise convert_service_error(ValueError("No user currently logged in"))
+@router.patch(
+    "/{username}", response_model=UserResponse, status_code=status.HTTP_200_OK
+)
+async def update_user(username: str, user_in: UserUpdate):
     try:
         updated_user = await UserService.update_user(username, user_in)
         return updated_user
@@ -94,14 +87,11 @@ async def update_user(user_in: UserUpdate):
 
 
 @router.post(
-    "/2fa/generate",
+    "/{username}/2fa/generate",
     response_model=UserTwoFactorResponse,
     status_code=status.HTTP_200_OK,
 )
-async def generate_2fa_code():
-    username = UserService.get_current_user()
-    if not username:
-        raise convert_service_error(ValueError("No user currently logged in"))
+async def generate_2fa_code(username: str):
     try:
         code = await UserService.generate_2fa_code(username)
         return UserTwoFactorResponse(message=f"2FA code generated: {code}")
@@ -110,19 +100,15 @@ async def generate_2fa_code():
 
 
 @router.post(
-    "/2fa/verify",
+    "/{username}/2fa/verify",
     response_model=UserTwoFactorResponse,
     status_code=status.HTTP_200_OK,
 )
-async def verify_2fa_code(body: UserTwoFactorVerify):
-    username = UserService.get_current_user()
-    if not username:
-        raise convert_service_error(ValueError("No user currently logged in"))
+async def verify_2fa_code(username: str, body: UserTwoFactorVerify):
     try:
         await UserService.verify_2fa_code(username, body.code)
         return UserTwoFactorResponse(
-            message="2FA verification successful",
-            requires_2fa=False,
+            message="2FA verification successful", requires_2fa=False
         )
     except ValueError as err:
         raise convert_service_error(err)
@@ -137,11 +123,10 @@ async def reset_password(username: str, body: UserPasswordReset):
         raise convert_service_error(err)
 
 
-@router.post("/addresses", response_model=UserResponse, status_code=status.HTTP_200_OK)
-async def add_address(address_in: AddressAdd):
-    username = UserService.get_current_user()
-    if not username:
-        raise convert_service_error(ValueError("No user currently logged in"))
+@router.post(
+    "/{username}/addresses", response_model=UserResponse, status_code=status.HTTP_200_OK
+)
+async def add_address(username: str, address_in: AddressAdd):
     try:
         updated_user = await UserService.add_address(username, address_in.address)
         return updated_user
@@ -149,11 +134,10 @@ async def add_address(address_in: AddressAdd):
         raise convert_service_error(err)
 
 
-@router.get("/addresses", response_model=list[str], status_code=status.HTTP_200_OK)
-async def get_addresses():
-    username = UserService.get_current_user()
-    if not username:
-        raise convert_service_error(ValueError("No user currently logged in"))
+@router.get(
+    "/{username}/addresses", response_model=list[str], status_code=status.HTTP_200_OK
+)
+async def get_addresses(username: str):
     try:
         addresses = await UserService.get_addresses(username)
         return addresses

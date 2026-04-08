@@ -26,6 +26,8 @@ export default function LoginPage() {
         id: response.id,
         username,
         requires2fa: Boolean(response.requires_2fa),
+        role: response.role ?? null,
+        restaurant_id: response.restaurant_id ?? null,
       });
       navigate(redirectPath, { replace: true });
     } catch (err) {

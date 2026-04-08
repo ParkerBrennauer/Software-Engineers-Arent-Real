@@ -1,6 +1,5 @@
 from pydantic import BaseModel
 
-
 class OrderInternal(BaseModel):
     id: int
     order_status: str
