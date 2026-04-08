@@ -26,7 +26,7 @@ export default function LoginPage() {
         setNeeds2FA(true);
         return;
       }
-      navigate("/orders");
+      navigate("/restaurants");
     } catch (err) {
       setError(err.message);
     }
@@ -42,7 +42,7 @@ export default function LoginPage() {
     try {
       await api.users.verify2FA(twoFactorCode.trim());
       completeTwoFactor();
-      navigate("/orders");
+      navigate("/restaurants");
     } catch (err) {
       setError(err.message);
     } finally {

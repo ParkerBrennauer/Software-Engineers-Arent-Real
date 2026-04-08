@@ -5,32 +5,33 @@ import RequireAuth from "./components/RequireAuth";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import RestaurantsPage from "./pages/RestaurantsPage";
+import RestaurantDetailPage from "./pages/RestaurantDetailPage";
 import OrdersPage from "./pages/OrdersPage";
 import ReviewsPage from "./pages/ReviewsPage";
 import OperationsPage from "./pages/OperationsPage";
 import ProfilePage from "./pages/ProfilePage";
 import DiscountsPage from "./pages/DiscountsPage";
+import CartIconNav from "./components/CartIconNav";
 
 function HomePage() {
   return (
     <section className="card hero">
-      <h1>FoodHub Control Center</h1>
-      <p>
-        Unified frontend mapped directly to the available FastAPI backend routes for
-        customers, restaurant teams, and drivers.
+      <h1 className="hero-title">Order food you love</h1>
+      <p className="hero-lede">
+        Discover local restaurants, customize your meal, and track delivery—all in one place.
       </p>
-      <div className="grid cards">
-        <article className="panel">
-          <h3>Customer</h3>
-          <p>Browse restaurants, build cart, place and track orders, leave reviews.</p>
+      <div className="grid cards hero-cards">
+        <article className="panel hero-card">
+          <h2 className="hero-card__title">Hungry?</h2>
+          <p>Browse menus, save favorites, and check out when you&apos;re ready.</p>
         </article>
-        <article className="panel">
-          <h3>Driver</h3>
-          <p>View assigned orders, pickup actions, delay reporting, tip payout.</p>
+        <article className="panel hero-card">
+          <h2 className="hero-card__title">On the road?</h2>
+          <p>Drivers can pick up, navigate, and stay on top of every run.</p>
         </article>
-        <article className="panel">
-          <h3>Owner / Staff</h3>
-          <p>View restaurant orders, filter by date/status, assign staff, and create promo codes on the Discounts page.</p>
+        <article className="panel hero-card">
+          <h2 className="hero-card__title">Running a kitchen?</h2>
+          <p>Owners and staff get the tools to keep service smooth behind the scenes.</p>
         </article>
       </div>
     </section>
@@ -47,14 +48,15 @@ function Nav() {
         <Link to="/restaurants">Restaurants</Link>
         <Link to="/orders">Orders</Link>
         <Link to="/reviews">Reviews</Link>
-        <Link to="/operations">Operations</Link>
-        <Link to="/discounts">Discounts</Link>
+        <Link to="/operations">Business</Link>
+        <Link to="/discounts">Promos</Link>
         <Link to="/profile">Profile</Link>
       </nav>
       <div className="auth-chip">
+        <CartIconNav />
         {user ? (
           <>
-            <span>{user.username} ({user.role})</span>
+            <span className="nav-user-name">{user.username}</span>
             <button onClick={logout}>Logout</button>
           </>
         ) : (
@@ -77,6 +79,7 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/restaurants" element={<RestaurantsPage />} />
+        <Route path="/restaurants/:restaurantId" element={<RestaurantDetailPage />} />
         <Route path="/orders" element={<RequireAuth><OrdersPage /></RequireAuth>} />
         <Route path="/reviews" element={<ReviewsPage />} />
         <Route path="/operations" element={<RequireAuth><OperationsPage /></RequireAuth>} />
