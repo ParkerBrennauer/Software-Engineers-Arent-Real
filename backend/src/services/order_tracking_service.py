@@ -56,10 +56,6 @@ class OrderTrackingService:
         return max(0, int(time_minutes))
 
     @staticmethod
-    def _generate_distance(minimum: float = 1.0, maximum: float = 15.0) -> float:
-        return round(random.uniform(minimum, maximum), 2)
-
-    @staticmethod
     def _generate_time(minimum: int = 8, maximum: int = 50) -> int:
         return random.randint(minimum, maximum)
 
@@ -67,8 +63,6 @@ class OrderTrackingService:
     def _ensure_restaurant_metrics(
         cls, distance: float, time_minutes: int
     ) -> tuple[float, int]:
-        if distance <= 0:
-            distance = cls._generate_distance()
         if time_minutes <= 0:
             time_minutes = cls._generate_time()
         return distance, time_minutes
@@ -77,8 +71,6 @@ class OrderTrackingService:
     def _resolve_delivery_tracking(
         cls, status: OrderStatus, distance: float, time_minutes: int, refresh: bool
     ) -> tuple[OrderStatus, float, int]:
-        if distance <= 0:
-            distance = cls._generate_distance(0.5, 10.0)
         if time_minutes <= 0:
             time_minutes = cls._generate_time(5, 35)
 
