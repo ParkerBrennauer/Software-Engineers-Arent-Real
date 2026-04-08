@@ -363,7 +363,7 @@ async def test_delete_review_permission_denied(client, monkeypatch):
 async def test_report_review_success(client, monkeypatch):
     order_id = "order1"
     username = "customer1"
-    payload = {"reason": "Inappropriate content"}
+    payload = {"reason": "spam", "description": "Spam review"}
 
     def fake_get_current_user():
         return username
@@ -381,7 +381,11 @@ async def test_report_review_success(client, monkeypatch):
         from src.schemas.review_schema import ReportResponse
 
         return ReportResponse(
-            order_id=_order_id, reason=_payload.reason, message="Report submitted"
+            report_id=1,
+            order_id=_order_id,
+            reason=_payload.reason,
+            description=_payload.description,
+            message="Report submitted"
         )
 
     monkeypatch.setattr(
@@ -408,7 +412,7 @@ async def test_report_review_success(client, monkeypatch):
 async def test_report_review_permission_denied(client, monkeypatch):
     order_id = "order1"
     username = "customer2"
-    payload = {"reason": "Inappropriate content"}
+    payload = {"reason": "spam", "description": "Spam review"}
 
     def fake_get_current_user():
         return username
