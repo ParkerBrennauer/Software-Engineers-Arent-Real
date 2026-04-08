@@ -1,23 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
-from src.api import dependencies as api_dependencies
+from src.api.dependencies import get_current_user
 from src.schemas.discount_schema import DiscountCreate, DiscountApply
 from src.services.discount_services import DiscountServices
 
 router = APIRouter(prefix="/discounts", tags=["discounts"])
-
-
-async def _missing_get_current_user() -> dict:
-    raise HTTPException(
-        status_code=500,
-        detail="Authentication dependency get_current_user is not configured",
-    )
-
-
-get_current_user = getattr(
-    api_dependencies,
-    "get_current_user",
-    _missing_get_current_user,
-)
 
 
 def get_current_owner(current_user: dict = Depends(get_current_user)) -> dict:

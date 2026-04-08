@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from src.api.exceptions import AppException
 from src.api.exceptions import ValidationError
@@ -6,6 +6,11 @@ from src.api.exceptions import NotFoundError
 from src.api.exceptions import ConflictError
 from src.api.exceptions import UnauthorizedError
 from src.api.exceptions import ForbiddenError
+
+
+async def get_current_user() -> dict:
+
+    raise HTTPException(status_code=401, detail="Not authenticated")
 
 
 def setup_exception_handlers(app: FastAPI) -> None:
