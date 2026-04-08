@@ -8,6 +8,7 @@ import RegisterPage from "../pages/RegisterPage";
 import RestaurantsPage from "../pages/RestaurantsPage";
 import OrdersPage from "../pages/OrdersPage";
 import ProfilePage from "../pages/ProfilePage";
+import { useCart } from "../state/CartContext";
 
 function wrap(ui) {
   return render(
@@ -73,6 +74,29 @@ describe("frontend endpoint flows", () => {
     await waitFor(() => expect(fetch).toHaveBeenCalled());
   });
 
+  it("requires valid 2FA code before verify submit", async () => {
+    fetch.mockImplementation((url) => {
+      if (String(url).includes("/users/login")) {
+        return Promise.resolve({ ok: true, json: async () => ({ id: 10, requires_2fa: true }) });
+      }
+      if (String(url).includes("/users/current-user")) {
+        return Promise.resolve({ ok: true, json: async () => ({ username: "driver_demo" }) });
+      }
+      if (String(url).includes("/users/2fa/generate")) {
+        return Promise.resolve({ ok: true, json: async () => ({ message: "generated" }) });
+      }
+      return Promise.resolve({ ok: true, json: async () => ({}) });
+    });
+    wrap(createElement(LoginPage));
+    fireEvent.change(screen.getByPlaceholderText("Username"), { target: { value: "driver_demo" } });
+    fireEvent.change(screen.getByPlaceholderText("Password"), { target: { value: "secret" } });
+    fireEvent.click(screen.getByText("Sign in"));
+    await screen.findByText(/Two-factor verification/i);
+    expect(screen.getByRole("button", { name: "Verify 2FA" })).toBeDisabled();
+    fireEvent.change(screen.getByPlaceholderText("6-digit code"), { target: { value: "123456" } });
+    expect(screen.getByRole("button", { name: "Verify 2FA" })).not.toBeDisabled();
+  });
+
   it("shows unauthorized error from order endpoint", async () => {
     fetch.mockResolvedValueOnce({
       ok: false,
@@ -116,6 +140,23 @@ describe("frontend endpoint flows", () => {
     wrap(createElement(ProfilePage));
     await waitFor(() => expect(fetch).toHaveBeenCalled());
     expect(screen.getByRole("button", { name: "Save address" })).toBeDisabled();
+  });
+
+  it("prevents adding items from different restaurants to cart", () => {
+    function Harness() {
+      const { addItem, items } = useCart();
+      return (
+        <>
+          <button onClick={() => addItem({ item_name: "Burger", restaurant_id: 1, cost: 10 })}>Add one</button>
+          <button onClick={() => addItem({ item_name: "Pasta", restaurant_id: 2, cost: 12 })}>Add two</button>
+          <p>Count:{items.length}</p>
+        </>
+      );
+    }
+    wrap(createElement(Harness));
+    fireEvent.click(screen.getByText("Add one"));
+    fireEvent.click(screen.getByText("Add two"));
+    expect(screen.getByText("Count:1")).toBeInTheDocument();
   });
 });
 

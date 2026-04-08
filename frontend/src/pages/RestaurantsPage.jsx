@@ -9,14 +9,21 @@ export default function RestaurantsPage() {
   const [selectedRestaurantId, setSelectedRestaurantId] = useState(null);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
+  const [menuLoading, setMenuLoading] = useState(false);
   const [error, setError] = useState("");
   const { addItem } = useCart();
+
+  function normalizeList(data) {
+    if (Array.isArray(data)) return data;
+    if (data && typeof data === "object") return Object.values(data);
+    return [];
+  }
 
   async function loadAll() {
     setLoading(true);
     setError("");
     try {
-      setRestaurants(await api.restaurants.getAll());
+      setRestaurants(normalizeList(await api.restaurants.getAll()));
     } catch (err) {
       setError(err.message);
     } finally {
@@ -31,7 +38,7 @@ export default function RestaurantsPage() {
       setError("");
       try {
         const data = await api.restaurants.getAll();
-        if (active) setRestaurants(Array.isArray(data) ? data : []);
+        if (active) setRestaurants(normalizeList(data));
       } catch (err) {
         if (active) setError(err.message);
       } finally {
@@ -52,7 +59,7 @@ export default function RestaurantsPage() {
         await loadAll();
         return;
       }
-      setRestaurants(await api.restaurants.search(query));
+      setRestaurants(normalizeList(await api.restaurants.search(query)));
     } catch (err) {
       setError(err.message);
     } finally {
@@ -71,18 +78,23 @@ export default function RestaurantsPage() {
             onClick={async () => {
               setError("");
               setSelectedRestaurantId(r.restaurant_id);
+              setMenuLoading(true);
               try {
                 const menu = await api.restaurants.menu(r.restaurant_id);
-                setMenuItems(Array.isArray(menu) ? menu : []);
+                setMenuItems(normalizeList(menu));
               } catch {
                 try {
                   const fallback = await api.items.byRestaurant(r.restaurant_id);
-                  setMenuItems(Array.isArray(fallback) ? fallback : []);
+                  setMenuItems(normalizeList(fallback));
                 } catch (err) {
                   setMenuItems([]);
                   setError(err.message);
+                } finally {
+                  setMenuLoading(false);
                 }
+                return;
               }
+              setMenuLoading(false);
             }}
           >
             View menu
@@ -106,14 +118,22 @@ export default function RestaurantsPage() {
       <div className="grid cards">{cards}</div>
       <section className="card">
         <h3>Menu {selectedRestaurantId ? `for Restaurant ${selectedRestaurantId}` : ""}</h3>
-        {menuItems.length === 0 && <p className="muted">Select a restaurant to load menu items.</p>}
+        {menuLoading && <p>Loading menu...</p>}
+        {!menuLoading && menuItems.length === 0 && <p className="muted">Select a restaurant to load menu items.</p>}
         <div className="grid cards">
           {menuItems.map((item) => (
             <article className="panel" key={`${item.item_name}_${item.restaurant_id}`}>
               <h4>{item.item_name}</h4>
               <p>${Number(item.cost ?? 0).toFixed(2)}</p>
               <p className="muted">{item.cuisine}</p>
-              <button onClick={() => addItem(item)}>Add to cart</button>
+              <button
+                onClick={() => {
+                  const result = addItem(item);
+                  if (!result?.ok) setError(result.message || "Unable to add item to cart.");
+                }}
+              >
+                Add to cart
+              </button>
             </article>
           ))}
         </div>

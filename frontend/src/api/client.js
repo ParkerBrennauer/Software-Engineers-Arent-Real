@@ -1,23 +1,40 @@
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "/api";
 
+function parseErrorDetail(body, response) {
+  if (typeof body?.detail === "string") return body.detail;
+  if (Array.isArray(body?.detail)) {
+    return body.detail
+      .map((d) => d?.msg || d?.message || JSON.stringify(d))
+      .filter(Boolean)
+      .join("; ");
+  }
+  if (typeof body?.message === "string") return body.message;
+  return `Request failed: ${response.status}`;
+}
+
 async function request(path, options = {}) {
   let response;
   try {
     response = await fetch(`${API_BASE}${path}`, {
-      headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        ...(options.headers || {}),
+      },
       ...options,
     });
   } catch {
     throw new Error("Network error. Please check connection and retry.");
   }
+  const rawText = await response.text();
   let body = null;
   try {
-    body = await response.json();
+    body = rawText ? JSON.parse(rawText) : null;
   } catch {
-    body = null;
+    body = rawText || null;
   }
   if (!response.ok) {
-    const detail = body?.detail || body?.message || `Request failed: ${response.status}`;
+    const detail = parseErrorDetail(body, response);
     throw new Error(detail);
   }
   return body;
