@@ -59,3 +59,17 @@ async def order_history(customer_id:str):
         return await CustomerService.get_order_history(customer_id)
     except ValueError as err:
         raise convert_service_error(err) from err
+
+@router.patch("/{customer_id}/favourites/{item_key}")
+async def update_favourite(customer_id, item_key):
+    try:
+        return await CustomerService.toggle_favourite(customer_id, item_key)
+    except ValueError as err:
+        raise convert_service_error(err) from err
+
+@router.get("/{customer_id}/favourites")
+async def get_favourites(customer_id):
+    try:
+        return await CustomerService.get_favourites(customer_id)
+    except ValueError as err:
+        raise convert_service_error(err) from err
