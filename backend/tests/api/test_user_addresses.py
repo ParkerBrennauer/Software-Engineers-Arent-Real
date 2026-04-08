@@ -10,9 +10,6 @@ async def test_add_address_success(client, monkeypatch):
     def fake_get_current_user():
         return username
 
-    def fake_get_current_user():
-        return username
-
     async def fake_add_address(_username: str, _address: str):
 
         class DummyUser:
@@ -63,9 +60,6 @@ async def test_add_address_user_not_found(client, monkeypatch):
 async def test_get_addresses_success(client, monkeypatch):
     username = "testuser"
     expected_addresses = ["123 Random Blvd", "456 Side St"]
-
-    def fake_get_current_user():
-        return username
 
     def fake_get_current_user():
         return username
