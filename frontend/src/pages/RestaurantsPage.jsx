@@ -1,200 +1,125 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import {
-  addFavoriteRestaurant,
-  getFavoriteRestaurants,
-  getRestaurants,
-  removeFavoriteRestaurant,
-} from '../lib/api';
-import {
-  loadPreferredCustomerId,
-  savePreferredCustomerId,
-} from '../lib/demoData';
-import { useAuth } from '../state/AuthContext';
-
-function normalizeRestaurants(payload) {
-  if (Array.isArray(payload)) {
-    return payload;
-  }
-
-  if (payload && typeof payload === 'object') {
-    return Object.values(payload);
-  }
-
-  return [];
-}
-
-function averageRating(ratings) {
-  if (!ratings || typeof ratings !== 'object') {
-    return null;
-  }
-
-  let weightedTotal = 0;
-  let totalCount = 0;
-
-  Object.entries(ratings).forEach(([score, count]) => {
-    const numericScore = Number(score);
-    const numericCount = Number(count);
-
-    if (Number.isFinite(numericScore) && Number.isFinite(numericCount)) {
-      weightedTotal += numericScore * numericCount;
-      totalCount += numericCount;
-    }
-  });
-
-  if (totalCount === 0) {
-    return null;
-  }
-
-  return (weightedTotal / totalCount).toFixed(2);
-}
+import React, { useEffect, useMemo, useState } from "react";
+import { api } from "../api/client";
+import { useCart } from "../state/CartContext";
+import CartPanel from "../components/CartPanel";
 
 export default function RestaurantsPage() {
-  const { user } = useAuth();
-  const [customerId, setCustomerId] = useState(() =>
-    loadPreferredCustomerId(user?.username),
-  );
   const [restaurants, setRestaurants] = useState([]);
-  const [favoriteIds, setFavoriteIds] = useState([]);
-  const [query, setQuery] = useState('');
-  const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
-  const [pendingRestaurantId, setPendingRestaurantId] = useState(null);
+  const [menuItems, setMenuItems] = useState([]);
+  const [selectedRestaurantId, setSelectedRestaurantId] = useState(null);
+  const [query, setQuery] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const { addItem } = useCart();
 
-  useEffect(() => {
-    savePreferredCustomerId(customerId);
-  }, [customerId]);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadRestaurants = async () => {
-      setIsLoading(true);
-      setError('');
-      setMessage('');
-
-      try {
-        const [payload, favoritesPayload] = await Promise.all([
-          getRestaurants(),
-          getFavoriteRestaurants(customerId),
-        ]);
-        if (isMounted) {
-          setRestaurants(normalizeRestaurants(payload));
-          setFavoriteIds(favoritesPayload.favorite_restaurants || []);
-        }
-      } catch (err) {
-        if (isMounted) {
-          setError(err.message || 'Could not load restaurants.');
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    loadRestaurants();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [customerId]);
-
-  const filteredRestaurants = useMemo(() => {
-    const lowered = query.trim().toLowerCase();
-    if (!lowered) {
-      return restaurants;
-    }
-
-    return restaurants.filter((restaurant) => {
-      const cuisine = String(restaurant.cuisine || '').toLowerCase();
-      const id = String(restaurant.restaurant_id || '').toLowerCase();
-      return cuisine.includes(lowered) || id.includes(lowered);
-    });
-  }, [restaurants, query]);
-
-  const toggleFavorite = async (restaurantId) => {
-    setPendingRestaurantId(restaurantId);
-    setError('');
-    setMessage('');
-
+  async function loadAll() {
+    setLoading(true);
+    setError("");
     try {
-      const response = favoriteIds.includes(restaurantId)
-        ? await removeFavoriteRestaurant(customerId, restaurantId)
-        : await addFavoriteRestaurant(customerId, restaurantId);
-
-      setFavoriteIds(response.favorite_restaurants || []);
-      setMessage(response.message);
+      setRestaurants(await api.restaurants.getAll());
     } catch (err) {
-      setError(err.message || 'Could not update favorite restaurants.');
+      setError(err.message);
     } finally {
-      setPendingRestaurantId(null);
+      setLoading(false);
     }
-  };
+  }
+
+  useEffect(() => {
+    let active = true;
+    async function init() {
+      setLoading(true);
+      setError("");
+      try {
+        const data = await api.restaurants.getAll();
+        if (active) setRestaurants(Array.isArray(data) ? data : []);
+      } catch (err) {
+        if (active) setError(err.message);
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+    init();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  async function runSearch() {
+    setLoading(true);
+    setError("");
+    try {
+      if (!query.trim()) {
+        await loadAll();
+        return;
+      }
+      setRestaurants(await api.restaurants.search(query));
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const cards = useMemo(
+    () =>
+      restaurants.map((r) => (
+        <article className="panel" key={r.restaurant_id || JSON.stringify(r)}>
+          <h3>Restaurant {r.restaurant_id ?? "Unknown"}</h3>
+          <p>Cuisine: {r.cuisine || "n/a"}</p>
+          <p>Rating: {r.avg_ratings ?? "n/a"}</p>
+          <button
+            onClick={async () => {
+              setError("");
+              setSelectedRestaurantId(r.restaurant_id);
+              try {
+                const menu = await api.restaurants.menu(r.restaurant_id);
+                setMenuItems(Array.isArray(menu) ? menu : []);
+              } catch {
+                try {
+                  const fallback = await api.items.byRestaurant(r.restaurant_id);
+                  setMenuItems(Array.isArray(fallback) ? fallback : []);
+                } catch (err) {
+                  setMenuItems([]);
+                  setError(err.message);
+                }
+              }
+            }}
+          >
+            View menu
+          </button>
+        </article>
+      )),
+    [restaurants]
+  );
 
   return (
     <section className="card">
-      <h2>Restaurants</h2>
-      <p>Browse available restaurants from the backend API and save favorites.</p>
-
-      <label className="search-input">
-        Customer id for favorites
-        <input
-          value={customerId}
-          onChange={(event) => setCustomerId(event.target.value)}
-          placeholder="Paste a customer id from customers.json"
-        />
-      </label>
-
-      <label className="search-input">
-        Search by cuisine or restaurant id
-        <input
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="e.g. asian or 30"
-        />
-      </label>
-
-      {isLoading && <p>Loading restaurants...</p>}
-      {error && <p className="error">{error}</p>}
-      {message && <p className="success">{message}</p>}
-
-      {!isLoading && !error && filteredRestaurants.length === 0 && (
-        <p>No restaurants matched your search.</p>
-      )}
-
-      <div className="restaurant-grid">
-        {filteredRestaurants.map((restaurant) => (
-          <article key={restaurant.restaurant_id} className="restaurant-card">
-            <h3>Restaurant #{restaurant.restaurant_id}</h3>
-            <p>
-              <strong>Cuisine:</strong> {restaurant.cuisine || 'Unknown'}
-            </p>
-            <p>
-              <strong>Average rating:</strong>{' '}
-              {averageRating(restaurant.ratings) ?? 'No ratings yet'}
-            </p>
-            <div className="button-row">
-              <Link to={`/restaurants/${restaurant.restaurant_id}/order`}>
-                View menu and order
-              </Link>
-              <button
-                type="button"
-                className="secondary-button"
-                disabled={pendingRestaurantId === Number(restaurant.restaurant_id)}
-                onClick={() => toggleFavorite(Number(restaurant.restaurant_id))}
-              >
-                {pendingRestaurantId === Number(restaurant.restaurant_id)
-                  ? 'Updating...'
-                  : favoriteIds.includes(Number(restaurant.restaurant_id))
-                    ? 'Unfavorite'
-                    : 'Favorite'}
-              </button>
-            </div>
-          </article>
-        ))}
+      <h2>Restaurant discovery</h2>
+      <div className="row">
+        <input placeholder="Search by id (backend limitation)" value={query} onChange={(e) => setQuery(e.target.value)} />
+        <button onClick={runSearch}>Search</button>
+        <button onClick={loadAll}>Refresh</button>
       </div>
+      {loading && <p>Loading restaurants...</p>}
+      {error && <p className="error">{error}</p>}
+      {!loading && !error && cards.length === 0 && <p className="muted">No restaurants returned.</p>}
+      <div className="grid cards">{cards}</div>
+      <section className="card">
+        <h3>Menu {selectedRestaurantId ? `for Restaurant ${selectedRestaurantId}` : ""}</h3>
+        {menuItems.length === 0 && <p className="muted">Select a restaurant to load menu items.</p>}
+        <div className="grid cards">
+          {menuItems.map((item) => (
+            <article className="panel" key={`${item.item_name}_${item.restaurant_id}`}>
+              <h4>{item.item_name}</h4>
+              <p>${Number(item.cost ?? 0).toFixed(2)}</p>
+              <p className="muted">{item.cuisine}</p>
+              <button onClick={() => addItem(item)}>Add to cart</button>
+            </article>
+          ))}
+        </div>
+      </section>
+      <CartPanel />
     </section>
   );
 }
+

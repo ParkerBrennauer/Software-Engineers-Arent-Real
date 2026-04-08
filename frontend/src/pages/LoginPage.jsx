@@ -1,72 +1,65 @@
-import { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { loginUser } from '../lib/api';
-import { useAuth } from '../state/AuthContext';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { api } from "../api/client";
+import { useAuth } from "../state/AuthContext";
 
 export default function LoginPage() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
+  const { login, loading } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-  const { setUser } = useAuth();
+  const [form, setForm] = useState({ username: "", password: "" });
+  const [error, setError] = useState("");
+  const [twoFactorCode, setTwoFactorCode] = useState("");
+  const [needs2FA, setNeeds2FA] = useState(false);
 
-  const redirectPath = location.state?.from?.pathname || '/restaurants';
-
-  const onSubmit = async (event) => {
-    event.preventDefault();
-    setError('');
-    setIsSubmitting(true);
-
-    try {
-      const response = await loginUser({ username, password });
-      setUser({
-        id: response.id,
-        username,
-        requires2fa: Boolean(response.requires_2fa),
-        role: response.role ?? null,
-        restaurant_id: response.restaurant_id ?? null,
-      });
-      navigate(redirectPath, { replace: true });
-    } catch (err) {
-      setError(err.message || 'Login failed.');
-    } finally {
-      setIsSubmitting(false);
+  async function onSubmit(e) {
+    e.preventDefault();
+    setError("");
+    if (!form.username.trim() || !form.password.trim()) {
+      setError("Username and password are required.");
+      return;
     }
-  };
+    try {
+      const result = await login(form);
+      if (result?.requires_2fa) {
+        await api.users.generate2FA();
+        setNeeds2FA(true);
+        return;
+      }
+      navigate("/orders");
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  async function verify2FA() {
+    setError("");
+    try {
+      await api.users.verify2FA(twoFactorCode);
+      navigate("/orders");
+    } catch (err) {
+      setError(err.message);
+    }
+  }
 
   return (
     <section className="card">
       <h2>Login</h2>
-      <p>Sign in to browse restaurants and create orders.</p>
-      <form onSubmit={onSubmit} className="form-grid">
-        <label>
-          Username
-          <input
-            value={username}
-            onChange={(event) => setUsername(event.target.value)}
-            required
-          />
-        </label>
-        <label>
-          Password
-          <input
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            required
-          />
-        </label>
-        <button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Logging in...' : 'Login'}
+      <form className="grid" onSubmit={onSubmit}>
+        <input placeholder="Username" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} />
+        <input type="password" placeholder="Password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+        <button disabled={loading || !form.username.trim() || !form.password.trim()}>
+          {loading ? "Signing in..." : "Sign in"}
         </button>
       </form>
+      {needs2FA && (
+        <div className="panel">
+          <h3>Two-factor verification</h3>
+          <input placeholder="6-digit code" value={twoFactorCode} onChange={(e) => setTwoFactorCode(e.target.value)} />
+          <button onClick={verify2FA}>Verify 2FA</button>
+        </div>
+      )}
       {error && <p className="error">{error}</p>}
-      <p>
-        Need an account? <Link to="/register">Register here</Link>.
-      </p>
     </section>
   );
 }
+
