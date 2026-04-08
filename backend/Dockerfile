@@ -13,7 +13,8 @@ COPY src ./src
 
 RUN adduser --uid 5678 --disabled-password --gecos "" appuser \
     && mkdir -p /app/src/data \
-    && chown -R appuser /app
+    && chown -R 5678:5678 /app/src \
+    && chmod -R 666 /app/src/data
 
 USER appuser
 
