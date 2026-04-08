@@ -1,9 +1,54 @@
 from src.schemas.order_schema import OrderCreate, Order
 from src.models.order_model import OrderInternal
 from src.repositories.order_repo import OrderRepo
+from src.repositories.user_repo import UserRepo
+from src.repositories.restaurant_repo import RestaurantRepo
+from src.utils.distance import calculate_distance
 
 
 class OrderService:
+    @staticmethod
+    async def get_distance(customer: str, restaurant: str) -> float:
+        try:
+            users = await UserRepo.read_all()
+            customer_data = next(
+                (u for u in users if u.get("username") == customer), None
+            )
+            if (
+                not customer_data
+                or not customer_data.get("location")
+                or not customer_data["location"]
+            ):
+                return 0.0
+
+            customer_lon, customer_lat = customer_data["location"][0]
+
+            restaurant_id_str = restaurant.replace("Restaurant_", "")
+            restaurants = await RestaurantRepo.read_all()
+
+            if isinstance(restaurants, dict):
+                restaurant_data = restaurants.get(restaurant_id_str)
+            else:
+                restaurant_data = next(
+                    (
+                        r
+                        for r in restaurants
+                        if str(r.get("restaurant_id")) == restaurant_id_str
+                    ),
+                    None,
+                )
+
+            if not restaurant_data or not restaurant_data.get("location"):
+                return 0.0
+
+            restaurant_lon, restaurant_lat = restaurant_data["location"]
+
+            return calculate_distance(
+                customer_lon, customer_lat, restaurant_lon, restaurant_lat
+            )
+        except Exception:
+            return 0.0
+
     @staticmethod
     async def create_order(create_order: OrderCreate) -> dict:
         order_data = create_order.model_dump()
@@ -18,6 +63,11 @@ class OrderService:
         order_data["cost"] = await OrderService.calculate_order_cost(
             order_data["items"]
         )
+
+        if order_data.get("distance") is None:
+            order_data["distance"] = await OrderService.get_distance(
+                order_data.get("customer", ""), order_data.get("restaurant", "")
+            )
 
         saved_data = await OrderRepo.save_order(order_data)
         return OrderInternal.model_validate(saved_data)
@@ -200,7 +250,7 @@ class OrderService:
             raise ValueError("No username submitted")
 
         for order in orders.values():
-            if (order["customer"] == username):
+            if order["customer"] == username:
                 results.append(order)
 
         return results
