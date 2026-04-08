@@ -38,7 +38,7 @@ async def test_create_order_success():
     assert payload["order_status"] == "payment pending"
     assert payload["payment_status"] == "pending"
     assert payload["locked"] is False
-    assert payload["cost"] == 17.51
+    assert payload["cost"] == 20.9
     assert payload["items"] == [
         {"id": 1, "price": 10.0},
         {"id": 2, "price": 5.5},

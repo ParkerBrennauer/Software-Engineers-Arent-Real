@@ -60,14 +60,15 @@ class OrderService:
 
         order_data["locked"] = False
         order_data["items"] = order_data.get("items", [])
-        order_data["cost"] = await OrderService.calculate_order_cost(
-            order_data["items"]
-        )
 
         if order_data.get("distance") is None:
             order_data["distance"] = await OrderService.get_distance(
                 order_data.get("customer", ""), order_data.get("restaurant", "")
             )
+
+        order_data["cost"] = await OrderService.calculate_order_cost(
+            order_data["items"], order_data.get("distance", 0.0)
+        )
 
         saved_data = await OrderRepo.save_order(order_data)
         return OrderInternal.model_validate(saved_data)
@@ -90,7 +91,7 @@ class OrderService:
             "items", existing_order.get("items", [])
         )
         updated_order["cost"] = await OrderService.calculate_order_cost(
-            updated_order["items"]
+            updated_order["items"], updated_order.get("distance", 0.0)
         )
 
         saved_order = await OrderRepo.update_order(order_id, updated_order)
@@ -102,13 +103,16 @@ class OrderService:
         return OrderInternal.model_validate(saved_order)
 
     @staticmethod
-    async def calculate_order_cost(items: list) -> float:
+    async def calculate_order_cost(items: list, distance: float = 0.0) -> float:
         total = 0.0
         for item in items:
             if isinstance(item, dict):
                 total += item.get("price", 0)
             else:
                 total += 0
+
+        delivery_fee = 2.00 + (distance * 0.50)
+        total += delivery_fee
 
         total *= 1.13
         return round(total, 2)
