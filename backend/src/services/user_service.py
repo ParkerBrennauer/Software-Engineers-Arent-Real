@@ -2,7 +2,6 @@ import random
 from datetime import datetime, timedelta, timezone
 from src.schemas.user_schema import UserRegister, UserRole, UserUpdate
 from src.repositories.user_repo import UserRepo
-from src.repositories.item_repo import ItemRepo
 from src.models.user_model import UserInternal
 from passlib.context import CryptContext
 
@@ -10,6 +9,8 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 class UserService:
+    _current_logged_in_user: str | None = None
+
     @staticmethod
     async def get_password_hash(password: str) -> str:
         return pwd_context.hash(password)
@@ -32,7 +33,37 @@ class UserService:
         if not user.get("is_active"):
             raise ValueError("User account is inactive")
 
+        if (
+            UserService._current_logged_in_user is not None
+            and UserService._current_logged_in_user != username
+        ):
+            raise ValueError(
+                f"Another user ({UserService._current_logged_in_user}) is already logged in."
+            )
+
+        UserService._current_logged_in_user = username
+
+        update_data = {
+            "is_logged_in": True,
+            "last_login": datetime.now(timezone.utc).isoformat(),
+        }
+        await UserRepo.update_by_username(username, update_data)
+        user.update(update_data)
+
         return UserInternal.model_validate(user)
+
+    @staticmethod
+    async def logout_user(username: str) -> bool:
+        if UserService._current_logged_in_user == username:
+            UserService._current_logged_in_user = None
+
+        update_data = {"is_logged_in": False}
+        updated = await UserRepo.update_by_username(username, update_data)
+        return bool(updated)
+
+    @staticmethod
+    def get_current_user() -> str | None:
+        return UserService._current_logged_in_user
 
     @staticmethod
     async def create_user(user_in: UserRegister) -> dict:
@@ -162,54 +193,27 @@ class UserService:
         return True
 
     @staticmethod
-    async def toggle_favourite(username: str, itemKey: str) -> str:
-        """
-        Toggle a user's favourite item while enforcing one favourite per restaurant.
-        """
-        # Input validation to prevent lookups with invalid values.
-        if not isinstance(username, str) or not username.strip():
-            raise ValueError("username must be a non-empty string")
-        if not isinstance(itemKey, str) or not itemKey.strip():
-            raise ValueError("itemKey must be a non-empty string")
-
+    async def add_address(username: str, address: str) -> dict:
         user = await UserRepo.get_by_username(username)
         if not user:
             raise ValueError("User not found")
 
-        item = await ItemRepo.get_by_key(itemKey)
-        if not item:
-            raise ValueError("Item not found")
+        addresses = user.get("saved_addresses", [])
+        if address not in addresses:
+            addresses.append(address)
 
-        restaurant_id = item.get("restaurant_id")
-        if restaurant_id is None:
-            raise ValueError("Item missing restaurant_id")
+        updated_user = await UserRepo.update_by_username(
+            username, {"saved_addresses": addresses}
+        )
+        if not updated_user:
+            raise ValueError("User not found")
 
-        favorites_raw = user.get("favourites", [])
-        if not isinstance(favorites_raw, list):
-            raise ValueError("User favourites must be a list")
-        favourites = list(favorites_raw)
+        return UserInternal.model_validate(updated_user)
 
-        # Toggle off if this exact item is already favourited.
-        if itemKey in favourites:
-            updated = [fav for fav in favourites if fav != itemKey]
-            await UserRepo.update_by_username(username, {"favourites": updated})
-            return "removed"
+    @staticmethod
+    async def get_addresses(username: str) -> list[str]:
+        user = await UserRepo.get_by_username(username)
+        if not user:
+            raise ValueError("User not found")
 
-        # Enforce one favourite per restaurant by replacing any same-restaurant item.
-        replaced = False
-        updated_favourites: list[str] = []
-        for favourite_key in favourites:
-            favourite_item = await ItemRepo.get_by_key(favourite_key)
-            favourite_restaurant_id = (
-                favourite_item.get("restaurant_id")
-                if isinstance(favourite_item, dict)
-                else None
-            )
-            if favourite_restaurant_id == restaurant_id:
-                replaced = True
-                continue
-            updated_favourites.append(favourite_key)
-
-        updated_favourites.append(itemKey)
-        await UserRepo.update_by_username(username, {"favourites": updated_favourites})
-        return "replaced" if replaced else "added"
+        return user.get("saved_addresses", [])

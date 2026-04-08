@@ -37,6 +37,7 @@ class Order(BaseModel):
 
     delay_reason: str | None = None
     driver: str | None = None
+    delivery_instructions: str | None = None
 
     refund_issued: bool = False
     refund_amount: float | None = None
@@ -49,7 +50,8 @@ class OrderCreate(BaseModel):
     customer: str
     time: int
     cuisine: str
-    distance: float
+    distance: float | None = None
+    delivery_instructions: str | None = None
 
 
 class OrderUpdate(BaseModel):
@@ -60,6 +62,7 @@ class OrderUpdate(BaseModel):
     time: int | None = None
     cuisine: str | None = None
     distance: float | None = None
+    delivery_instructions: str | None = None
 
     order_status: OrderStatus | None = None
     delay_reason: str | None = None

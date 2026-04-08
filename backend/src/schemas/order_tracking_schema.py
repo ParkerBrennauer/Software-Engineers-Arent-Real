@@ -14,6 +14,7 @@ class OrderTrackingResponse(BaseModel):
     customer: str
     driver: str | None = None
     order_status: OrderStatus
+    delivery_instructions: str | None = None
     current_location: str
     distance_km: float
     estimated_time_minutes: int

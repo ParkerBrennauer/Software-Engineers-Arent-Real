@@ -3,6 +3,13 @@ from src.repositories.user_repo import UserRepo
 from src.services.user_service import UserService
 
 
+@pytest.fixture(autouse=True)
+def reset_logged_in_user():
+    UserService._current_logged_in_user = None
+    yield
+    UserService._current_logged_in_user = None
+
+
 @pytest.mark.asyncio
 async def test_login_user_success_driver(monkeypatch):
     user_data = {

@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+
 class OrderInternal(BaseModel):
     id: int
     order_status: str
@@ -7,3 +8,4 @@ class OrderInternal(BaseModel):
     items: list
     cost: float
     locked: bool = False
+    delivery_instructions: str | None = None

@@ -6,6 +6,7 @@ from src.schemas.favorite_restaurant_schema import (
     FavoriteRestaurantResponse,
 )
 from src.services.favorite_restaurant_service import FavoriteRestaurantService
+from src.services.customer_service import CustomerService
 
 router = APIRouter(prefix="/customers", tags=["customers"])
 
@@ -48,5 +49,13 @@ async def remove_favorite_restaurant(customer_id: str, restaurant_id: int):
             customer_id,
             restaurant_id,
         )
+    except ValueError as err:
+        raise convert_service_error(err) from err
+
+
+@router.patch("/{customer_id}/order-history")
+async def order_history(customer_id:str):
+    try:
+        return await CustomerService.get_order_history(customer_id)
     except ValueError as err:
         raise convert_service_error(err) from err
