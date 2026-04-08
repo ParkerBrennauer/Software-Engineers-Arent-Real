@@ -26,7 +26,7 @@ async def remove_favorite_restaurant(customer_id: str, restaurant_id: int):
     except ValueError as err:
         raise convert_service_error(err) from err
 
-@router.get('/{customer_id}/order-history')
+@router.patch('/{customer_id}/order-history')
 async def order_history(customer_id: str):
     try:
         return await CustomerService.get_order_history(customer_id)
