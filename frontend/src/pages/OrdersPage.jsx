@@ -41,12 +41,17 @@ export default function OrdersPage() {
   const [tipMode, setTipMode] = useState("percent");
   const [tipPercentInput, setTipPercentInput] = useState("15");
   const [tipFixedInput, setTipFixedInput] = useState("");
+  const [tipSuccess, setTipSuccess] = useState(null);
 
   useEffect(() => {
     if (resolvedRole === "driver" && user?.username) {
       setDriverName((prev) => (prev.trim() ? prev : user.username));
     }
   }, [resolvedRole, user?.username]);
+
+  useEffect(() => {
+    setTipSuccess(null);
+  }, [orderId]);
 
   async function run(call) {
     setBusy(true);
@@ -76,24 +81,63 @@ export default function OrdersPage() {
     return value;
   }
 
-  function applyCustomerTip() {
+  function formatTipCurrency(value) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return "—";
+    try {
+      return new Intl.NumberFormat(undefined, { style: "currency", currency: "USD" }).format(n);
+    } catch {
+      return `$${n.toFixed(2)}`;
+    }
+  }
+
+  async function applyCustomerTip() {
     const valid = requireOrderId();
     if (!valid) return;
+    let payload;
+    let percentUsed = null;
+    let fixedEntered = null;
     if (tipMode === "percent") {
       const p = parseFloat(tipPercentInput);
       if (!Number.isFinite(p) || p < 0) {
         setError("Enter a valid tip percentage (0 or greater).");
         return;
       }
-      run(() => api.orders.tip(valid, { tip_percent: p }));
-      return;
+      payload = { tip_percent: p };
+      percentUsed = p;
+    } else {
+      const amount = parseFloat(tipFixedInput);
+      if (!Number.isFinite(amount) || amount < 0) {
+        setError("Enter a valid tip amount in dollars (0 or greater).");
+        return;
+      }
+      payload = { tip_amount: amount };
+      fixedEntered = amount;
     }
-    const amount = parseFloat(tipFixedInput);
-    if (!Number.isFinite(amount) || amount < 0) {
-      setError("Enter a valid tip amount in dollars (0 or greater).");
-      return;
+    setBusy(true);
+    setError("");
+    try {
+      const data = await api.orders.tip(valid, payload);
+      setResult(data);
+      let tipTotal = null;
+      if (data && typeof data === "object" && data.tip_amount != null) {
+        const parsed = Number(data.tip_amount);
+        if (Number.isFinite(parsed)) tipTotal = parsed;
+      }
+      if (tipTotal == null && tipMode === "fixed" && fixedEntered != null) {
+        tipTotal = fixedEntered;
+      }
+      setTipSuccess({
+        orderId: valid,
+        tipTotal,
+        percentUsed,
+        mode: tipMode,
+      });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
     }
-    run(() => api.orders.tip(valid, { tip_amount: amount }));
   }
 
   async function checkoutOrder() {
@@ -240,6 +284,60 @@ export default function OrdersPage() {
                 )}
               </div>
             </fieldset>
+            {tipSuccess && (
+              <section
+                className="panel tip-applied-success"
+                role="status"
+                aria-live="polite"
+                aria-labelledby="tip-applied-success-heading"
+              >
+                <div className="tip-applied-success__header">
+                  <span className="tip-applied-success__icon" aria-hidden="true">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="28"
+                      height="28"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                      <polyline points="22 4 12 14.01 9 11.01" />
+                    </svg>
+                  </span>
+                  <h3 id="tip-applied-success-heading" className="tip-applied-success__title">
+                    Tip applied successfully
+                  </h3>
+                </div>
+                <div className="tip-applied-success__body">
+                  <p className="tip-applied-success__meta">
+                    Order <span className="tip-applied-success__strong">#{tipSuccess.orderId}</span> now includes your
+                    tip.
+                  </p>
+                  {tipSuccess.tipTotal != null && (
+                    <p className="tip-applied-success__amount" aria-label="Total tip amount">
+                      Tip total: {formatTipCurrency(tipSuccess.tipTotal)}
+                    </p>
+                  )}
+                  {tipSuccess.mode === "percent" && tipSuccess.percentUsed != null && (
+                    <p className="muted small-print">
+                      Based on {tipSuccess.percentUsed}% of the order subtotal (before tip).
+                    </p>
+                  )}
+                  {tipSuccess.mode === "fixed" && (
+                    <p className="muted small-print">You added a fixed-dollar tip to this order.</p>
+                  )}
+                </div>
+                <div className="tip-applied-success__actions row">
+                  <button type="button" className="tip-applied-success__dismiss" onClick={() => setTipSuccess(null)}>
+                    Dismiss
+                  </button>
+                </div>
+              </section>
+            )}
             <div className="row action-toolbar">
               <button
                 type="button"

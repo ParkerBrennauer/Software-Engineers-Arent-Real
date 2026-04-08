@@ -407,6 +407,64 @@ code {
   font-size: 0.95rem;
 }
 
+.tip-applied-success {
+  margin-top: 0.65rem;
+  border: 1px solid rgba(120, 220, 160, 0.45);
+  background: rgba(20, 55, 45, 0.35);
+}
+.tip-applied-success__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  margin-bottom: 0.55rem;
+}
+.tip-applied-success__icon {
+  flex-shrink: 0;
+  color: #92f6b6;
+  display: flex;
+}
+.tip-applied-success__title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 650;
+  color: #f3fff8;
+}
+.tip-applied-success__body {
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+.tip-applied-success__meta {
+  margin: 0 0 0.35rem 0;
+}
+.tip-applied-success__strong {
+  font-weight: 600;
+  color: #dbe6ff;
+}
+.tip-applied-success__amount {
+  margin: 0.5rem 0 0.25rem 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #c8ffd8;
+  letter-spacing: 0.01em;
+}
+.tip-applied-success__actions {
+  margin-top: 0.65rem;
+  margin-bottom: 0;
+  justify-content: flex-end;
+}
+.tip-applied-success__dismiss {
+  padding: 0.4rem 0.85rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.tip-applied-success__dismiss:hover {
+  border-color: #7db4ff;
+}
+
 .access-restricted-notice {
   margin-top: 0.75rem;
   padding: 1rem 1.15rem;

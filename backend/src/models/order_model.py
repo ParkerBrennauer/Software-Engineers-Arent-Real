@@ -8,3 +8,6 @@ class OrderInternal(BaseModel):
     cost: float
     locked: bool = False
     delivery_instructions: str | None = None
+    tip_percent: float | None = None
+    tip_amount: float | None = None
+    tip_paid: bool = False
