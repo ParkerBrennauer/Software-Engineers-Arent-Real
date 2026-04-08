@@ -4,26 +4,52 @@ from src.schemas.order_tracking_schema import OrderTrackingResponse, OrderTracki
 from src.models.order_model import OrderInternal
 from src.services.order_services import OrderService
 from src.services.order_tracking_service import OrderTrackingService
+from src.services.user_service import UserService
 from src.api.dependencies import convert_service_error
+from src.repositories.order_repo import OrderRepo
+
 router = APIRouter(prefix='/orders', tags=['orders'])
 
 @router.post('/place', response_model=OrderInternal, status_code=status.HTTP_201_CREATED)
 async def place_order(order: OrderCreate):
+    current_user = UserService.get_current_user()
+    if not current_user:
+        raise convert_service_error(ValueError("No user currently logged in"))
     try:
+        order.customer = current_user
         return await OrderService.create_order(order)
     except ValueError as err:
         raise convert_service_error(err)
 
 @router.post('/{order_id}/items', response_model=OrderInternal, status_code=status.HTTP_200_OK)
 async def add_items_to_order(order_id: str, items_update: OrderUpdate):
+    current_user = UserService.get_current_user()
+    if not current_user:
+        raise convert_service_error(ValueError("No user currently logged in"))
     try:
+        order = await OrderRepo.get_by_id(order_id)
+        if order is None:
+            raise ValueError("Order not found")
+        if order.get("customer") != current_user:
+            raise ValueError("User does not have permission to add items to this order")
         return await OrderService.update_order(int(order_id), {'items': items_update.items})
     except ValueError as err:
         raise convert_service_error(err)
 
 @router.get('/{order_id}')
 async def get_order_status(order_id: str):
-    return await OrderService.get_order_status(order_id)
+    current_user = UserService.get_current_user()
+    if not current_user:
+        raise convert_service_error(ValueError("No user currently logged in"))
+    try:
+        order = await OrderRepo.get_by_id(order_id)
+        if order is None:
+            raise ValueError("Order not found")
+        if order.get("customer") != current_user:
+            raise ValueError("User does not have permission to view this order")
+        return await OrderService.get_order_status(order_id)
+    except ValueError as err:
+        raise convert_service_error(err)
 
 @router.get('/restaurant/{restaurant}')
 async def get_restaurant_orders(restaurant: str):
@@ -31,7 +57,18 @@ async def get_restaurant_orders(restaurant: str):
 
 @router.put('/{order_id}/cancel')
 async def cancel_order(order_id: str):
-    return await OrderService.cancel_order(order_id)
+    current_user = UserService.get_current_user()
+    if not current_user:
+        raise convert_service_error(ValueError("No user currently logged in"))
+    try:
+        order = await OrderRepo.get_by_id(order_id)
+        if order is None:
+            raise ValueError("Order not found")
+        if order.get("customer") != current_user:
+            raise ValueError("User does not have permission to cancel this order")
+        return await OrderService.cancel_order(order_id)
+    except ValueError as err:
+        raise convert_service_error(err)
 
 @router.put('/{order_id}/ready')
 async def mark_ready(order_id: str):
