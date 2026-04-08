@@ -3,10 +3,11 @@ from src.repositories.user_repo import UserRepo
 from src.repositories.item_repo import ItemRepo
 
 class CustomerService:
+
     @staticmethod
     async def get_order_history(username: str) -> list:
         if not username:
-            raise ValueError("No username submitted")
+            raise ValueError('No username submitted')
         return await OrderService.get_previous_orders_by_user(username)
 
     @staticmethod

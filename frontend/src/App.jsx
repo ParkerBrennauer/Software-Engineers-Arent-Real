@@ -8,6 +8,7 @@ import OrderStatusPage from './pages/OrderStatusPage';
 import FavoritesPage from './pages/FavoritesPage';
 import TrackingPage from './pages/TrackingPage';
 import ReviewsPage from './pages/ReviewsPage';
+import DiscountsPage from './pages/DiscountsPage';
 import { useAuth } from './state/AuthContext';
 
 function AppShell() {
@@ -30,6 +31,7 @@ function AppShell() {
               <NavLink to="/favorites">Favorites</NavLink>
               <NavLink to="/tracking">Tracking</NavLink>
               <NavLink to="/reviews">Reviews</NavLink>
+              <NavLink to="/discounts">Discounts</NavLink>
               <button className="link-button" onClick={logout} type="button">
                 Logout
               </button>
@@ -89,6 +91,14 @@ function AppShell() {
             element={
               <RequireAuth>
                 <ReviewsPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/discounts"
+            element={
+              <RequireAuth>
+                <DiscountsPage />
               </RequireAuth>
             }
           />

@@ -1,7 +1,6 @@
 from typing import Optional
 from src.schemas.user_schema import UserBase
 
-
 class UserInternal(UserBase):
     id: int
     hashed_password: str

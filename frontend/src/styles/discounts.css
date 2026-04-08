@@ -1,0 +1,173 @@
+.discounts-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.discounts-intro code {
+  font-size: 0.85em;
+  background: #f2f4f7;
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.25rem;
+}
+
+.discount-demo-banner {
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: #eff8ff;
+  border: 1px solid #b2ddff;
+  border-radius: 0.5rem;
+  font-size: 0.95rem;
+}
+
+.discount-demo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.discount-demo-actions button {
+  padding: 0.35rem 0.75rem;
+  border-radius: 0.4rem;
+  border: 1px solid #98a2b3;
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.discount-demo-actions button.active {
+  border-color: #155eef;
+  background: #155eef;
+  color: #fff;
+}
+
+.discount-owner-settings label {
+  display: grid;
+  gap: 0.35rem;
+  max-width: 280px;
+}
+
+.discount-owner-settings input {
+  padding: 0.45rem 0.5rem;
+  border-radius: 0.4rem;
+  border: 1px solid #d0d5dd;
+}
+
+.discount-manager-header h2 {
+  margin: 0 0 0.35rem;
+}
+
+.discount-manager {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.discount-card {
+  background: #ffffff;
+  border: 1px solid #d0d5dd;
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem 1.25rem;
+}
+
+.discount-card h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+}
+
+.discount-hint {
+  margin: 0 0 1rem;
+  font-size: 0.875rem;
+  color: #475467;
+}
+
+.discount-muted {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #667085;
+}
+
+.discount-form {
+  display: grid;
+  gap: 0.75rem;
+  max-width: 420px;
+}
+
+.discount-form label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+}
+
+.discount-form input {
+  padding: 0.45rem 0.55rem;
+  border-radius: 0.4rem;
+  border: 1px solid #d0d5dd;
+}
+
+.discount-form button {
+  justify-self: start;
+  padding: 0.5rem 1rem;
+  border-radius: 0.4rem;
+  border: none;
+  background: #155eef;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.discount-form button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.discount-success {
+  margin: 0.75rem 0 0;
+  color: #027a48;
+  font-size: 0.95rem;
+}
+
+.discount-error {
+  margin: 0.75rem 0 0;
+  color: #b42318;
+  font-size: 0.95rem;
+}
+
+.discount-table-wrap {
+  overflow-x: auto;
+}
+
+.discount-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.discount-table th,
+.discount-table td {
+  text-align: left;
+  padding: 0.5rem 0.65rem;
+  border-bottom: 1px solid #eaecf0;
+}
+
+.discount-table th {
+  font-weight: 600;
+  color: #344054;
+  background: #f9fafb;
+}
+
+.discount-btn-danger {
+  padding: 0.35rem 0.65rem;
+  border-radius: 0.35rem;
+  border: 1px solid #fda29b;
+  background: #fef3f2;
+  color: #b42318;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.discount-btn-danger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
