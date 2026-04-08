@@ -4,12 +4,13 @@ import { api } from "../api/client";
 import { useAuth } from "../state/AuthContext";
 
 export default function LoginPage() {
-  const { login, loading } = useAuth();
+  const { login, loading, completeTwoFactor } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ username: "", password: "" });
   const [error, setError] = useState("");
   const [twoFactorCode, setTwoFactorCode] = useState("");
   const [needs2FA, setNeeds2FA] = useState(false);
+  const [verifying2FA, setVerifying2FA] = useState(false);
 
   async function onSubmit(e) {
     e.preventDefault();
@@ -33,11 +34,19 @@ export default function LoginPage() {
 
   async function verify2FA() {
     setError("");
+    if (!/^\d{6}$/.test(twoFactorCode.trim())) {
+      setError("2FA code must be 6 digits.");
+      return;
+    }
+    setVerifying2FA(true);
     try {
-      await api.users.verify2FA(twoFactorCode);
+      await api.users.verify2FA(twoFactorCode.trim());
+      completeTwoFactor();
       navigate("/orders");
     } catch (err) {
       setError(err.message);
+    } finally {
+      setVerifying2FA(false);
     }
   }
 
@@ -54,8 +63,15 @@ export default function LoginPage() {
       {needs2FA && (
         <div className="panel">
           <h3>Two-factor verification</h3>
-          <input placeholder="6-digit code" value={twoFactorCode} onChange={(e) => setTwoFactorCode(e.target.value)} />
-          <button onClick={verify2FA}>Verify 2FA</button>
+          <input
+            placeholder="6-digit code"
+            inputMode="numeric"
+            value={twoFactorCode}
+            onChange={(e) => setTwoFactorCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+          />
+          <button disabled={verifying2FA || twoFactorCode.trim().length !== 6} onClick={verify2FA}>
+            {verifying2FA ? "Verifying..." : "Verify 2FA"}
+          </button>
         </div>
       )}
       {error && <p className="error">{error}</p>}

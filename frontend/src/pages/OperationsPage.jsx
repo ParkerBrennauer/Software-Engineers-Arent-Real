@@ -13,6 +13,20 @@ export default function OperationsPage() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
+  function parseTimeRange() {
+    const start = Number(startTime);
+    const end = Number(endTime);
+    if (!Number.isFinite(start) || !Number.isFinite(end)) {
+      setError("Start and end time must be valid numbers.");
+      return null;
+    }
+    if (start > end) {
+      setError("Start time cannot be greater than end time.");
+      return null;
+    }
+    return { start, end };
+  }
+
   async function run(call) {
     setBusy(true);
     setError("");
@@ -33,8 +47,14 @@ export default function OperationsPage() {
         <input placeholder="Restaurant ID" value={restaurantId} onChange={(e) => setRestaurantId(e.target.value)} />
         <button disabled={busy || !restaurantId.trim()} onClick={() => run(() => api.restaurantAdministration.orders(restaurantId))}>Owner orders</button>
         <button disabled={busy || !restaurantId.trim()} onClick={() => run(() => api.restaurantAdministration.ordersByStatus(restaurantId, "delayed"))}>Owner orders by status</button>
-        <button disabled={busy || !restaurantId.trim()} onClick={() => run(() => api.restaurantAdministration.ordersByDate(restaurantId, Number(startTime), Number(endTime)))}>Orders by date</button>
-        <button disabled={busy || !restaurantId.trim()} onClick={() => run(() => api.restaurantAdministration.ordersByStatusAndDate(restaurantId, "delayed", Number(startTime), Number(endTime)))}>Status + date</button>
+        <button disabled={busy || !restaurantId.trim()} onClick={() => {
+          const range = parseTimeRange();
+          if (range) run(() => api.restaurantAdministration.ordersByDate(restaurantId, range.start, range.end));
+        }}>Orders by date</button>
+        <button disabled={busy || !restaurantId.trim()} onClick={() => {
+          const range = parseTimeRange();
+          if (range) run(() => api.restaurantAdministration.ordersByStatusAndDate(restaurantId, "delayed", range.start, range.end));
+        }}>Status + date</button>
       </div>
       <div className="row">
         <input placeholder="Start unix time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />

@@ -9,6 +9,7 @@ import OrdersPage from "./pages/OrdersPage";
 import ReviewsPage from "./pages/ReviewsPage";
 import OperationsPage from "./pages/OperationsPage";
 import ProfilePage from "./pages/ProfilePage";
+import DiscountsPage from "./pages/DiscountsPage";
 
 function HomePage() {
   return (
@@ -29,7 +30,7 @@ function HomePage() {
         </article>
         <article className="panel">
           <h3>Owner / Staff</h3>
-          <p>View restaurant orders, filter by date/status, assign staff and manage discounts.</p>
+          <p>View restaurant orders, filter by date/status, assign staff, and create promo codes on the Discounts page.</p>
         </article>
       </div>
     </section>
@@ -47,6 +48,7 @@ function Nav() {
         <Link to="/orders">Orders</Link>
         <Link to="/reviews">Reviews</Link>
         <Link to="/operations">Operations</Link>
+        <Link to="/discounts">Discounts</Link>
         <Link to="/profile">Profile</Link>
       </nav>
       <div className="auth-chip">
@@ -79,6 +81,7 @@ export default function App() {
         <Route path="/reviews" element={<ReviewsPage />} />
         <Route path="/operations" element={<RequireAuth><OperationsPage /></RequireAuth>} />
         <Route path="/profile" element={<RequireAuth><ProfilePage /></RequireAuth>} />
+        <Route path="/discounts" element={<DiscountsPage />} />
       </Routes>
     </main>
   );

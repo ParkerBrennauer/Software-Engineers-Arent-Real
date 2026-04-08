@@ -39,7 +39,88 @@ button:hover { border-color: #7db4ff; }
 .muted { color: #b6c0de; }
 .json { white-space: pre-wrap; word-break: break-word; background: #02050e; padding: 0.7rem; border-radius: 10px; }
 
+code {
+  font-size: 0.9em;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 0.1em 0.35em;
+  border-radius: 6px;
+}
+
+.small-print { font-size: 0.88rem; line-height: 1.45; }
+.list-compact { margin: 0.4rem 0 0 1.1rem; padding: 0; }
+.list-compact li { margin: 0.35rem 0; }
+
+.promo-banner {
+  display: flex; align-items: flex-start; gap: 0.65rem;
+  flex-wrap: wrap;
+  padding: 0.65rem 0.85rem;
+  margin-bottom: 0.75rem;
+  border-radius: 12px;
+  border: 1px solid rgba(126, 200, 255, 0.35);
+  background: rgba(30, 60, 120, 0.35);
+}
+.promo-badge {
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em;
+  padding: 0.2rem 0.5rem; border-radius: 999px;
+  background: linear-gradient(120deg, #3d7cff, #5ad0ff);
+  color: #0a1020;
+}
+
+.promo-block {
+  margin: 0.75rem 0;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+.promo-heading { margin: 0 0 0.35rem 0; font-size: 1rem; }
+.promo-row { align-items: center; }
+
+.savings-chip {
+  margin-left: 0.5rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  background: rgba(80, 200, 140, 0.25);
+  border: 1px solid rgba(120, 240, 180, 0.4);
+}
+
+.strike { text-decoration: line-through; opacity: 0.75; }
+.strike-wrap { font-weight: 400; }
+
+.price-breakdown p { margin: 0.25rem 0; }
+
+.discount-info h3 { margin-top: 0; }
+.owner-discount-panel h3 { margin-top: 0; }
+
+.discount-form .form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.65rem;
+  align-items: end;
+}
+.field { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.88rem; }
+.field span { color: #b6c0de; }
+.field-wide { grid-column: 1 / -1; }
+
+.checkbox-inline {
+  display: flex; align-items: center; gap: 0.4rem;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.button-link {
+  display: inline-block;
+  margin-top: 0.5rem;
+  padding: 0.45rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+}
+.button-link:hover { border-color: #7db4ff; color: #fff; }
+
+.cart-panel h4 { margin: 0; }
+
 @media (max-width: 720px) {
   .topbar { flex-direction: column; align-items: flex-start; }
+  .promo-row { flex-direction: column; align-items: stretch; }
 }
 

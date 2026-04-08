@@ -6,29 +6,36 @@ export default function ProfilePage() {
   const [addresses, setAddresses] = useState([]);
   const [addressInput, setAddressInput] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   async function load() {
+    setLoading(true);
     setError("");
     try {
-      setCurrentUser(await api.users.currentUser());
-      setAddresses(await api.users.getAddresses());
+      const [current, addr] = await Promise.all([api.users.currentUser(), api.users.getAddresses()]);
+      setCurrentUser(current);
+      setAddresses(Array.isArray(addr) ? addr : []);
     } catch (err) {
       setError(err.message);
+    } finally {
+      setLoading(false);
     }
   }
 
   useEffect(() => {
     let active = true;
     async function init() {
+      setLoading(true);
       setError("");
       try {
-        const current = await api.users.currentUser();
-        const addr = await api.users.getAddresses();
+        const [current, addr] = await Promise.all([api.users.currentUser(), api.users.getAddresses()]);
         if (!active) return;
         setCurrentUser(current);
         setAddresses(Array.isArray(addr) ? addr : []);
       } catch (err) {
         if (active) setError(err.message);
+      } finally {
+        if (active) setLoading(false);
       }
     }
     init();
@@ -55,7 +62,7 @@ export default function ProfilePage() {
   return (
     <section className="card">
       <h2>Profile and customer data</h2>
-      <button onClick={load}>Refresh profile</button>
+      <button onClick={load} disabled={loading}>{loading ? "Refreshing..." : "Refresh profile"}</button>
       {currentUser && <pre className="json">{JSON.stringify(currentUser, null, 2)}</pre>}
       <div className="row">
         <input placeholder="Add address" value={addressInput} onChange={(e) => setAddressInput(e.target.value)} />

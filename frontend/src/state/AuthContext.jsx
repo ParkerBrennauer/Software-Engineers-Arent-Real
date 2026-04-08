@@ -5,9 +5,10 @@ const AuthContext = createContext(null);
 
 function inferRoleFromUsername(username) {
   if (!username) return "guest";
-  if (username.includes("owner")) return "owner";
-  if (username.includes("staff")) return "staff";
-  if (username.includes("driver")) return "driver";
+  const lower = String(username).toLowerCase();
+  if (lower.includes("owner")) return "owner";
+  if (lower.includes("staff")) return "staff";
+  if (lower.includes("driver")) return "driver";
   return "customer";
 }
 
@@ -26,6 +27,10 @@ export function AuthProvider({ children }) {
   const [bootstrapping, setBootstrapping] = useState(true);
 
   useEffect(() => {
+    if (!user) {
+      localStorage.removeItem("frontend-auth-user");
+      return;
+    }
     localStorage.setItem("frontend-auth-user", JSON.stringify(user));
   }, [user]);
 
@@ -60,11 +65,12 @@ export function AuthProvider({ children }) {
       const current = await api.users.currentUser();
       const username = current?.username || payload.username;
       const derivedRole = inferRoleFromUsername(username);
+      const requires2FA = Boolean(result?.requires_2fa);
       setUser({
         id: result?.id ?? null,
         username,
         role: derivedRole,
-        requires2FA: Boolean(result?.requires_2fa),
+        requires2FA,
       });
       return result;
     } finally {
@@ -81,8 +87,12 @@ export function AuthProvider({ children }) {
     setUser(null);
   }
 
+  function completeTwoFactor() {
+    setUser((prev) => (prev ? { ...prev, requires2FA: false } : prev));
+  }
+
   const value = useMemo(
-    () => ({ user, loading, bootstrapping, login, logout, setUser }),
+    () => ({ user, loading, bootstrapping, login, logout, setUser, completeTwoFactor }),
     [user, loading, bootstrapping]
   );
 
