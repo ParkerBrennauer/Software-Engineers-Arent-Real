@@ -113,7 +113,7 @@ export const api = {
   },
   discounts: {
     apply: (payload) => request("/discounts/apply", { method: "POST", body: JSON.stringify(payload) }),
-    create: (payload) => request("/discounts", { method: "POST", body: JSON.stringify(payload) }),
+    create: (payload) => request("/discounts/", { method: "POST", body: JSON.stringify(payload) }),
     remove: (discountCode) => request(`/discounts/${encodeURIComponent(discountCode)}`, { method: "DELETE" }),
   },
   restaurantAdministration: {

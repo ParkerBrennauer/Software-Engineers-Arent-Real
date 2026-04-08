@@ -6,7 +6,7 @@ import CartPanel from "../components/CartPanel";
 
 export default function OrdersPage() {
   const { user } = useAuth();
-  const { items, restaurant, total, clear } = useCart();
+  const { items, restaurant, grandTotal, clear } = useCart();
   const [orderId, setOrderId] = useState("");
   const [deliveryInstructions, setDeliveryInstructions] = useState("");
   const [driverName, setDriverName] = useState("");
@@ -49,7 +49,7 @@ export default function OrdersPage() {
     }
     const payload = {
       items: items.map((i) => ({ item_name: i.item_name, price: Number(i.price) * i.quantity })),
-      cost: Number(total.toFixed(2)),
+      cost: Number(grandTotal.toFixed(2)),
       restaurant: `Restaurant_${restaurant.restaurant_id}`,
       customer: user?.username || "",
       time: 25,
@@ -70,6 +70,7 @@ export default function OrdersPage() {
       <h2>Orders and tracking</h2>
       <p className="muted">
         Checkout uses backend order creation; payment is simulated in UI because no payment router endpoint exists.
+        Cart discounts use <code>POST /discounts/apply</code>; the discounted total is sent as <code>cost</code>.
       </p>
       <div className="row">
         <input

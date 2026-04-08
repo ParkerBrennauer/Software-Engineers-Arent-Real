@@ -10,6 +10,11 @@ import OrdersPage from "../pages/OrdersPage";
 import ProfilePage from "../pages/ProfilePage";
 import { useCart } from "../state/CartContext";
 
+function jsonFetch(ok, data, status = 200) {
+  const body = JSON.stringify(data);
+  return { ok, status, text: async () => body, json: async () => JSON.parse(body) };
+}
+
 function wrap(ui) {
   return render(
     createElement(
@@ -27,27 +32,20 @@ describe("frontend endpoint flows", () => {
   });
 
   it("shows loading and renders restaurant results", async () => {
-    fetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => [{ restaurant_id: 7, cuisine: "thai", avg_ratings: 4.8 }],
-    });
+    fetch.mockResolvedValueOnce(jsonFetch(true, [{ restaurant_id: 7, cuisine: "thai", avg_ratings: 4.8 }]));
     wrap(createElement(RestaurantsPage));
     expect(screen.getByText(/Loading restaurants/i)).toBeInTheDocument();
     await screen.findByText(/Restaurant 7/i);
   });
 
   it("handles empty restaurant state", async () => {
-    fetch.mockResolvedValueOnce({ ok: true, json: async () => [] });
+    fetch.mockResolvedValueOnce(jsonFetch(true, []));
     wrap(createElement(RestaurantsPage));
     await screen.findByText(/No restaurants returned/i);
   });
 
   it("handles restaurant API failure", async () => {
-    fetch.mockResolvedValueOnce({
-      ok: false,
-      status: 500,
-      json: async () => ({ detail: "Boom" }),
-    });
+    fetch.mockResolvedValueOnce(jsonFetch(false, { detail: "Boom" }, 500));
     wrap(createElement(RestaurantsPage));
     await screen.findByText("Boom");
   });
@@ -57,13 +55,13 @@ describe("frontend endpoint flows", () => {
     fetch.mockImplementation((url) => {
       if (String(url).includes("/users/login")) {
         return new Promise((resolve) => {
-          releaseLogin = () => resolve({ ok: true, json: async () => ({ id: 10, requires_2fa: false }) });
+          releaseLogin = () => resolve(jsonFetch(true, { id: 10, requires_2fa: false }));
         });
       }
       if (String(url).includes("/users/current-user")) {
-        return Promise.resolve({ ok: true, json: async () => ({ username: "demo" }) });
+        return Promise.resolve(jsonFetch(true, { username: "demo" }));
       }
-      return Promise.resolve({ ok: true, json: async () => ({}) });
+      return Promise.resolve(jsonFetch(true, {}));
     });
     wrap(createElement(LoginPage));
     fireEvent.change(screen.getByPlaceholderText("Username"), { target: { value: "demo" } });
@@ -77,15 +75,15 @@ describe("frontend endpoint flows", () => {
   it("requires valid 2FA code before verify submit", async () => {
     fetch.mockImplementation((url) => {
       if (String(url).includes("/users/login")) {
-        return Promise.resolve({ ok: true, json: async () => ({ id: 10, requires_2fa: true }) });
+        return Promise.resolve(jsonFetch(true, { id: 10, requires_2fa: true }));
       }
       if (String(url).includes("/users/current-user")) {
-        return Promise.resolve({ ok: true, json: async () => ({ username: "driver_demo" }) });
+        return Promise.resolve(jsonFetch(true, { username: "driver_demo" }));
       }
       if (String(url).includes("/users/2fa/generate")) {
-        return Promise.resolve({ ok: true, json: async () => ({ message: "generated" }) });
+        return Promise.resolve(jsonFetch(true, { message: "generated" }));
       }
-      return Promise.resolve({ ok: true, json: async () => ({}) });
+      return Promise.resolve(jsonFetch(true, {}));
     });
     wrap(createElement(LoginPage));
     fireEvent.change(screen.getByPlaceholderText("Username"), { target: { value: "driver_demo" } });
@@ -98,11 +96,7 @@ describe("frontend endpoint flows", () => {
   });
 
   it("shows unauthorized error from order endpoint", async () => {
-    fetch.mockResolvedValueOnce({
-      ok: false,
-      status: 401,
-      json: async () => ({ detail: "Not authenticated" }),
-    });
+    fetch.mockResolvedValueOnce(jsonFetch(false, { detail: "Not authenticated" }, 401));
     wrap(createElement(OrdersPage));
     fireEvent.change(screen.getByPlaceholderText("Order ID"), { target: { value: "1" } });
     fireEvent.click(screen.getByText("Load order"));
@@ -110,11 +104,7 @@ describe("frontend endpoint flows", () => {
   });
 
   it("handles invalid input on review endpoint access via orders controls", async () => {
-    fetch.mockResolvedValueOnce({
-      ok: false,
-      status: 400,
-      json: async () => ({ detail: "Order not found" }),
-    });
+    fetch.mockResolvedValueOnce(jsonFetch(false, { detail: "Order not found" }, 400));
     wrap(createElement(OrdersPage));
     fireEvent.change(screen.getByPlaceholderText("Order ID"), { target: { value: "999999" } });
     fireEvent.click(screen.getByText("Cancel"));
@@ -135,8 +125,8 @@ describe("frontend endpoint flows", () => {
 
   it("disables empty address save on profile page", async () => {
     fetch
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ username: "demo" }) })
-      .mockResolvedValueOnce({ ok: true, json: async () => [] });
+      .mockResolvedValueOnce(jsonFetch(true, { username: "demo" }))
+      .mockResolvedValueOnce(jsonFetch(true, []));
     wrap(createElement(ProfilePage));
     await waitFor(() => expect(fetch).toHaveBeenCalled());
     expect(screen.getByRole("button", { name: "Save address" })).toBeDisabled();
@@ -147,8 +137,8 @@ describe("frontend endpoint flows", () => {
       const { addItem, items } = useCart();
       return (
         <>
-          <button onClick={() => addItem({ item_name: "Burger", restaurant_id: 1, cost: 10 })}>Add one</button>
-          <button onClick={() => addItem({ item_name: "Pasta", restaurant_id: 2, cost: 12 })}>Add two</button>
+          <button type="button" onClick={() => addItem({ item_name: "Burger", restaurant_id: 1, cost: 10 })}>Add one</button>
+          <button type="button" onClick={() => addItem({ item_name: "Pasta", restaurant_id: 2, cost: 12 })}>Add two</button>
           <p>Count:{items.length}</p>
         </>
       );
@@ -159,4 +149,3 @@ describe("frontend endpoint flows", () => {
     expect(screen.getByText("Count:1")).toBeInTheDocument();
   });
 });
-

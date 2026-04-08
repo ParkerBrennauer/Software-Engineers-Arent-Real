@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { api } from "../api/client";
 import { useCart } from "../state/CartContext";
 import CartPanel from "../components/CartPanel";
@@ -11,7 +12,7 @@ export default function RestaurantsPage() {
   const [loading, setLoading] = useState(false);
   const [menuLoading, setMenuLoading] = useState(false);
   const [error, setError] = useState("");
-  const { addItem } = useCart();
+  const { addItem, items } = useCart();
 
   function normalizeList(data) {
     if (Array.isArray(data)) return data;
@@ -107,6 +108,14 @@ export default function RestaurantsPage() {
   return (
     <section className="card">
       <h2>Restaurant discovery</h2>
+      {items.length > 0 && (
+        <div className="promo-banner" role="status">
+          <span className="promo-badge">Promo</span>
+          <span>
+            Have a code? Apply it in your cart on the <Link to="/orders">Orders</Link> page before checkout.
+          </span>
+        </div>
+      )}
       <div className="row">
         <input placeholder="Search by id (backend limitation)" value={query} onChange={(e) => setQuery(e.target.value)} />
         <button onClick={runSearch}>Search</button>
