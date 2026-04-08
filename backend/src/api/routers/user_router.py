@@ -78,10 +78,11 @@ async def get_current_user():
     return {"message": "User is logged in", "username": username}
 
 
-@router.patch(
-    "/{username}", response_model=UserResponse, status_code=status.HTTP_200_OK
-)
-async def update_user(username: str, user_in: UserUpdate):
+@router.patch("", response_model=UserResponse, status_code=status.HTTP_200_OK)
+async def update_user(user_in: UserUpdate):
+    username = UserService.get_current_user()
+    if not username:
+        raise convert_service_error(ValueError("No user currently logged in"))
     try:
         updated_user = await UserService.update_user(username, user_in)
         return updated_user
@@ -90,11 +91,14 @@ async def update_user(username: str, user_in: UserUpdate):
 
 
 @router.post(
-    "/{username}/2fa/generate",
+    "/2fa/generate",
     response_model=UserTwoFactorResponse,
     status_code=status.HTTP_200_OK,
 )
-async def generate_2fa_code(username: str):
+async def generate_2fa_code():
+    username = UserService.get_current_user()
+    if not username:
+        raise convert_service_error(ValueError("No user currently logged in"))
     try:
         code = await UserService.generate_2fa_code(username)
         return UserTwoFactorResponse(message=f"2FA code generated: {code}")
@@ -103,11 +107,14 @@ async def generate_2fa_code(username: str):
 
 
 @router.post(
-    "/{username}/2fa/verify",
+    "/2fa/verify",
     response_model=UserTwoFactorResponse,
     status_code=status.HTTP_200_OK,
 )
-async def verify_2fa_code(username: str, body: UserTwoFactorVerify):
+async def verify_2fa_code(body: UserTwoFactorVerify):
+    username = UserService.get_current_user()
+    if not username:
+        raise convert_service_error(ValueError("No user currently logged in"))
     try:
         await UserService.verify_2fa_code(username, body.code)
         return UserTwoFactorResponse(
