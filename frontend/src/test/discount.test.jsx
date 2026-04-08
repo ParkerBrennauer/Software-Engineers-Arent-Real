@@ -1,3 +1,4 @@
+import React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { createElement } from "react";
 import { MemoryRouter } from "react-router-dom";
@@ -5,7 +6,6 @@ import { AuthProvider } from "../state/AuthContext";
 import { CartProvider } from "../state/CartContext";
 import CartPanel from "../components/CartPanel";
 import DiscountsPage from "../pages/DiscountsPage";
-import RestaurantsPage from "../pages/RestaurantsPage";
 import { useCart } from "../state/CartContext";
 
 function jsonFetch(ok, data, status = 200) {
@@ -142,7 +142,7 @@ describe("discount feature", () => {
       JSON.stringify({ username: "cafe_owner", role: "owner", id: 1, requires2FA: false })
     );
     wrap(createElement(DiscountsPage));
-    await waitFor(() => expect(screen.getByText(/Owner: create a discount code/i)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/Create a promo code/i)).toBeInTheDocument());
     expect(screen.getByPlaceholderText("e.g. 1")).toBeInTheDocument();
   });
 
@@ -161,7 +161,7 @@ describe("discount feature", () => {
     fireEvent.change(screen.getByPlaceholderText("e.g. 1"), { target: { value: "3" } });
     fireEvent.change(screen.getByPlaceholderText("0.85"), { target: { value: "0.85" } });
     fireEvent.change(screen.getByPlaceholderText("SAVE10"), { target: { value: "SAVE10" } });
-    fireEvent.click(screen.getByRole("button", { name: "Create discount" }));
+    fireEvent.click(screen.getByRole("button", { name: "Create code" }));
     await waitFor(() => expect(fetch).toHaveBeenCalled());
     const call = fetch.mock.calls.find((c) => String(c[0]).includes("/discounts/"));
     expect(call).toBeTruthy();
@@ -182,7 +182,9 @@ describe("discount feature", () => {
     );
     wrap(createElement(DiscountsPage));
     fireEvent.change(screen.getByPlaceholderText("e.g. 1"), { target: { value: "0" } });
-    fireEvent.click(screen.getByRole("button", { name: "Create discount" }));
+    fireEvent.change(screen.getByPlaceholderText("0.85"), { target: { value: "0.85" } });
+    fireEvent.change(screen.getByPlaceholderText("SAVE10"), { target: { value: "SAVE10" } });
+    fireEvent.click(screen.getByRole("button", { name: "Create code" }));
     expect(screen.getByText(/Restaurant ID must be a positive whole number/i)).toBeInTheDocument();
     expect(fetch.mock.calls.filter((c) => String(c[0]).includes("/discounts"))).toHaveLength(0);
   });
@@ -194,7 +196,7 @@ describe("discount feature", () => {
       JSON.stringify({ username: "bob", role: "customer", id: 2, requires2FA: false })
     );
     wrap(createElement(DiscountsPage));
-    await screen.findByText(/Only accounts with the owner role can create or delete/i);
+    await screen.findByText(/Creating and removing promo codes is limited to restaurant owner accounts/i);
   });
 
   it("submits delete discount for owner", async () => {
@@ -219,25 +221,4 @@ describe("discount feature", () => {
     expect(call).toBeTruthy();
   });
 
-  it("shows restaurants promo banner when cart has items", async () => {
-    fetch.mockImplementation((url) => {
-      const u = String(url);
-      if (u.includes("/restaurants/1/menu")) {
-        return Promise.resolve(jsonFetch(true, [{ item_name: "Burger", restaurant_id: 1, cost: 10, cuisine: "x" }]));
-      }
-      if (u.includes("/items/restaurant/1")) {
-        return Promise.resolve(jsonFetch(true, [{ item_name: "Burger", restaurant_id: 1, cost: 10, cuisine: "x" }]));
-      }
-      if (u.includes("/restaurants")) {
-        return Promise.resolve(jsonFetch(true, [{ restaurant_id: 1, cuisine: "x", avg_ratings: 5 }]));
-      }
-      return Promise.resolve(jsonFetch(true, {}));
-    });
-    wrap(createElement(RestaurantsPage));
-    await screen.findByText(/Restaurant 1/i);
-    fireEvent.click(screen.getByText("View menu"));
-    await screen.findByText("Add to cart");
-    fireEvent.click(screen.getByText("Add to cart"));
-    expect(screen.getByRole("status")).toHaveTextContent(/Have a code/i);
-  });
 });

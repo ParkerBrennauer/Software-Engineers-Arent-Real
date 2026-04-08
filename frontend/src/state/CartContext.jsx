@@ -192,3 +192,8 @@ export function useCart() {
   if (!ctx) throw new Error("useCart must be used within CartProvider");
   return ctx;
 }
+
+/** Safe when used outside CartProvider (returns null). */
+export function useCartOptional() {
+  return useContext(CartContext);
+}

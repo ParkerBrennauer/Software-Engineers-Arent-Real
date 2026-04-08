@@ -43,12 +43,12 @@ export default function DiscountsPage() {
     }
     const rate = parseDiscountRate(createRate);
     if (rate == null || rate <= 0) {
-      setCreateError("Discount rate must be a positive number (price multiplier, e.g. 0.85).");
+      setCreateError("Enter a valid price multiplier (for example, 0.85 for about 15% off).");
       return;
     }
     const code = createCode.trim().toUpperCase();
     if (!code || code.length < 2) {
-      setCreateError("Discount code must be at least 2 characters.");
+      setCreateError("Code must be at least 2 characters.");
       return;
     }
     setCreateBusy(true);
@@ -58,10 +58,10 @@ export default function DiscountsPage() {
         discount_code: code,
         restaurant_id: rid,
       });
-      setCreateMessage(typeof res?.message === "string" ? res.message : "Discount created.");
+      setCreateMessage(typeof res?.message === "string" ? res.message : "Promo code created.");
       setCreateCode("");
     } catch (err) {
-      setCreateError(err?.message || "Create failed.");
+      setCreateError(err?.message || "Something went wrong. Try again.");
     } finally {
       setCreateBusy(false);
     }
@@ -73,81 +73,71 @@ export default function DiscountsPage() {
     setDeleteError("");
     const code = deleteCode.trim();
     if (!code) {
-      setDeleteError("Enter the discount code to remove.");
+      setDeleteError("Enter the code you want to remove.");
       return;
     }
     if (!deleteConfirm) {
-      setDeleteError("Check the box to confirm removal.");
+      setDeleteError("Confirm below to remove this code.");
       return;
     }
     setDeleteBusy(true);
     try {
       const res = await api.discounts.remove(code);
-      setDeleteMessage(typeof res?.message === "string" ? res.message : "Discount removed.");
+      setDeleteMessage(typeof res?.message === "string" ? res.message : "Code removed.");
       setDeleteCode("");
       setDeleteConfirm(false);
     } catch (err) {
-      setDeleteError(err?.message || "Remove failed.");
+      setDeleteError(err?.message || "Could not remove that code.");
     } finally {
       setDeleteBusy(false);
     }
   }
 
   return (
-    <section className="card">
-      <h2>Discounts</h2>
-      <p className="muted">
-        This page mirrors the backend discount API. There is no public endpoint to list codes—owners manage codes here;
-        customers enter a code at checkout on the <Link to="/orders">Orders</Link> page cart.
-      </p>
-
-      <article className="panel discount-info">
-        <h3>How it works</h3>
-        <ul className="muted list-compact">
-          <li>
-            <strong>Apply (anyone):</strong> <code>POST /discounts/apply</code> with order total and code. The server
-            returns <code>discounted_total = order_total × discount_rate</code> stored for that code (a price multiplier,
-            not a percent label).
-          </li>
-          <li>
-            <strong>Create / delete (owners only):</strong> Codes are tied to a <code>restaurant_id</code> in storage.
-            The apply endpoint does not check that your cart matches that restaurant—see limitations below.
-          </li>
-        </ul>
-      </article>
+    <section className="card discounts-page">
+      <header className="page-header-block">
+        <h1 className="page-title">Promos &amp; codes</h1>
+        <p className="page-lede muted">
+          Customers enter codes at checkout on the <Link to="/orders">Orders</Link> page. Restaurant owners can create
+          or remove codes for their venue.
+        </p>
+      </header>
 
       <article className="panel">
-        <h3>Customer: use a promo code</h3>
-        <p className="muted">
-          Build your cart on Restaurants, then open Orders and use the cart panel to apply your code before placing the
-          order. The discounted total is sent as the order <code>cost</code>.
+        <h2 className="section-heading">Using a code</h2>
+        <p className="muted small-print">
+          Add food to your cart, open Orders, and apply your code before you place the order. The total updates to
+          reflect your savings.
         </p>
-        <Link className="button-link" to="/restaurants">Browse restaurants</Link>
+        <Link className="button-link" to="/restaurants">
+          Find food
+        </Link>
       </article>
 
       {!user && (
         <article className="panel muted">
           <p>
-            <strong>Restaurant owners:</strong> log in to create or remove discount codes for your venue.
+            <strong>Restaurant owner?</strong> Sign in to manage promo codes for your restaurant.
           </p>
-          <Link to="/login">Login</Link>
+          <Link className="button-link" to="/login">
+            Sign in
+          </Link>
         </article>
       )}
 
       {user && !isOwner && (
         <article className="panel muted">
-          <p>Only accounts with the owner role can create or delete discount codes. Your role: {user.role}.</p>
+          <p>Creating and removing promo codes is limited to restaurant owner accounts.</p>
         </article>
       )}
 
       {isOwner && (
         <>
           <article className="panel owner-discount-panel">
-            <h3>Owner: create a discount code</h3>
+            <h2 className="section-heading">Create a promo code</h2>
             <p className="muted small-print">
-              Your session must belong to an owner account whose <code>restaurant_id</code> matches the ID you enter. The
-              backend does not expose your restaurant ID on the login response—use the ID you use elsewhere (for example
-              Operations or restaurant setup).
+              Enter your restaurant&apos;s numeric ID and choose a code guests can type at checkout. Use a multiplier
+              under 1 for a discount (for example, 0.85 means guests pay about 85% of the cart total).
             </p>
             <form className="discount-form" onSubmit={submitCreate}>
               <div className="row form-grid">
@@ -162,7 +152,7 @@ export default function DiscountsPage() {
                   />
                 </label>
                 <label className="field">
-                  <span>Price multiplier (discount_rate)</span>
+                  <span>Price multiplier</span>
                   <input
                     value={createRate}
                     onChange={(e) => setCreateRate(e.target.value)}
@@ -181,12 +171,8 @@ export default function DiscountsPage() {
                   />
                 </label>
               </div>
-              <p className="muted small-print">
-                Example: multiplier <strong>0.85</strong> means the customer pays 85% of the cart total (about 15% off).
-                Values above 1 increase the total; the API does not enforce a maximum.
-              </p>
               <button type="submit" disabled={createBusy}>
-                {createBusy ? "Creating…" : "Create discount"}
+                {createBusy ? "Creating…" : "Create code"}
               </button>
             </form>
             {createError && <p className="error">{createError}</p>}
@@ -194,10 +180,8 @@ export default function DiscountsPage() {
           </article>
 
           <article className="panel owner-discount-panel">
-            <h3>Owner: remove a discount code</h3>
-            <p className="muted small-print">
-              There is no list endpoint—you must know the code string to delete it.
-            </p>
+            <h2 className="section-heading">Remove a code</h2>
+            <p className="muted small-print">Enter the exact code you want to retire from your restaurant.</p>
             <form className="discount-form" onSubmit={submitDelete}>
               <div className="row">
                 <input

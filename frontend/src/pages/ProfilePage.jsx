@@ -47,7 +47,7 @@ export default function ProfilePage() {
   async function addAddress() {
     setError("");
     if (!addressInput.trim()) {
-      setError("Address is required.");
+      setError("Enter an address.");
       return;
     }
     try {
@@ -60,22 +60,77 @@ export default function ProfilePage() {
   }
 
   return (
-    <section className="card">
-      <h2>Profile and customer data</h2>
-      <button onClick={load} disabled={loading}>{loading ? "Refreshing..." : "Refresh profile"}</button>
-      {currentUser && <pre className="json">{JSON.stringify(currentUser, null, 2)}</pre>}
-      <div className="row">
-        <input placeholder="Add address" value={addressInput} onChange={(e) => setAddressInput(e.target.value)} />
-        <button disabled={!addressInput.trim()} onClick={addAddress}>Save address</button>
+    <section className="card profile-page">
+      <header className="page-header-block">
+        <h1 className="page-title">Profile</h1>
+        <p className="page-lede muted">Your account and saved addresses.</p>
+      </header>
+
+      <div className="row profile-toolbar">
+        <button type="button" onClick={load} disabled={loading}>
+          {loading ? "Refreshing…" : "Refresh"}
+        </button>
       </div>
-      <h3>Saved addresses</h3>
-      <ul>
-        {addresses.map((address) => (
-          <li key={address}>{address}</li>
-        ))}
-      </ul>
-      {error && <p className="error">{error}</p>}
+
+      {currentUser && (
+        <article className="panel profile-summary">
+          <h2 className="section-heading">Account</h2>
+          {currentUser.username == null && currentUser.email == null && currentUser.name == null ? (
+            <p className="muted">We couldn&apos;t load profile details. Try refreshing.</p>
+          ) : (
+            <dl className="app-data-summary__dl">
+              {currentUser.username != null && (
+                <div className="app-data-summary__row">
+                  <dt>Username</dt>
+                  <dd>{String(currentUser.username)}</dd>
+                </div>
+              )}
+              {currentUser.email != null && String(currentUser.email).trim() !== "" && (
+                <div className="app-data-summary__row">
+                  <dt>Email</dt>
+                  <dd>{String(currentUser.email)}</dd>
+                </div>
+              )}
+              {currentUser.name != null && String(currentUser.name).trim() !== "" && (
+                <div className="app-data-summary__row">
+                  <dt>Name</dt>
+                  <dd>{String(currentUser.name)}</dd>
+                </div>
+              )}
+            </dl>
+          )}
+        </article>
+      )}
+
+      <article className="panel">
+        <h2 className="section-heading">Addresses</h2>
+        <div className="row">
+          <input
+            placeholder="Street, city, postal code"
+            value={addressInput}
+            onChange={(e) => setAddressInput(e.target.value)}
+            aria-label="New address"
+          />
+          <button type="button" disabled={!addressInput.trim()} onClick={addAddress}>
+            Save address
+          </button>
+        </div>
+        {addresses.length === 0 ? (
+          <p className="muted">No saved addresses yet.</p>
+        ) : (
+          <ul className="profile-address-list">
+            {addresses.map((address) => (
+              <li key={address}>{address}</li>
+            ))}
+          </ul>
+        )}
+      </article>
+
+      {error && (
+        <p className="error app-inline-alert" role="alert">
+          {error}
+        </p>
+      )}
     </section>
   );
 }
-

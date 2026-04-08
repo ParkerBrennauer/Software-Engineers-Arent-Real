@@ -1,3 +1,4 @@
+import React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { createElement } from "react";
 import { MemoryRouter } from "react-router-dom";
@@ -96,18 +97,30 @@ describe("frontend endpoint flows", () => {
   });
 
   it("shows unauthorized error from order endpoint", async () => {
-    fetch.mockResolvedValueOnce(jsonFetch(false, { detail: "Not authenticated" }, 401));
+    localStorage.setItem("frontend-auth-user", JSON.stringify({ username: "demo", role: "customer", id: 1 }));
+    fetch.mockImplementation((url) => {
+      if (String(url).includes("/users/current-user")) {
+        return Promise.resolve(jsonFetch(true, { username: "demo" }));
+      }
+      return Promise.resolve(jsonFetch(false, { detail: "Not authenticated" }, 401));
+    });
     wrap(createElement(OrdersPage));
     fireEvent.change(screen.getByPlaceholderText("Order ID"), { target: { value: "1" } });
-    fireEvent.click(screen.getByText("Load order"));
+    fireEvent.click(screen.getByText("View order"));
     await screen.findByText("Not authenticated");
   });
 
   it("handles invalid input on review endpoint access via orders controls", async () => {
-    fetch.mockResolvedValueOnce(jsonFetch(false, { detail: "Order not found" }, 400));
+    localStorage.setItem("frontend-auth-user", JSON.stringify({ username: "demo", role: "customer", id: 1 }));
+    fetch.mockImplementation((url) => {
+      if (String(url).includes("/users/current-user")) {
+        return Promise.resolve(jsonFetch(true, { username: "demo" }));
+      }
+      return Promise.resolve(jsonFetch(false, { detail: "Order not found" }, 400));
+    });
     wrap(createElement(OrdersPage));
     fireEvent.change(screen.getByPlaceholderText("Order ID"), { target: { value: "999999" } });
-    fireEvent.click(screen.getByText("Cancel"));
+    fireEvent.click(screen.getByRole("button", { name: "Cancel order" }));
     await screen.findByText("Order not found");
   });
 

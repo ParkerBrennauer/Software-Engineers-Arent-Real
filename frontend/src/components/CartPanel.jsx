@@ -43,10 +43,7 @@ export default function CartPanel() {
       {items.length > 0 && (
         <div className="promo-block">
           <h4 className="promo-heading">Promo code</h4>
-          <p className="muted small-print">
-            The backend multiplies your order total by the code&apos;s stored rate (for example, 0.85 means you pay 85%
-            of the total). Codes are not validated against the restaurant on apply.
-          </p>
+          <p className="muted small-print">Have a code? Apply it here before you place your order.</p>
           <div className="row promo-row">
             <input
               placeholder="Enter code"
