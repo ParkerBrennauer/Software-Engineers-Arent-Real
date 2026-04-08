@@ -102,7 +102,7 @@ describe("Restaurant browsing navigation", () => {
     await waitFor(() => {
       expect(screen.getByRole("heading", { name: /^Cart$/i })).toBeInTheDocument();
     });
-    expect(screen.getByText(/Burger/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Burger/i).length).toBeGreaterThan(0);
   });
 
   it("shows safe fallback for invalid restaurant id param", () => {
@@ -131,6 +131,58 @@ describe("Restaurant browsing navigation", () => {
     );
 
     await waitFor(() => expect(screen.getByText(/Menu item/i)).toBeInTheDocument());
-    expect(screen.getByText(/\$0\.00/)).toBeInTheDocument();
+    expect(screen.getAllByText(/\$0\.00/).length).toBeGreaterThan(0);
+  });
+
+  it("shows the restaurant favourite section and toggles a favourite item", async () => {
+    localStorage.setItem(
+      "frontend-auth-user",
+      JSON.stringify({ username: "demo", role: "customer", id: 1, requires2FA: false })
+    );
+
+    fetch.mockImplementation((url, options = {}) => {
+      const path = String(url);
+      if (path.includes("/users/current-user")) {
+        return Promise.resolve(jsonFetch(true, { username: "demo" }));
+      }
+      if (path.includes("/restaurants/7/menu")) {
+        return Promise.resolve(
+          jsonFetch(true, [
+            { item_name: "Burger", restaurant_id: 7, cost: 9.99, cuisine: "thai" },
+            { item_name: "Cookie", restaurant_id: 7, cost: 2.5, cuisine: "thai" },
+          ])
+        );
+      }
+      if (path.includes("/customers/favourites") && (!options.method || options.method === "GET")) {
+        return Promise.resolve(jsonFetch(true, ["Burger_7"]));
+      }
+      if (path.includes("/customers/favourites/Burger_7") && options.method === "PATCH") {
+        return Promise.resolve(jsonFetch(true, "removed"));
+      }
+      if (path.includes("/customers/favourites/Cookie_7") && options.method === "PATCH") {
+        return Promise.resolve(jsonFetch(true, "added"));
+      }
+      return Promise.resolve(jsonFetch(true, [{ restaurant_id: 7, cuisine: "thai", avg_ratings: 4.8 }]));
+    });
+
+    wrapRoutes(
+      createElement(
+        Routes,
+        null,
+        createElement(Route, { path: "/restaurants/:restaurantId", element: createElement(RestaurantDetailPage) })
+      ),
+      ["/restaurants/7"]
+    );
+
+    await screen.findByRole("heading", { name: /^Favourite$/i });
+    expect(await screen.findAllByText("Burger")).not.toHaveLength(0);
+    expect(screen.getByRole("button", { name: /Remove favourite/i })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /Remove favourite/i }));
+    await screen.findByText(/No favourite item saved for this restaurant yet/i);
+
+    fireEvent.click(screen.getAllByRole("button", { name: /☆ Favourite/i })[1]);
+    expect(await screen.findByRole("button", { name: /Remove favourite/i })).toBeInTheDocument();
+    expect(fetch).toHaveBeenCalledWith("/api/customers/favourites/Cookie_7", expect.objectContaining({ method: "PATCH" }));
   });
 });

@@ -72,7 +72,7 @@ async def order_history():
 
 
 @router.patch("/favourites/{item_key}")
-async def update_favourite(item_key):
+async def toggle_favourite_item(item_key):
     customer_id = UserService.get_current_user()
     if not customer_id:
         raise convert_service_error(ValueError("No user currently logged in"))
@@ -83,7 +83,7 @@ async def update_favourite(item_key):
 
 
 @router.get("/favourites")
-async def get_favourites():
+async def get_favourite_items():
     customer_id = UserService.get_current_user()
     if not customer_id:
         raise convert_service_error(ValueError("No user currently logged in"))
