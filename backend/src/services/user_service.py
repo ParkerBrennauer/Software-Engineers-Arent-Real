@@ -2,6 +2,7 @@ import random
 from datetime import datetime, timedelta, timezone
 from src.schemas.user_schema import UserRegister, UserRole, UserUpdate
 from src.repositories.user_repo import UserRepo
+from src.repositories.item_repo import ItemRepo
 from src.models.user_model import UserInternal
 from passlib.context import CryptContext
 
@@ -159,3 +160,56 @@ class UserService:
         )
 
         return True
+
+    @staticmethod
+    async def toggle_favourite(username: str, itemKey: str) -> str:
+        """
+        Toggle a user's favourite item while enforcing one favourite per restaurant.
+        """
+        # Input validation to prevent lookups with invalid values.
+        if not isinstance(username, str) or not username.strip():
+            raise ValueError("username must be a non-empty string")
+        if not isinstance(itemKey, str) or not itemKey.strip():
+            raise ValueError("itemKey must be a non-empty string")
+
+        user = await UserRepo.get_by_username(username)
+        if not user:
+            raise ValueError("User not found")
+
+        item = await ItemRepo.get_by_key(itemKey)
+        if not item:
+            raise ValueError("Item not found")
+
+        restaurant_id = item.get("restaurant_id")
+        if restaurant_id is None:
+            raise ValueError("Item missing restaurant_id")
+
+        favorites_raw = user.get("favourites", [])
+        if not isinstance(favorites_raw, list):
+            raise ValueError("User favourites must be a list")
+        favourites = list(favorites_raw)
+
+        # Toggle off if this exact item is already favourited.
+        if itemKey in favourites:
+            updated = [fav for fav in favourites if fav != itemKey]
+            await UserRepo.update_by_username(username, {"favourites": updated})
+            return "removed"
+
+        # Enforce one favourite per restaurant by replacing any same-restaurant item.
+        replaced = False
+        updated_favourites: list[str] = []
+        for favourite_key in favourites:
+            favourite_item = await ItemRepo.get_by_key(favourite_key)
+            favourite_restaurant_id = (
+                favourite_item.get("restaurant_id")
+                if isinstance(favourite_item, dict)
+                else None
+            )
+            if favourite_restaurant_id == restaurant_id:
+                replaced = True
+                continue
+            updated_favourites.append(favourite_key)
+
+        updated_favourites.append(itemKey)
+        await UserRepo.update_by_username(username, {"favourites": updated_favourites})
+        return "replaced" if replaced else "added"

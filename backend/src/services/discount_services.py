@@ -1,6 +1,9 @@
 from src.repositories.discount_repo import DiscountRepo
 
 class DiscountServices:
+    @staticmethod
+    async def get_discount(discount_code: str) -> dict | None:
+        return await DiscountRepo.find_code(discount_code)
 
     @staticmethod
     async def applyDiscount(order_total: float, discount_code: str) -> float | None:
