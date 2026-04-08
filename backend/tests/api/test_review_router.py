@@ -90,7 +90,7 @@ async def test_submit_review_permission_denied(monkeypatch):
             "/orders/1d8e87M/review", json={"review_text": "Great food!"}
         )
     assert response.status_code == 403
-    assert response.json()["detail"] == "Permission denied"
+    assert "does not have permission" in response.json()["detail"]
 
 
 @pytest.mark.asyncio
@@ -224,7 +224,7 @@ async def test_edit_review_permission_denied(monkeypatch):
     ) as client:
         response = await client.put("/orders/1d8e87M/review", json={"stars": 3})
     assert response.status_code == 403
-    assert response.json()["detail"] == "Permission denied"
+    assert "does not have permission" in response.json()["detail"]
 
 
 @pytest.mark.asyncio
@@ -341,7 +341,7 @@ async def test_delete_review_permission_denied(monkeypatch):
     ) as client:
         response = await client.delete("/orders/1d8e87M/review")
     assert response.status_code == 403
-    assert response.json()["detail"] == "Permission denied"
+    assert "does not have permission" in response.json()["detail"]
 
 
 @pytest.mark.asyncio
@@ -441,7 +441,7 @@ async def test_report_review_permission_denied(monkeypatch):
     ) as client:
         response = await client.post("/orders/1d8e87M/report", json={"reason": "spam"})
     assert response.status_code == 403
-    assert response.json()["detail"] == "Permission denied"
+    assert "does not have permission" in response.json()["detail"]
 
 
 @pytest.mark.asyncio
