@@ -7,12 +7,15 @@ from src.schemas.user_schema import (
     UserTwoFactorResponse,
     UserPasswordReset,
     UserLogin,
+    AddressAdd,
 )
 from src.schemas.customer_schema import CustomerRegister
 from src.schemas.driver_schema import DriverRegister
 
 from src.services.user_service import UserService
 from src.api.dependencies import convert_service_error
+
+from src.services.customer_service import CustomerService
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -56,6 +59,22 @@ async def login_user(body: UserLogin):
         return user
     except ValueError as err:
         raise convert_service_error(err)
+
+
+@router.post("/logout", status_code=status.HTTP_200_OK)
+async def logout_user(username: str):
+    success = await UserService.logout_user(username)
+    if not success:
+        return {"message": "User not found or log out failed"}
+    return {"message": "Successfully logged out"}
+
+
+@router.get("/current-user", status_code=status.HTTP_200_OK)
+async def get_current_user():
+    username = UserService.get_current_user()
+    if not username:
+        return {"message": "No user currently logged in", "username": None}
+    return {"message": "User is logged in", "username": username}
 
 
 @router.patch(
@@ -103,5 +122,27 @@ async def reset_password(username: str, body: UserPasswordReset):
     try:
         await UserService.reset_password(username, body.code, body.new_password)
         return {"message": "Password reset successful"}
+    except ValueError as err:
+        raise convert_service_error(err)
+
+
+@router.post(
+    "/{username}/addresses", response_model=UserResponse, status_code=status.HTTP_200_OK
+)
+async def add_address(username: str, address_in: AddressAdd):
+    try:
+        updated_user = await UserService.add_address(username, address_in.address)
+        return updated_user
+    except ValueError as err:
+        raise convert_service_error(err)
+
+
+@router.get(
+    "/{username}/addresses", response_model=list[str], status_code=status.HTTP_200_OK
+)
+async def get_addresses(username: str):
+    try:
+        addresses = await UserService.get_addresses(username)
+        return addresses
     except ValueError as err:
         raise convert_service_error(err)

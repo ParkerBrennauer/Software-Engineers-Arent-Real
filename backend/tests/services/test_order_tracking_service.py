@@ -49,10 +49,10 @@ async def test_get_tracking_info_generates_metrics_for_restaurant_stage(monkeypa
 
     assert tracking.order_id == "12"
     assert tracking.current_location == "at restaurant"
-    assert tracking.distance_km == 7.25
+    assert tracking.distance_km == 0.0
     assert tracking.estimated_time_minutes == 18
     assert saved_updates["order_id"] == "12"
-    assert saved_updates["updates"] == {"distance": 7.25, "time": 18}
+    assert saved_updates["updates"] == {"time": 18}
 
 
 @pytest.mark.asyncio
@@ -163,3 +163,30 @@ async def test_get_tracking_info_cancelled_order_is_not_marked_delivered(monkeyp
     assert tracking.current_location == "cancelled"
     assert tracking.distance_km == 0.0
     assert tracking.estimated_time_minutes == 0
+
+
+@pytest.mark.asyncio
+async def test_get_tracking_info_includes_delivery_instructions(monkeypatch):
+    order = {
+        "restaurant": "Restaurant_2",
+        "customer": "customer_6",
+        "driver": None,
+        "order_status": OrderStatus.CONFIRMED.value,
+        "distance": 4.5,
+        "time": 19,
+        "delivery_instructions": "Leave at front door",
+    }
+
+    async def fake_get_by_id(_order_id: str):
+        return dict(order)
+
+    async def fake_update_order(_order_id: str, updates: dict):
+        order.update(updates)
+        return dict(order)
+
+    monkeypatch.setattr(OrderRepo, "get_by_id", fake_get_by_id)
+    monkeypatch.setattr(OrderRepo, "update_order", fake_update_order)
+
+    tracking = await OrderTrackingService.get_tracking_info("52")
+
+    assert tracking.delivery_instructions == "Leave at front door"

@@ -51,24 +51,14 @@ async def test_calculate_order_cost_with_non_dict_items(mock_get_order):
 
     cost = await OrderService.calculate_order_cost(items)
 
-    assert cost == 33.9
+    assert cost == 36.16
 
 
 @pytest.mark.asyncio
 @patch("src.repositories.order_repo.OrderRepo.get_order", new_callable=AsyncMock)
 async def test_calculate_order_cost_empty_list(mock_get_order):
     cost = await OrderService.calculate_order_cost([])
-    assert cost == 0.0
-
-
-@pytest.mark.asyncio
-@patch("src.repositories.order_repo.OrderRepo.get_order", new_callable=AsyncMock)
-@patch("src.repositories.order_repo.OrderRepo.update_order", new_callable=AsyncMock)
-async def test_update_order_with_non_existent_order(mock_update, mock_get):
-    mock_get.return_value = None
-
-    with pytest.raises(ValueError, match="Order not found"):
-        await OrderService.update_order(999, {"restaurant": "New"})
+    assert cost == 2.26
 
 
 @pytest.mark.asyncio

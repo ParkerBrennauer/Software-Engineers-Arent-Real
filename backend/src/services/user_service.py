@@ -9,6 +9,8 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 class UserService:
+    _current_logged_in_user: str | None = None
+
     @staticmethod
     async def get_password_hash(password: str) -> str:
         return pwd_context.hash(password)
@@ -31,7 +33,37 @@ class UserService:
         if not user.get("is_active"):
             raise ValueError("User account is inactive")
 
+        if (
+            UserService._current_logged_in_user is not None
+            and UserService._current_logged_in_user != username
+        ):
+            raise ValueError(
+                f"Another user ({UserService._current_logged_in_user}) is already logged in."
+            )
+
+        UserService._current_logged_in_user = username
+
+        update_data = {
+            "is_logged_in": True,
+            "last_login": datetime.now(timezone.utc).isoformat(),
+        }
+        await UserRepo.update_by_username(username, update_data)
+        user.update(update_data)
+
         return UserInternal.model_validate(user)
+
+    @staticmethod
+    async def logout_user(username: str) -> bool:
+        if UserService._current_logged_in_user == username:
+            UserService._current_logged_in_user = None
+
+        update_data = {"is_logged_in": False}
+        updated = await UserRepo.update_by_username(username, update_data)
+        return bool(updated)
+
+    @staticmethod
+    def get_current_user() -> str | None:
+        return UserService._current_logged_in_user
 
     @staticmethod
     async def create_user(user_in: UserRegister) -> dict:
@@ -159,3 +191,29 @@ class UserService:
         )
 
         return True
+
+    @staticmethod
+    async def add_address(username: str, address: str) -> dict:
+        user = await UserRepo.get_by_username(username)
+        if not user:
+            raise ValueError("User not found")
+
+        addresses = user.get("saved_addresses", [])
+        if address not in addresses:
+            addresses.append(address)
+
+        updated_user = await UserRepo.update_by_username(
+            username, {"saved_addresses": addresses}
+        )
+        if not updated_user:
+            raise ValueError("User not found")
+
+        return UserInternal.model_validate(updated_user)
+
+    @staticmethod
+    async def get_addresses(username: str) -> list[str]:
+        user = await UserRepo.get_by_username(username)
+        if not user:
+            raise ValueError("User not found")
+
+        return user.get("saved_addresses", [])

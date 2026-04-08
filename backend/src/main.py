@@ -7,6 +7,7 @@ from src.api.routers.order_router import router as order_router
 from src.api.routers.restaurant_administration_router import (
     router as restaurant_administration_router,
 )
+from src.api.routers.discount_router import router as discount_router
 from src.api.routers.user_router import router as user_router
 from src.api.dependencies import setup_exception_handlers
 
@@ -21,3 +22,4 @@ app.include_router(rating_router)
 app.include_router(order_router)
 app.include_router(item_router)
 app.include_router(restaurant_router)
+app.include_router(discount_router)
