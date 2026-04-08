@@ -60,7 +60,10 @@ async def login_user(body: UserLogin):
 
 
 @router.post("/logout", status_code=status.HTTP_200_OK)
-async def logout_user(username: str):
+async def logout_user():
+    username = UserService.get_current_user()
+    if not username:
+        raise convert_service_error(ValueError("No user currently logged in"))
     success = await UserService.logout_user(username)
     if not success:
         raise convert_service_error(ValueError("Log out failed"))
@@ -123,10 +126,11 @@ async def reset_password(username: str, body: UserPasswordReset):
         raise convert_service_error(err)
 
 
-@router.post(
-    "/{username}/addresses", response_model=UserResponse, status_code=status.HTTP_200_OK
-)
-async def add_address(username: str, address_in: AddressAdd):
+@router.post("/addresses", response_model=UserResponse, status_code=status.HTTP_200_OK)
+async def add_address(address_in: AddressAdd):
+    username = UserService.get_current_user()
+    if not username:
+        raise convert_service_error(ValueError("No user currently logged in"))
     try:
         updated_user = await UserService.add_address(username, address_in.address)
         return updated_user
@@ -134,10 +138,11 @@ async def add_address(username: str, address_in: AddressAdd):
         raise convert_service_error(err)
 
 
-@router.get(
-    "/{username}/addresses", response_model=list[str], status_code=status.HTTP_200_OK
-)
-async def get_addresses(username: str):
+@router.get("/addresses", response_model=list[str], status_code=status.HTTP_200_OK)
+async def get_addresses():
+    username = UserService.get_current_user()
+    if not username:
+        raise convert_service_error(ValueError("No user currently logged in"))
     try:
         addresses = await UserService.get_addresses(username)
         return addresses
