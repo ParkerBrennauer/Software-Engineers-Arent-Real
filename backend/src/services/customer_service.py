@@ -1,6 +1,7 @@
 from src.services.order_services import OrderService
 from src.repositories.user_repo import UserRepo
 from src.repositories.item_repo import ItemRepo
+from src.repositories.rating_repo import RatingRepo
 
 class CustomerService:
 
@@ -8,7 +9,17 @@ class CustomerService:
     async def get_order_history(username: str) -> list:
         if not username:
             raise ValueError('No username submitted')
-        return await OrderService.get_previous_orders_by_user(username)
+        orders = await OrderService.get_previous_orders_by_user(username)
+        enriched_orders = []
+        for order in orders:
+            enriched_order = dict(order)
+            order_id = str(enriched_order.get("id", ""))
+            review = await RatingRepo.get_by_order_id(order_id) if order_id else None
+            if review:
+                enriched_order["submitted_stars"] = review.get("submitted_stars")
+                enriched_order["review_text"] = review.get("review_text")
+            enriched_orders.append(enriched_order)
+        return enriched_orders
 
     @staticmethod
     async def get_favourites(username: str) -> list:

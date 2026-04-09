@@ -192,6 +192,46 @@ describe("Restaurant browsing navigation", () => {
     expect(fetch).toHaveBeenCalledWith("/api/customers/favourites/Cookie_7", expect.objectContaining({ method: "PATCH" }));
   });
 
+  it("lets a signed-in customer favourite and unfavourite restaurants from the browse page", async () => {
+    localStorage.setItem(
+      "frontend-auth-user",
+      JSON.stringify({ username: "demo", role: "customer", id: 1, requires2FA: false })
+    );
+
+    fetch.mockImplementation((url, options = {}) => {
+      const path = String(url);
+      if (path.includes("/users/current-user")) {
+        return Promise.resolve(jsonFetch(true, { username: "demo" }));
+      }
+      if (path.includes("/customers/favorites/restaurants/7") && options.method === "POST") {
+        return Promise.resolve(
+          jsonFetch(true, { customer_id: "demo", restaurant_id: 7, favorite_restaurants: [7], message: "added" })
+        );
+      }
+      if (path.includes("/customers/favorites/restaurants/7") && options.method === "DELETE") {
+        return Promise.resolve(
+          jsonFetch(true, { customer_id: "demo", restaurant_id: 7, favorite_restaurants: [], message: "removed" })
+        );
+      }
+      if (path.includes("/customers/favorites/restaurants")) {
+        return Promise.resolve(jsonFetch(true, { customer_id: "demo", favorite_restaurants: [] }));
+      }
+      if (path.includes("/restaurants")) {
+        return Promise.resolve(jsonFetch(true, [{ restaurant_id: 7, cuisine: "thai", avg_ratings: 4.8 }]));
+      }
+      return Promise.resolve(jsonFetch(false, { detail: "Not found" }, 404));
+    });
+
+    wrapRoutes(createElement(RestaurantsPage));
+
+    const addButton = await screen.findByLabelText(/Add Restaurant 7 to favourite restaurants/i);
+    fireEvent.click(addButton);
+    expect(await screen.findByLabelText(/Remove Restaurant 7 from favourite restaurants/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByLabelText(/Remove Restaurant 7 from favourite restaurants/i));
+    expect(await screen.findByLabelText(/Add Restaurant 7 to favourite restaurants/i)).toBeInTheDocument();
+  });
+
   it("hides favourite buttons on the restaurant details page for non-customer users", async () => {
     localStorage.setItem(
       "frontend-auth-user",
@@ -383,6 +423,9 @@ describe("Restaurant browsing navigation", () => {
       if (path.includes("/users/current-user")) {
         return Promise.resolve(jsonFetch(true, { username: "demo" }));
       }
+      if (path.includes("/customers/favorites/restaurants")) {
+        return Promise.resolve(jsonFetch(true, { customer_id: "demo", favorite_restaurants: [7, 9] }));
+      }
       if (path.includes("/customers/favourites")) {
         return Promise.resolve(jsonFetch(true, ["Burger_7", "Cookie_7", "Soup_9", "Missing_99"]));
       }
@@ -419,9 +462,10 @@ describe("Restaurant browsing navigation", () => {
       ["/favourites"]
     );
 
+    await screen.findByRole("heading", { name: /^Favourite restaurants$/i });
+    expect(screen.getAllByText("North Noodles").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("South Soup").length).toBeGreaterThan(0);
     await screen.findByRole("heading", { name: /^Favourite items$/i });
-    expect(screen.getByText("North Noodles")).toBeInTheDocument();
-    expect(screen.getByText("South Soup")).toBeInTheDocument();
     expect(screen.getByText("Burger")).toBeInTheDocument();
     expect(screen.getByText("Cookie")).toBeInTheDocument();
     expect(screen.getByText("Soup")).toBeInTheDocument();

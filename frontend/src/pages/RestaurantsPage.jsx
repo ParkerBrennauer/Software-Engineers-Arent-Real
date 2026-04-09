@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api/client";
+import { useAuth } from "../state/AuthContext";
 import { normalizeApiArray } from "../utils/normalizeApiArray";
 
 const SORT_OPTIONS = [
@@ -12,13 +13,18 @@ const SORT_OPTIONS = [
 ];
 
 export default function RestaurantsPage() {
+  const { user } = useAuth();
   const [restaurants, setRestaurants] = useState([]);
+  const [favoriteRestaurantIds, setFavoriteRestaurantIds] = useState([]);
   const [query, setQuery] = useState("");
   const [selectedFilters, setSelectedFilters] = useState([]);
   const [sort, setSort] = useState("");
   const [filterOptions, setFilterOptions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [favoriteBusyId, setFavoriteBusyId] = useState("");
+
+  const isCustomerSignedIn = user?.role === "customer" && !user?.requires2FA;
 
   function captureFilterOptions(rows) {
     const nextOptions = [...new Set(normalizeApiArray(rows).map((r) => r?.cuisine).filter(Boolean))].sort((a, b) =>
@@ -33,9 +39,20 @@ export default function RestaurantsPage() {
     setLoading(true);
     setError("");
     try {
-      const data = normalizeApiArray(await api.restaurants.getAll());
+      const [restaurantData, favoriteData] = await Promise.all([
+        api.restaurants.getAll(),
+        isCustomerSignedIn
+          ? api.customer.getFavoriteRestaurants()
+          : Promise.resolve({ favorite_restaurants: [] }),
+      ]);
+      const data = normalizeApiArray(restaurantData);
       captureFilterOptions(data);
       setRestaurants(data);
+      setFavoriteRestaurantIds(
+        Array.isArray(favoriteData?.favorite_restaurants)
+          ? favoriteData.favorite_restaurants.map((restaurantId) => String(restaurantId))
+          : []
+      );
     } catch (err) {
       setError(err.message);
     } finally {
@@ -49,10 +66,21 @@ export default function RestaurantsPage() {
       setLoading(true);
       setError("");
       try {
-        const data = normalizeApiArray(await api.restaurants.getAll());
+        const [restaurantData, favoriteData] = await Promise.all([
+          api.restaurants.getAll(),
+          isCustomerSignedIn
+            ? api.customer.getFavoriteRestaurants()
+            : Promise.resolve({ favorite_restaurants: [] }),
+        ]);
+        const data = normalizeApiArray(restaurantData);
         if (active) {
           captureFilterOptions(data);
           setRestaurants(data);
+          setFavoriteRestaurantIds(
+            Array.isArray(favoriteData?.favorite_restaurants)
+              ? favoriteData.favorite_restaurants.map((restaurantId) => String(restaurantId))
+              : []
+          );
         }
       } catch (err) {
         if (active) setError(err.message);
@@ -64,7 +92,7 @@ export default function RestaurantsPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [isCustomerSignedIn]);
 
   async function runSearch() {
     setLoading(true);
@@ -103,6 +131,28 @@ export default function RestaurantsPage() {
     );
   }
 
+  async function toggleFavoriteRestaurant(event, restaurantId, isFavorite) {
+    event.preventDefault();
+    event.stopPropagation();
+    setFavoriteBusyId(String(restaurantId));
+    setError("");
+    try {
+      if (isFavorite) {
+        await api.customer.removeFavoriteRestaurant(restaurantId);
+        setFavoriteRestaurantIds((current) =>
+          current.filter((currentId) => currentId !== String(restaurantId))
+        );
+      } else {
+        await api.customer.addFavoriteRestaurant(restaurantId);
+        setFavoriteRestaurantIds((current) => [...new Set([...current, String(restaurantId)])]);
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setFavoriteBusyId("");
+    }
+  }
+
   const cards = useMemo(
     () =>
       restaurants
@@ -110,21 +160,39 @@ export default function RestaurantsPage() {
         .map((r) => {
           const id = r.restaurant_id;
           const safeId = String(id);
+          const isFavorite = favoriteRestaurantIds.includes(safeId);
           return (
-            <Link
+            <article
               key={safeId}
               className="restaurant-browse-card panel"
-              to={`/restaurants/${safeId}`}
-              state={{ restaurant: r }}
             >
-              <h3>Restaurant {id}</h3>
+              <div className="restaurant-browse-card__header">
+                <h3>Restaurant {id}</h3>
+                {isCustomerSignedIn && (
+                  <button
+                    type="button"
+                    className={`restaurant-favorite-button${isFavorite ? " restaurant-favorite-button--active" : ""}`}
+                    aria-label={isFavorite ? `Remove Restaurant ${safeId} from favourite restaurants` : `Add Restaurant ${safeId} to favourite restaurants`}
+                    disabled={favoriteBusyId === safeId}
+                    onClick={(event) => toggleFavoriteRestaurant(event, safeId, isFavorite)}
+                  >
+                    <span aria-hidden="true">{isFavorite ? "♥" : "♡"}</span>
+                  </button>
+                )}
+              </div>
               <p>Cuisine: {r.cuisine || "—"}</p>
               <p>Rating: {r.avg_ratings != null && r.avg_ratings !== "" ? Number(r.avg_ratings).toFixed(1) : "—"}</p>
-              <span className="restaurant-browse-card__cta">View menu</span>
-            </Link>
+              <Link
+                className="restaurant-browse-card__cta"
+                to={`/restaurants/${safeId}`}
+                state={{ restaurant: r }}
+              >
+                View menu
+              </Link>
+            </article>
           );
         }),
-    [restaurants]
+    [favoriteBusyId, favoriteRestaurantIds, isCustomerSignedIn, restaurants]
   );
 
   return (
