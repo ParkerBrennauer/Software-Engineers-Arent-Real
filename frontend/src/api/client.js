@@ -69,6 +69,7 @@ export const api = {
       });
     },
     menu: (restaurantId) => request(`/restaurants/${restaurantId}/menu`),
+    deliveryInfo: (restaurantId) => request(`/restaurants/${restaurantId}/delivery-info`),
     create: (payload) => request("/restaurants", { method: "POST", body: JSON.stringify(payload) }),
     update: (restaurantId, payload) =>
       request(`/restaurants/${restaurantId}`, { method: "PATCH", body: JSON.stringify(payload) }),

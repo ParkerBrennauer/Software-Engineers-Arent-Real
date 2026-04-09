@@ -72,7 +72,7 @@ export function CartProvider({ children }) {
 
     async function fetchDeliveryInfo() {
       try {
-        const response = await api.get(`/restaurants/${restaurant.restaurant_id}/delivery-info`);
+        const response = await api.restaurants.deliveryInfo(restaurant.restaurant_id);
         setDistance(response.distance || 0);
       } catch (error) {
         setDistance(0);
