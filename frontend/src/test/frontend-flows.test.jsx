@@ -56,6 +56,38 @@ describe("frontend endpoint flows", () => {
     await screen.findByText("Boom");
   });
 
+  it("uses advanced restaurant search when filters or sort are selected", async () => {
+    fetch
+      .mockResolvedValueOnce(
+        jsonFetch(true, [
+          { restaurant_id: 7, cuisine: "thai", avg_ratings: 4.8 },
+          { restaurant_id: 9, cuisine: "american", avg_ratings: 3.2 },
+        ])
+      )
+      .mockResolvedValueOnce(jsonFetch(true, [{ restaurant_id: 7, cuisine: "thai", avg_ratings: 4.8 }]));
+
+    wrap(createElement(RestaurantsPage));
+
+    await screen.findByText(/Restaurant 7/i);
+
+    fireEvent.click(screen.getByText(/^Filters/));
+    fireEvent.click(screen.getByRole("checkbox", { name: /thai/i }));
+    fireEvent.change(screen.getByRole("combobox", { name: /sort restaurants/i }), {
+      target: { value: "RatingDesc" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /^Search$/i }));
+
+    await waitFor(() =>
+      expect(fetch).toHaveBeenLastCalledWith(
+        "/api/restaurants/search/advanced//thai/RatingDesc",
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({ query: "", filters: ["thai"], sort: "RatingDesc" }),
+        })
+      )
+    );
+  });
+
   it("prevents duplicate login submit while loading", async () => {
     let releaseLogin;
     fetch.mockImplementation((url) => {
