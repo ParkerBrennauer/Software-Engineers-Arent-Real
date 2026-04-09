@@ -22,7 +22,9 @@ export default function LoginPage() {
     try {
       const result = await login(form);
       if (result?.requires_2fa) {
-        await api.users.generate2FA();
+        const genResult = await api.users.generate2FA();
+        const codeMsg = genResult?.message || "Please check your notifications.";
+        window.alert(`Your 2-factor authentication code has been generated.\n\n${codeMsg}`);
         setNeeds2FA(true);
         return;
       }
