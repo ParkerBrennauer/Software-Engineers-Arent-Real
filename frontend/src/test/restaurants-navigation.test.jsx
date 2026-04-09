@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { CartProvider } from "../state/CartContext";
 import { AuthProvider } from "../state/AuthContext";
+import { RestaurantWorkspaceProvider } from "../state/RestaurantWorkspaceContext";
 import RestaurantsPage from "../pages/RestaurantsPage";
 import RestaurantDetailPage from "../pages/RestaurantDetailPage";
 import FavouritesPage from "../pages/FavouritesPage";
@@ -19,7 +20,11 @@ function wrapRoutes(ui, initialEntries = ["/restaurants"]) {
     createElement(
       MemoryRouter,
       { initialEntries },
-      createElement(AuthProvider, null, createElement(CartProvider, null, ui))
+      createElement(
+        AuthProvider,
+        null,
+        createElement(RestaurantWorkspaceProvider, null, createElement(CartProvider, null, ui))
+      )
     )
   );
 }
@@ -185,6 +190,186 @@ describe("Restaurant browsing navigation", () => {
     fireEvent.click(screen.getAllByRole("button", { name: /☆ Favourite/i })[1]);
     expect(await screen.findByRole("button", { name: /Remove favourite/i })).toBeInTheDocument();
     expect(fetch).toHaveBeenCalledWith("/api/customers/favourites/Cookie_7", expect.objectContaining({ method: "PATCH" }));
+  });
+
+  it("hides favourite buttons on the restaurant details page for non-customer users", async () => {
+    localStorage.setItem(
+      "frontend-auth-user",
+      JSON.stringify({ username: "owner-demo", role: "owner", id: 2, requires2FA: false })
+    );
+
+    fetch.mockImplementation((url) => {
+      const path = String(url);
+      if (path.includes("/users/current-user")) {
+        return Promise.resolve(jsonFetch(true, { username: "owner-demo" }));
+      }
+      if (path.includes("/restaurants/7/menu")) {
+        return Promise.resolve(
+          jsonFetch(true, [{ item_name: "Burger", restaurant_id: 7, cost: 9.99, cuisine: "thai" }])
+        );
+      }
+      return Promise.resolve(jsonFetch(true, [{ restaurant_id: 7, cuisine: "thai", avg_ratings: 4.8 }]));
+    });
+
+    wrapRoutes(
+      createElement(
+        Routes,
+        null,
+        createElement(Route, { path: "/restaurants/:restaurantId", element: createElement(RestaurantDetailPage) })
+      ),
+      ["/restaurants/7"]
+    );
+
+    await screen.findByRole("heading", { name: /^Favourite$/i });
+    await screen.findByText("Burger");
+    expect(screen.queryByRole("button", { name: /Favourite/i })).not.toBeInTheDocument();
+    expect(screen.getByText(/Sign in as a customer to save a favourite item here/i)).toBeInTheDocument();
+  });
+
+  it("shows item edit and create controls only for the owner viewing their own restaurant", async () => {
+    localStorage.setItem(
+      "frontend-auth-user",
+      JSON.stringify({ username: "owner-demo", role: "owner", id: 2, requires2FA: false })
+    );
+    localStorage.setItem(
+      "frontend-restaurant-workspace-by-user-v1",
+      JSON.stringify({
+        "owner-demo": { restaurantId: 7, label: "Restaurant 7", cuisine: "thai" },
+      })
+    );
+
+    fetch.mockImplementation((url, options = {}) => {
+      const path = String(url);
+      if (path.includes("/users/current-user")) {
+        return Promise.resolve(jsonFetch(true, { username: "owner-demo" }));
+      }
+      if (path.includes("/restaurants/7/menu")) {
+        return Promise.resolve(
+          jsonFetch(true, [{ item_name: "Burger", restaurant_id: 7, cost: 9.99, cuisine: "thai" }])
+        );
+      }
+      if (path.includes("/items/Burger_7") && options.method === "PATCH") {
+        return Promise.resolve(
+          jsonFetch(true, { item_name: "Big Burger", restaurant_id: 7, cost: 12.5, cuisine: "thai" })
+        );
+      }
+      if (path.endsWith("/items") && options.method === "POST") {
+        return Promise.resolve(
+          jsonFetch(true, { item_name: "Soup", restaurant_id: 7, cost: 6.25, cuisine: "thai" }, 201)
+        );
+      }
+      return Promise.resolve(jsonFetch(true, [{ restaurant_id: 7, cuisine: "thai", avg_ratings: 4.8 }]));
+    });
+
+    wrapRoutes(
+      createElement(
+        Routes,
+        null,
+        createElement(Route, { path: "/restaurants/:restaurantId", element: createElement(RestaurantDetailPage) })
+      ),
+      ["/restaurants/7"]
+    );
+
+    await screen.findByText("Burger");
+    expect(screen.getByRole("button", { name: /Create item/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Edit item/i })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /Edit item/i }));
+    fireEvent.change(screen.getByLabelText(/^Name$/i), { target: { value: "Big Burger" } });
+    fireEvent.change(screen.getByLabelText(/^Cost$/i), { target: { value: "12.5" } });
+    fireEvent.click(screen.getByRole("button", { name: /Save changes/i }));
+
+    expect(await screen.findByText("Big Burger")).toBeInTheDocument();
+    expect(fetch).toHaveBeenCalledWith(
+      "/api/items/Burger_7",
+      expect.objectContaining({
+        method: "PATCH",
+        body: JSON.stringify({
+          item_name: "Big Burger",
+          cost: 12.5,
+          cuisine: "thai",
+          dietary: {
+            vegan: false,
+            vegetarian: false,
+            gluten_free: false,
+            dairy_free: false,
+            nut_free: false,
+            halal: false,
+            kosher: false,
+          },
+        }),
+      })
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /Create item/i }));
+    fireEvent.change(screen.getByLabelText(/^Name$/i), { target: { value: "Soup" } });
+    fireEvent.change(screen.getByLabelText(/^Cost$/i), { target: { value: "6.25" } });
+    fireEvent.click(screen.getByRole("button", { name: /^Save item$/i }));
+
+    expect(await screen.findByText("Soup")).toBeInTheDocument();
+    expect(fetch).toHaveBeenCalledWith(
+      "/api/items",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({
+          item_name: "Soup",
+          restaurant_id: 7,
+          cost: 6.25,
+          cuisine: "thai",
+          times_ordered: 0,
+          avg_rating: 0,
+          dietary: {
+            vegan: false,
+            vegetarian: false,
+            gluten_free: false,
+            dairy_free: false,
+            nut_free: false,
+            halal: false,
+            kosher: false,
+          },
+        }),
+      })
+    );
+  });
+
+  it("hides owner item management controls when viewing a different restaurant", async () => {
+    localStorage.setItem(
+      "frontend-auth-user",
+      JSON.stringify({ username: "owner-demo", role: "owner", id: 2, requires2FA: false })
+    );
+    localStorage.setItem(
+      "frontend-restaurant-workspace-by-user-v1",
+      JSON.stringify({
+        "owner-demo": { restaurantId: 8, label: "Restaurant 8", cuisine: "thai" },
+      })
+    );
+
+    fetch.mockImplementation((url) => {
+      const path = String(url);
+      if (path.includes("/users/current-user")) {
+        return Promise.resolve(jsonFetch(true, { username: "owner-demo" }));
+      }
+      if (path.includes("/restaurants/7/menu")) {
+        return Promise.resolve(
+          jsonFetch(true, [{ item_name: "Burger", restaurant_id: 7, cost: 9.99, cuisine: "thai" }])
+        );
+      }
+      return Promise.resolve(jsonFetch(true, [{ restaurant_id: 7, cuisine: "thai", avg_ratings: 4.8 }]));
+    });
+
+    wrapRoutes(
+      createElement(
+        Routes,
+        null,
+        createElement(Route, { path: "/restaurants/:restaurantId", element: createElement(RestaurantDetailPage) })
+      ),
+      ["/restaurants/7"]
+    );
+
+    await screen.findByText("Burger");
+    expect(screen.queryByRole("button", { name: /Create item/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Edit item/i })).not.toBeInTheDocument();
+    expect(screen.getByText(/Item editing is only available on your linked restaurant/i)).toBeInTheDocument();
   });
 
   it("shows all favourite items from restaurants that have a saved favourite", async () => {
