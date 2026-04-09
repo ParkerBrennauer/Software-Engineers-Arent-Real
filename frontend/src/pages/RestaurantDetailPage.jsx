@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import { api } from "../api/client";
 import { useCart } from "../state/CartContext";
+import { useAuth } from "../state/AuthContext";
 import CartPanel from "../components/CartPanel";
 import { normalizeApiArray } from "../utils/normalizeApiArray";
 import { dietaryTags } from "../utils/formatItemDietary";
@@ -23,6 +24,7 @@ export default function RestaurantDetailPage() {
   const { restaurantId: idParam } = useParams();
   const location = useLocation();
   const { addItem } = useCart();
+  const { user } = useAuth();
 
   const idNum = Number(idParam);
   const idValid = Number.isInteger(idNum) && idNum > 0;
@@ -33,11 +35,25 @@ export default function RestaurantDetailPage() {
   const [menuLoading, setMenuLoading] = useState(false);
   const [menuError, setMenuError] = useState("");
   const [cartMessage, setCartMessage] = useState("");
+  const [favouriteKeys, setFavouriteKeys] = useState([]);
+  const [favouriteLoading, setFavouriteLoading] = useState(false);
+  const [favouriteError, setFavouriteError] = useState("");
+  const [favouriteActionKey, setFavouriteActionKey] = useState("");
+
+  const isCustomerSignedIn = user?.role === "customer" && !user?.requires2FA;
 
   const displayName = useMemo(() => {
     if (restaurant?.name && String(restaurant.name).trim()) return String(restaurant.name).trim();
     return `Restaurant ${idValid ? idNum : idParam ?? "—"}`;
   }, [restaurant, idValid, idNum, idParam]);
+
+  const favouriteItems = useMemo(() => {
+    if (menuItems.length === 0 || favouriteKeys.length === 0) return [];
+    const menuByKey = new Map(
+      menuItems.map((item) => [`${String(item?.item_name ?? "Menu item").trim()}_${item?.restaurant_id ?? idNum}`, item])
+    );
+    return favouriteKeys.map((key) => menuByKey.get(key)).filter(Boolean);
+  }, [favouriteKeys, menuItems, idNum]);
 
   const stateRestaurantId = location.state?.restaurant?.restaurant_id;
 
@@ -93,6 +109,57 @@ export default function RestaurantDetailPage() {
       cancelled = true;
     };
   }, [idValid, idNum]);
+
+  useEffect(() => {
+    if (!idValid || !isCustomerSignedIn) {
+      setFavouriteKeys([]);
+      setFavouriteError("");
+      setFavouriteLoading(false);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      setFavouriteLoading(true);
+      setFavouriteError("");
+      try {
+        const favourites = await api.customer.getFavourites();
+        if (!cancelled) {
+          setFavouriteKeys(Array.isArray(favourites) ? favourites : []);
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setFavouriteKeys([]);
+          setFavouriteError(e?.message || "Could not load favourite items.");
+        }
+      } finally {
+        if (!cancelled) setFavouriteLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [idValid, isCustomerSignedIn]);
+
+  async function handleFavouriteToggle(item) {
+    const itemKey = `${String(item?.item_name ?? "Menu item").trim()}_${item?.restaurant_id ?? idNum}`;
+    setFavouriteActionKey(itemKey);
+    setFavouriteError("");
+    try {
+      const result = await api.customer.toggleFavouriteItem(itemKey);
+      setFavouriteKeys((prev) => {
+        const current = Array.isArray(prev) ? prev : [];
+        const withoutCurrentRestaurant = current.filter((key) => !key.endsWith(`_${item?.restaurant_id ?? idNum}`));
+        if (result === "removed") {
+          return withoutCurrentRestaurant.filter((key) => key !== itemKey);
+        }
+        return [...withoutCurrentRestaurant, itemKey];
+      });
+    } catch (e) {
+      setFavouriteError(e?.message || "Could not update favourite item.");
+    } finally {
+      setFavouriteActionKey("");
+    }
+  }
 
   if (!idValid) {
     return (
@@ -160,6 +227,50 @@ export default function RestaurantDetailPage() {
         </p>
       </header>
 
+      <section className="panel restaurant-favourites" aria-labelledby="restaurant-favourites-heading">
+        <div className="restaurant-favourites__header">
+          <h2 id="restaurant-favourites-heading" className="restaurant-menu-section__title">
+            Favourite
+          </h2>
+          {!isCustomerSignedIn && (
+            <p className="muted small-print">Sign in as a customer to save a favourite item here.</p>
+          )}
+        </div>
+        {isCustomerSignedIn && favouriteLoading && <p className="muted">Loading favourite item…</p>}
+        {isCustomerSignedIn && !favouriteLoading && favouriteError && <p className="error">{favouriteError}</p>}
+        {isCustomerSignedIn && !favouriteLoading && !favouriteError && favouriteItems.length === 0 && (
+          <p className="muted">No favourite item saved for this restaurant yet.</p>
+        )}
+        {isCustomerSignedIn && favouriteItems.length > 0 && (
+          <div className="restaurant-favourites__list">
+            {favouriteItems.map((item, idx) => {
+              const name =
+                item?.item_name != null && String(item.item_name).trim()
+                  ? String(item.item_name).trim()
+                  : "Menu item";
+              const price = Number(item?.cost ?? item?.price ?? 0);
+              const safePrice = Number.isFinite(price) ? price : 0;
+              return (
+                <article className="restaurant-favourites__card" key={`favourite_${name}_${idx}`}>
+                  <div>
+                    <h3 className="menu-item-card__name">{name}</h3>
+                    <p className="menu-item-card__price">${safePrice.toFixed(2)}</p>
+                  </div>
+                  <button
+                    type="button"
+                    className="menu-item-card__favourite menu-item-card__favourite--active"
+                    onClick={() => handleFavouriteToggle(item)}
+                    disabled={favouriteActionKey === `${name}_${item?.restaurant_id ?? idNum}`}
+                  >
+                    {favouriteActionKey === `${name}_${item?.restaurant_id ?? idNum}` ? "Saving…" : "Remove favourite"}
+                  </button>
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
       <section className="restaurant-menu-section" aria-labelledby="restaurant-menu-heading">
         <h2 id="restaurant-menu-heading" className="restaurant-menu-section__title">
           Menu
@@ -179,14 +290,29 @@ export default function RestaurantDetailPage() {
             const tags = dietaryTags(item?.dietary);
             const price = Number(item?.cost ?? item?.price ?? 0);
             const safePrice = Number.isFinite(price) ? price : 0;
+            const itemKey = `${keyBase}_${rid}`;
             const extra =
               item?.description != null && String(item.description).trim()
                 ? String(item.description).trim()
                 : null;
+            const isFavourite = favouriteKeys.includes(itemKey);
+            const favouriteBusy = favouriteActionKey === itemKey;
 
             return (
               <article className="panel menu-item-card" key={`${keyBase}_${rid}_${idx}`}>
-                <h3 className="menu-item-card__name">{keyBase}</h3>
+                <div className="menu-item-card__top">
+                  <h3 className="menu-item-card__name">{keyBase}</h3>
+                  <button
+                    type="button"
+                    className={`menu-item-card__favourite${isFavourite ? " menu-item-card__favourite--active" : ""}`}
+                    aria-pressed={isFavourite}
+                    onClick={() => handleFavouriteToggle(item)}
+                    disabled={!isCustomerSignedIn || favouriteBusy}
+                    title={isCustomerSignedIn ? undefined : "Sign in as a customer to favourite items"}
+                  >
+                    {favouriteBusy ? "Saving…" : isFavourite ? "★ Favourite" : "☆ Favourite"}
+                  </button>
+                </div>
                 <p className="menu-item-card__price">${safePrice.toFixed(2)}</p>
                 {item?.cuisine != null && String(item.cuisine).trim() && (
                   <p className="muted small-print">{item.cuisine}</p>

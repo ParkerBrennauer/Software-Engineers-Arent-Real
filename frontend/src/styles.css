@@ -378,6 +378,93 @@ code {
   margin-top: 0.5rem;
 }
 
+.tip-fieldset {
+  margin: 0.65rem 0 0.35rem;
+  padding: 0.75rem 1rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.12);
+}
+.tip-fieldset:disabled {
+  opacity: 0.65;
+}
+.tip-legend {
+  padding: 0 0.35rem;
+  font-size: 1.05rem;
+  font-weight: 650;
+  margin-bottom: 0.25rem;
+}
+.tip-mode-row {
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  margin-bottom: 0.5rem;
+}
+.tip-mode-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.tip-applied-success {
+  margin-top: 0.65rem;
+  border: 1px solid rgba(120, 220, 160, 0.45);
+  background: rgba(20, 55, 45, 0.35);
+}
+.tip-applied-success__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  margin-bottom: 0.55rem;
+}
+.tip-applied-success__icon {
+  flex-shrink: 0;
+  color: #92f6b6;
+  display: flex;
+}
+.tip-applied-success__title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 650;
+  color: #f3fff8;
+}
+.tip-applied-success__body {
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+.tip-applied-success__meta {
+  margin: 0 0 0.35rem 0;
+}
+.tip-applied-success__strong {
+  font-weight: 600;
+  color: #dbe6ff;
+}
+.tip-applied-success__amount {
+  margin: 0.5rem 0 0.25rem 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #c8ffd8;
+  letter-spacing: 0.01em;
+}
+.tip-applied-success__actions {
+  margin-top: 0.65rem;
+  margin-bottom: 0;
+  justify-content: flex-end;
+}
+.tip-applied-success__dismiss {
+  padding: 0.4rem 0.85rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.tip-applied-success__dismiss:hover {
+  border-color: #7db4ff;
+}
+
 .access-restricted-notice {
   margin-top: 0.75rem;
   padding: 1rem 1.15rem;
@@ -477,6 +564,33 @@ code {
   margin: 0 0 0.75rem 0;
   font-size: 1.25rem;
 }
+.restaurant-favourites {
+  margin-bottom: 1.25rem;
+}
+.restaurant-favourites__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.restaurant-favourites__header p {
+  margin: 0;
+}
+.restaurant-favourites__list {
+  display: grid;
+  gap: 0.75rem;
+}
+.restaurant-favourites__card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.9rem 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(126, 200, 255, 0.28);
+  background: linear-gradient(135deg, rgba(25, 45, 90, 0.5), rgba(15, 26, 54, 0.82));
+}
 .restaurant-menu-grid {
   align-items: stretch;
 }
@@ -489,6 +603,12 @@ code {
 .menu-item-card__name {
   margin: 0;
   font-size: 1.05rem;
+}
+.menu-item-card__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
 }
 .menu-item-card__price {
   margin: 0;
@@ -515,6 +635,17 @@ code {
   border: 1px solid rgba(120, 180, 255, 0.22);
   text-transform: capitalize;
 }
+.menu-item-card__favourite {
+  flex-shrink: 0;
+  font-size: 0.84rem;
+  font-weight: 600;
+  padding: 0.45rem 0.7rem;
+}
+.menu-item-card__favourite--active {
+  border-color: rgba(255, 214, 102, 0.45);
+  background: rgba(146, 112, 22, 0.24);
+  color: #ffe7a8;
+}
 .menu-item-card__add {
   margin-top: auto;
   align-self: flex-start;
@@ -527,5 +658,12 @@ code {
 @media (max-width: 720px) {
   .topbar { flex-direction: column; align-items: flex-start; }
   .promo-row { flex-direction: column; align-items: stretch; }
+  .restaurant-favourites__card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .menu-item-card__top {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
-
