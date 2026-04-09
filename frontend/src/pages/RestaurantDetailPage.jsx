@@ -633,19 +633,21 @@ export default function RestaurantDetailPage() {
                     ))}
                   </ul>
                 )}
-                <button
-                  type="button"
-                  className="menu-item-card__add"
-                  onClick={() => {
-                    const result = addItem(item);
-                    if (!result?.ok) setCartMessage(result?.message || "Unable to add item to cart.");
-                    else {
-                      setCartMessage("");
-                    }
-                  }}
-                >
-                  Add to cart
-                </button>
+                {isCustomerSignedIn && (
+                  <button
+                    type="button"
+                    className="menu-item-card__add"
+                    onClick={() => {
+                      const result = addItem(item);
+                      if (!result?.ok) setCartMessage(result?.message || "Unable to add item to cart.");
+                      else {
+                        setCartMessage("");
+                      }
+                    }}
+                  >
+                    Add to cart
+                  </button>
+                )}
                 {ownerCanManageItems && editingItemKey === itemKey && (
                   <form
                     className="owner-item-form owner-item-form--inline"

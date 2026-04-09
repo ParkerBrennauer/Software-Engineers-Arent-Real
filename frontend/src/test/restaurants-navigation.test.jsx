@@ -86,11 +86,23 @@ describe("Restaurant browsing navigation", () => {
   });
 
   it("add to cart from detail page updates cart affordance", async () => {
-    fetch
-      .mockResolvedValueOnce(jsonFetch(true, [{ restaurant_id: 7, cuisine: "thai", avg_ratings: 4.8 }]))
-      .mockResolvedValueOnce(
-        jsonFetch(true, [{ item_name: "Burger", restaurant_id: 7, cost: 9.99, cuisine: "thai" }])
-      );
+    localStorage.setItem(
+      "frontend-auth-user",
+      JSON.stringify({ username: "demo", role: "customer", id: 1, requires2FA: false })
+    );
+
+    fetch.mockImplementation((url) => {
+      const path = String(url);
+      if (path.includes("/users/current-user")) {
+        return Promise.resolve(jsonFetch(true, { username: "demo" }));
+      }
+      if (path.includes("/restaurants/7/menu")) {
+        return Promise.resolve(
+          jsonFetch(true, [{ item_name: "Burger", restaurant_id: 7, cost: 9.99, cuisine: "thai" }])
+        );
+      }
+      return Promise.resolve(jsonFetch(true, [{ restaurant_id: 7, cuisine: "thai", avg_ratings: 4.8 }]));
+    });
 
     wrapRoutes(
       createElement(
@@ -263,6 +275,7 @@ describe("Restaurant browsing navigation", () => {
     await screen.findByRole("heading", { name: /^Favourite$/i });
     await screen.findByText("Burger");
     expect(screen.queryByRole("button", { name: /Favourite/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Add to cart/i })).not.toBeInTheDocument();
     expect(screen.getByText(/Sign in as a customer to save a favourite item here/i)).toBeInTheDocument();
   });
 
