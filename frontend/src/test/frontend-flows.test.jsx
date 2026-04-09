@@ -1,0 +1,164 @@
+import React from "react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { createElement } from "react";
+import { MemoryRouter } from "react-router-dom";
+import { AuthProvider } from "../state/AuthContext";
+import { CartProvider } from "../state/CartContext";
+import LoginPage from "../pages/LoginPage";
+import RegisterPage from "../pages/RegisterPage";
+import RestaurantsPage from "../pages/RestaurantsPage";
+import OrdersPage from "../pages/OrdersPage";
+import ProfilePage from "../pages/ProfilePage";
+import { useCart } from "../state/CartContext";
+
+function jsonFetch(ok, data, status = 200) {
+  const body = JSON.stringify(data);
+  return { ok, status, text: async () => body, json: async () => JSON.parse(body) };
+}
+
+function wrap(ui) {
+  return render(
+    createElement(
+      MemoryRouter,
+      null,
+      createElement(AuthProvider, null, createElement(CartProvider, null, ui))
+    )
+  );
+}
+
+describe("frontend endpoint flows", () => {
+  beforeEach(() => {
+    global.fetch = vi.fn();
+    localStorage.clear();
+  });
+
+  it("shows loading and renders restaurant results", async () => {
+    fetch.mockResolvedValueOnce(jsonFetch(true, [{ restaurant_id: 7, cuisine: "thai", avg_ratings: 4.8 }]));
+    wrap(createElement(RestaurantsPage));
+    expect(screen.getByText(/Loading restaurants/i)).toBeInTheDocument();
+    await screen.findByText(/Restaurant 7/i);
+  });
+
+  it("handles empty restaurant state", async () => {
+    fetch.mockResolvedValueOnce(jsonFetch(true, []));
+    wrap(createElement(RestaurantsPage));
+    await screen.findByText(/No restaurants returned/i);
+  });
+
+  it("handles restaurant API failure", async () => {
+    fetch.mockResolvedValueOnce(jsonFetch(false, { detail: "Boom" }, 500));
+    wrap(createElement(RestaurantsPage));
+    await screen.findByText("Boom");
+  });
+
+  it("prevents duplicate login submit while loading", async () => {
+    let releaseLogin;
+    fetch.mockImplementation((url) => {
+      if (String(url).includes("/users/login")) {
+        return new Promise((resolve) => {
+          releaseLogin = () => resolve(jsonFetch(true, { id: 10, requires_2fa: false }));
+        });
+      }
+      if (String(url).includes("/users/current-user")) {
+        return Promise.resolve(jsonFetch(true, { username: "demo" }));
+      }
+      return Promise.resolve(jsonFetch(true, {}));
+    });
+    wrap(createElement(LoginPage));
+    fireEvent.change(screen.getByPlaceholderText("Username"), { target: { value: "demo" } });
+    fireEvent.change(screen.getByPlaceholderText("Password"), { target: { value: "secret" } });
+    fireEvent.click(screen.getByText("Sign in"));
+    expect(screen.getByRole("button", { name: /Signing in/i })).toBeDisabled();
+    releaseLogin();
+    await waitFor(() => expect(fetch).toHaveBeenCalled());
+  });
+
+  it("requires valid 2FA code before verify submit", async () => {
+    fetch.mockImplementation((url) => {
+      if (String(url).includes("/users/login")) {
+        return Promise.resolve(jsonFetch(true, { id: 10, requires_2fa: true }));
+      }
+      if (String(url).includes("/users/current-user")) {
+        return Promise.resolve(jsonFetch(true, { username: "driver_demo" }));
+      }
+      if (String(url).includes("/users/2fa/generate")) {
+        return Promise.resolve(jsonFetch(true, { message: "generated" }));
+      }
+      return Promise.resolve(jsonFetch(true, {}));
+    });
+    wrap(createElement(LoginPage));
+    fireEvent.change(screen.getByPlaceholderText("Username"), { target: { value: "driver_demo" } });
+    fireEvent.change(screen.getByPlaceholderText("Password"), { target: { value: "secret" } });
+    fireEvent.click(screen.getByText("Sign in"));
+    await screen.findByText(/Two-factor verification/i);
+    expect(screen.getByRole("button", { name: "Verify 2FA" })).toBeDisabled();
+    fireEvent.change(screen.getByPlaceholderText("6-digit code"), { target: { value: "123456" } });
+    expect(screen.getByRole("button", { name: "Verify 2FA" })).not.toBeDisabled();
+  });
+
+  it("shows unauthorized error from order endpoint", async () => {
+    localStorage.setItem("frontend-auth-user", JSON.stringify({ username: "demo", role: "customer", id: 1 }));
+    fetch.mockImplementation((url) => {
+      if (String(url).includes("/users/current-user")) {
+        return Promise.resolve(jsonFetch(true, { username: "demo" }));
+      }
+      return Promise.resolve(jsonFetch(false, { detail: "Not authenticated" }, 401));
+    });
+    wrap(createElement(OrdersPage));
+    fireEvent.change(screen.getByPlaceholderText("Order ID"), { target: { value: "1" } });
+    fireEvent.click(screen.getByText("View order"));
+    await screen.findByText("Not authenticated");
+  });
+
+  it("handles invalid input on review endpoint access via orders controls", async () => {
+    localStorage.setItem("frontend-auth-user", JSON.stringify({ username: "demo", role: "customer", id: 1 }));
+    fetch.mockImplementation((url) => {
+      if (String(url).includes("/users/current-user")) {
+        return Promise.resolve(jsonFetch(true, { username: "demo" }));
+      }
+      return Promise.resolve(jsonFetch(false, { detail: "Order not found" }, 400));
+    });
+    wrap(createElement(OrdersPage));
+    fireEvent.change(screen.getByPlaceholderText("Order ID"), { target: { value: "999999" } });
+    fireEvent.click(screen.getByRole("button", { name: "Cancel order" }));
+    await screen.findByText("Order not found");
+  });
+
+  it("blocks customer signup with invalid card number before API call", async () => {
+    wrap(createElement(RegisterPage));
+    fireEvent.change(screen.getByPlaceholderText("Email"), { target: { value: "a@a.com" } });
+    fireEvent.change(screen.getByPlaceholderText("Name"), { target: { value: "A" } });
+    fireEvent.change(screen.getByPlaceholderText("Username"), { target: { value: "aa" } });
+    fireEvent.change(screen.getByPlaceholderText("Password"), { target: { value: "pass123" } });
+    fireEvent.change(screen.getByPlaceholderText("Card number (15-16 digits)"), { target: { value: "123" } });
+    fireEvent.click(screen.getByRole("button", { name: "Create account" }));
+    expect(await screen.findByText("Card number must be 15 or 16 digits.")).toBeInTheDocument();
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("disables empty address save on profile page", async () => {
+    fetch
+      .mockResolvedValueOnce(jsonFetch(true, { username: "demo" }))
+      .mockResolvedValueOnce(jsonFetch(true, []));
+    wrap(createElement(ProfilePage));
+    await waitFor(() => expect(fetch).toHaveBeenCalled());
+    expect(screen.getByRole("button", { name: "Save address" })).toBeDisabled();
+  });
+
+  it("prevents adding items from different restaurants to cart", () => {
+    function Harness() {
+      const { addItem, items } = useCart();
+      return (
+        <>
+          <button type="button" onClick={() => addItem({ item_name: "Burger", restaurant_id: 1, cost: 10 })}>Add one</button>
+          <button type="button" onClick={() => addItem({ item_name: "Pasta", restaurant_id: 2, cost: 12 })}>Add two</button>
+          <p>Count:{items.length}</p>
+        </>
+      );
+    }
+    wrap(createElement(Harness));
+    fireEvent.click(screen.getByText("Add one"));
+    fireEvent.click(screen.getByText("Add two"));
+    expect(screen.getByText("Count:1")).toBeInTheDocument();
+  });
+});
