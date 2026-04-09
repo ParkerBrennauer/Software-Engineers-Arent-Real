@@ -5,6 +5,7 @@ import { CartProvider } from "../state/CartContext";
 import { AuthProvider } from "../state/AuthContext";
 import RestaurantsPage from "../pages/RestaurantsPage";
 import RestaurantDetailPage from "../pages/RestaurantDetailPage";
+import FavouritesPage from "../pages/FavouritesPage";
 import { normalizeApiArray } from "../utils/normalizeApiArray";
 import { dietaryTags } from "../utils/formatItemDietary";
 
@@ -184,5 +185,66 @@ describe("Restaurant browsing navigation", () => {
     fireEvent.click(screen.getAllByRole("button", { name: /☆ Favourite/i })[1]);
     expect(await screen.findByRole("button", { name: /Remove favourite/i })).toBeInTheDocument();
     expect(fetch).toHaveBeenCalledWith("/api/customers/favourites/Cookie_7", expect.objectContaining({ method: "PATCH" }));
+  });
+
+  it("shows all favourite items from restaurants that have a saved favourite", async () => {
+    localStorage.setItem(
+      "frontend-auth-user",
+      JSON.stringify({ username: "demo", role: "customer", id: 1, requires2FA: false })
+    );
+
+    fetch.mockImplementation((url) => {
+      const path = String(url);
+      if (path.includes("/users/current-user")) {
+        return Promise.resolve(jsonFetch(true, { username: "demo" }));
+      }
+      if (path.includes("/customers/favourites")) {
+        return Promise.resolve(jsonFetch(true, ["Burger_7", "Cookie_7", "Soup_9", "Missing_99"]));
+      }
+      if (path.includes("/items/Burger_7")) {
+        return Promise.resolve(jsonFetch(true, { item_name: "Burger", restaurant_id: 7, cost: 9.99, cuisine: "thai" }));
+      }
+      if (path.includes("/items/Cookie_7")) {
+        return Promise.resolve(jsonFetch(true, { item_name: "Cookie", restaurant_id: 7, cost: 2.5, cuisine: "thai" }));
+      }
+      if (path.includes("/items/Soup_9")) {
+        return Promise.resolve(jsonFetch(true, { item_name: "Soup", restaurant_id: 9, cost: 8.25, cuisine: "comfort" }));
+      }
+      if (path.includes("/items/Missing_99")) {
+        return Promise.resolve(jsonFetch(false, { detail: "Not found" }, 404));
+      }
+      if (path.includes("/restaurants")) {
+        return Promise.resolve(
+          jsonFetch(true, [
+            { restaurant_id: 7, name: "North Noodles", cuisine: "thai" },
+            { restaurant_id: 9, name: "South Soup", cuisine: "comfort" },
+            { restaurant_id: 12, name: "Empty Cafe", cuisine: "coffee" },
+          ])
+        );
+      }
+      return Promise.resolve(jsonFetch(false, { detail: "Not found" }, 404));
+    });
+
+    wrapRoutes(
+      createElement(
+        Routes,
+        null,
+        createElement(Route, { path: "/favourites", element: createElement(FavouritesPage) })
+      ),
+      ["/favourites"]
+    );
+
+    await screen.findByRole("heading", { name: /^Favourite items$/i });
+    expect(screen.getByText("North Noodles")).toBeInTheDocument();
+    expect(screen.getByText("South Soup")).toBeInTheDocument();
+    expect(screen.getByText("Burger")).toBeInTheDocument();
+    expect(screen.getByText("Cookie")).toBeInTheDocument();
+    expect(screen.getByText("Soup")).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: /Add to cart/i })).toHaveLength(3);
+    expect(screen.queryByText("Missing")).not.toBeInTheDocument();
+    expect(screen.queryByText("Empty Cafe")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getAllByRole("button", { name: /Add to cart/i })[0]);
+    expect(screen.getByText(/\$9\.99/)).toBeInTheDocument();
   });
 });
