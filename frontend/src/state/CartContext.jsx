@@ -6,6 +6,7 @@ const CartContext = createContext(null);
 export function CartProvider({ children }) {
   const [items, setItems] = useState([]);
   const [restaurant, setRestaurant] = useState(null);
+  const [distance, setDistance] = useState(null);
   const [appliedCode, setAppliedCode] = useState(null);
   const [discountedTotal, setDiscountedTotal] = useState(null);
   const [discountError, setDiscountError] = useState("");
@@ -55,6 +56,7 @@ export function CartProvider({ children }) {
   function clear() {
     setItems([]);
     setRestaurant(null);
+    setDistance(null);
     clearDiscountState();
   }
 
@@ -62,12 +64,30 @@ export function CartProvider({ children }) {
     clearDiscountState();
   }
 
+  useEffect(() => {
+    if (!restaurant?.restaurant_id) {
+      setDistance(null);
+      return;
+    }
+
+    async function fetchDeliveryInfo() {
+      try {
+        const response = await api.restaurants.deliveryInfo(restaurant.restaurant_id);
+        setDistance(response.distance || 0);
+      } catch (error) {
+        setDistance(0);
+      }
+    }
+
+    fetchDeliveryInfo();
+  }, [restaurant?.restaurant_id]);
+
   const subtotal = useMemo(
     () => items.reduce((sum, i) => sum + (i.price || 0) * i.quantity, 0),
     [items]
   );
   const tax = useMemo(() => subtotal * 0.13, [subtotal]);
-  const deliveryFee = items.length ? 2 : 0;
+  const deliveryFee = items.length && distance !== null ? 2.0 + distance * 0.5 : (items.length ? 2 : 0);
   const total = subtotal + tax + deliveryFee;
 
   const grandTotal = useMemo(() => {
@@ -166,6 +186,7 @@ export function CartProvider({ children }) {
   const value = {
     items,
     restaurant,
+    distance,
     subtotal,
     tax,
     deliveryFee,
