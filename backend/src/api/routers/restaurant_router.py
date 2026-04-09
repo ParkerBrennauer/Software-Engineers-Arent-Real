@@ -6,7 +6,7 @@ from src.schemas.restaurant_schema import (
     RestaurantSearchAdvanced,
 )
 from src.services.restaurant_services import RestaurantService
-from src.services.user_services import UserService
+from src.services.user_service import UserService
 from src.services.order_services import OrderService
 from src.api.dependencies import convert_service_error
 
