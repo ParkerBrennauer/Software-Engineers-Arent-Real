@@ -26,3 +26,4 @@ coverage.xml
 .pytest_cache/
 
 backend/src/scripts/update_items.py
+backend/src/data/users.json

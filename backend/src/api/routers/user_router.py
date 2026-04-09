@@ -139,13 +139,15 @@ async def add_address(address_in: AddressAdd):
     if not username:
         raise convert_service_error(ValueError("No user currently logged in"))
     try:
-        updated_user = await UserService.add_address(username, address_in.address)
+        updated_user = await UserService.add_address(username, address_in)
         return updated_user
     except ValueError as err:
         raise convert_service_error(err)
 
 
-@router.get("/addresses", response_model=list[str], status_code=status.HTTP_200_OK)
+@router.get(
+    "/addresses", response_model=list[AddressAdd], status_code=status.HTTP_200_OK
+)
 async def get_addresses():
     username = UserService.get_current_user()
     if not username:
