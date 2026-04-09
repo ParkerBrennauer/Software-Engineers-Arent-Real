@@ -1,8 +1,35 @@
 import pytest
 
 from src.repositories.item_repo import ItemRepo
+from src.repositories.rating_repo import RatingRepo
 from src.repositories.user_repo import UserRepo
 from src.services.customer_service import CustomerService
+from src.services.order_services import OrderService
+
+
+@pytest.mark.asyncio
+async def test_get_order_history_includes_order_ids_and_review_data(monkeypatch):
+    async def fake_get_previous_orders_by_user(_username: str):
+        return [
+            {"id": "11", "customer": "alice", "restaurant": "Restaurant_16", "order_status": "delivered"},
+            {"id": "12", "customer": "alice", "restaurant": "Restaurant_9", "order_status": "picked_up"},
+        ]
+
+    async def fake_get_by_order_id(order_id: str):
+        if order_id == "11":
+            return {"submitted_stars": 5, "review_text": "Great meal"}
+        return None
+
+    monkeypatch.setattr(OrderService, "get_previous_orders_by_user", fake_get_previous_orders_by_user)
+    monkeypatch.setattr(RatingRepo, "get_by_order_id", fake_get_by_order_id)
+
+    result = await CustomerService.get_order_history("alice")
+
+    assert result[0]["id"] == "11"
+    assert result[0]["submitted_stars"] == 5
+    assert result[0]["review_text"] == "Great meal"
+    assert result[1]["id"] == "12"
+    assert "submitted_stars" not in result[1]
 
 
 @pytest.mark.asyncio

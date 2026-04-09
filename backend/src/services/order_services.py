@@ -230,7 +230,9 @@ class OrderService:
         results = []
         if not username:
             raise ValueError('No username submitted')
-        for order in orders.values():
+        for order_id, order in orders.items():
             if order['customer'] == username:
-                results.append(order)
+                hydrated_order = dict(order)
+                hydrated_order.setdefault('id', str(order_id))
+                results.append(hydrated_order)
         return results
