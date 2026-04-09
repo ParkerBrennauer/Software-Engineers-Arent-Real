@@ -125,8 +125,6 @@ class RestaurantOwnerService:
     ) -> None:
         if order_data.get("restaurant") != restaurant_key:
             return
-        if order_data.get("payment_status") != "accepted":
-            return
         bucket.append(OrderService._dict_to_order(order_data))
 
     @staticmethod
