@@ -591,6 +591,32 @@ code {
   border: 1px solid rgba(126, 200, 255, 0.28);
   background: linear-gradient(135deg, rgba(25, 45, 90, 0.5), rgba(15, 26, 54, 0.82));
 }
+.favourites-section {
+  display: grid;
+  gap: 0.85rem;
+}
+.favourites-restaurant-list {
+  display: grid;
+  gap: 0.85rem;
+}
+.favourites-restaurant-card {
+  display: grid;
+  gap: 0.85rem;
+}
+.favourites-restaurant-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.favourites-restaurant-card__title {
+  margin: 0;
+  font-size: 1.08rem;
+}
+.favourites-restaurant-card__header p {
+  margin: 0.25rem 0 0 0;
+}
 .restaurant-menu-grid {
   align-items: stretch;
 }
@@ -918,6 +944,10 @@ code {
   .topbar { flex-direction: column; align-items: flex-start; }
   .promo-row { flex-direction: column; align-items: stretch; }
   .restaurant-favourites__card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .favourites-restaurant-card__header {
     flex-direction: column;
     align-items: flex-start;
   }

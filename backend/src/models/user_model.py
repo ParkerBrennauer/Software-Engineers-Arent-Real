@@ -1,6 +1,7 @@
 from typing import Optional
 from src.schemas.user_schema import UserBase
 
+
 class UserInternal(UserBase):
     id: int
     hashed_password: str
@@ -11,3 +12,4 @@ class UserInternal(UserBase):
     two_factor_code: Optional[str] = None
     two_factor_expires_at: Optional[str] = None
     saved_addresses: list[str] = []
+    location: list[list[float]] = []
