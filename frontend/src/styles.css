@@ -655,6 +655,265 @@ code {
   margin-top: 1.5rem;
 }
 
+/* Owner / staff linked venue */
+.owner-venue-bar {
+  margin: 0 0 0.75rem 0;
+  padding: 0.55rem 0.85rem;
+  border-radius: 12px;
+  border: 1px solid rgba(126, 200, 255, 0.22);
+  background: rgba(20, 40, 80, 0.35);
+}
+.owner-venue-bar__inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem 1rem;
+}
+.owner-venue-bar__line {
+  margin: 0;
+}
+.owner-venue-bar__chip {
+  font-size: 0.95rem;
+}
+.owner-venue-bar__linkish {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #9ec8ff;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 0.92rem;
+}
+.owner-venue-bar__linkish:hover {
+  color: #fff;
+}
+.owner-venue-bar__banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+.owner-venue-bar__banner p {
+  margin: 0;
+  flex: 1 1 12rem;
+}
+.restaurant-workspace-picker-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(5, 10, 22, 0.72);
+  backdrop-filter: blur(4px);
+}
+.restaurant-workspace-picker {
+  width: min(32rem, 100%);
+  max-height: min(80vh, 32rem);
+  overflow: auto;
+  margin: 0;
+}
+.restaurant-workspace-picker__title {
+  margin: 0 0 0.35rem 0;
+  font-size: 1.2rem;
+}
+.restaurant-workspace-picker__lede {
+  margin: 0 0 0.75rem 0;
+}
+.restaurant-workspace-picker__search input {
+  width: 100%;
+  max-width: none;
+}
+.restaurant-workspace-picker__list {
+  list-style: none;
+  padding: 0;
+  margin: 0.75rem 0 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.restaurant-workspace-picker__row {
+  width: 100%;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.15);
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+}
+.restaurant-workspace-picker__row:hover {
+  border-color: rgba(126, 200, 255, 0.45);
+}
+.restaurant-workspace-picker__row-title {
+  font-weight: 600;
+}
+.restaurant-workspace-picker__footer {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: flex-end;
+}
+.kitchen-linked-venue {
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+}
+.kitchen-linked-venue__text {
+  margin: 0;
+  flex: 1 1 14rem;
+}
+.kitchen-linked-venue__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+.operations-switch-venue,
+.discounts-switch-venue {
+  margin-left: 0.35rem;
+  background: none;
+  border: none;
+  padding: 0;
+  color: #9ec8ff;
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.92rem;
+}
+.operations-linked-venue {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem;
+}
+
+/* Kitchen queue (owner / staff) */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.kitchen-board .kitchen-board-toolbar {
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+.kitchen-subpanel {
+  margin-top: 0.85rem;
+  padding: 0.75rem 0.85rem;
+  background: rgba(0, 0, 0, 0.12);
+}
+.kitchen-subheading {
+  margin: 0 0 0.35rem 0;
+  font-size: 1rem;
+  font-weight: 650;
+}
+.kitchen-order-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-top: 1rem;
+}
+.kitchen-section-title {
+  margin: 0 0 0.65rem 0;
+  font-size: 1.05rem;
+  font-weight: 650;
+  color: #c8d8f8;
+}
+.kitchen-order-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.kitchen-order-card {
+  border: 1px solid rgba(126, 200, 255, 0.2);
+  background: rgba(12, 22, 48, 0.55);
+}
+.kitchen-order-card__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.35rem;
+}
+.kitchen-order-card__id {
+  margin: 0;
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+.kitchen-order-card__status {
+  margin: 0.2rem 0 0 0;
+  font-size: 0.9rem;
+}
+.kitchen-badge {
+  display: inline-block;
+  padding: 0.15rem 0.45rem;
+  border-radius: 8px;
+  background: rgba(100, 160, 255, 0.18);
+  border: 1px solid rgba(120, 180, 255, 0.28);
+  text-transform: capitalize;
+}
+.kitchen-order-card__cost {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #b8e6ff;
+  white-space: nowrap;
+}
+.kitchen-order-card__line {
+  margin: 0.25rem 0;
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+.kitchen-order-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+  margin-top: 0.65rem;
+}
+.kitchen-order-card__actions button {
+  font-size: 0.88rem;
+}
+.kitchen-btn-secondary {
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.06);
+}
+.kitchen-btn-warn {
+  border-color: rgba(255, 160, 120, 0.45);
+  background: rgba(90, 40, 30, 0.35);
+}
+.kitchen-assign-label {
+  display: inline-flex;
+  align-items: center;
+}
+.kitchen-assign-label select {
+  min-width: 8rem;
+  max-width: 14rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(10, 18, 35, 0.85);
+  color: inherit;
+}
+.kitchen-order-detail {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
 @media (max-width: 720px) {
   .topbar { flex-direction: column; align-items: flex-start; }
   .promo-row { flex-direction: column; align-items: stretch; }
@@ -665,5 +924,13 @@ code {
   .menu-item-card__top {
     flex-direction: column;
     align-items: flex-start;
+  }
+  .kitchen-order-card__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .kitchen-assign-label select {
+    max-width: none;
+    width: 100%;
   }
 }

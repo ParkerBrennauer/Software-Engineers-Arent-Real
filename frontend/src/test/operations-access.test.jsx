@@ -5,6 +5,7 @@ import App from "../App";
 import RequireAuth from "../components/RequireAuth";
 import OperationsPage from "../pages/OperationsPage";
 import { AuthProvider } from "../state/AuthContext";
+import { RestaurantWorkspaceProvider } from "../state/RestaurantWorkspaceContext";
 import { CartProvider } from "../state/CartContext";
 import { canViewOperationsContent } from "../utils/operationsAccess";
 
@@ -18,7 +19,11 @@ function wrapWithApp(initialEntry) {
     createElement(
       MemoryRouter,
       { initialEntries: [initialEntry] },
-      createElement(AuthProvider, null, createElement(CartProvider, null, createElement(App)))
+      createElement(
+        AuthProvider,
+        null,
+        createElement(RestaurantWorkspaceProvider, null, createElement(CartProvider, null, createElement(App)))
+      )
     )
   );
 }
@@ -32,11 +37,15 @@ function wrapOperationsRouteOnly(initialEntry) {
         AuthProvider,
         null,
         createElement(
-          Routes,
+          RestaurantWorkspaceProvider,
           null,
           createElement(
-            Route,
-            { path: "/operations", element: createElement(RequireAuth, null, createElement(OperationsPage)) }
+            Routes,
+            null,
+            createElement(
+              Route,
+              { path: "/operations", element: createElement(RequireAuth, null, createElement(OperationsPage)) }
+            )
           )
         )
       )
@@ -81,6 +90,12 @@ describe("Operations access UI", () => {
     localStorage.setItem(
       "frontend-auth-user",
       JSON.stringify({ username: "cafe_owner", role: "owner", id: 1, requires2FA: false })
+    );
+    localStorage.setItem(
+      "frontend-restaurant-workspace-by-user-v1",
+      JSON.stringify({
+        cafe_owner: { restaurantId: 1, label: "Restaurant 1", cuisine: "" },
+      })
     );
     wrapOperationsRouteOnly("/operations");
     expect(await screen.findByRole("heading", { name: /Business tools/i })).toBeInTheDocument();

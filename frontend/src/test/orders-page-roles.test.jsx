@@ -3,6 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { createElement } from "react";
 import { MemoryRouter } from "react-router-dom";
 import { AuthProvider } from "../state/AuthContext";
+import { RestaurantWorkspaceProvider } from "../state/RestaurantWorkspaceContext";
 import { CartProvider } from "../state/CartContext";
 import OrdersPage from "../pages/OrdersPage";
 
@@ -16,7 +17,15 @@ function wrapOrders() {
     createElement(
       MemoryRouter,
       null,
-      createElement(AuthProvider, null, createElement(CartProvider, null, createElement(OrdersPage)))
+      createElement(
+        AuthProvider,
+        null,
+        createElement(
+          RestaurantWorkspaceProvider,
+          null,
+          createElement(CartProvider, null, createElement(OrdersPage))
+        )
+      )
     )
   );
 }
@@ -64,29 +73,28 @@ describe("OrdersPage role-based UI", () => {
     expect(screen.queryByRole("button", { name: /^Mark ready$/i })).not.toBeInTheDocument();
   });
 
-  it("shows owner operational controls and restaurant queue", () => {
+  it("shows owner kitchen queue with load orders and advanced link", () => {
     primeSession({ username: "owner_carol", role: "owner", id: 3 });
     wrapOrders();
 
-    expect(screen.getByRole("heading", { name: /Kitchen & dispatch/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^Mark ready$/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^Assign driver$/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^Load orders$/i })).toBeInTheDocument();
+    expect(screen.getByTestId("kitchen-order-board")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Kitchen queue/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Load orders|Refresh orders/i })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Advanced filters/i })).toBeInTheDocument();
 
     expect(screen.queryByRole("button", { name: /^Place order$/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: /^Cart$/i })).not.toBeInTheDocument();
   });
 
-  it("shows staff kitchen and queue controls but not assign driver", () => {
+  it("shows staff the same kitchen queue without refund/advanced owner link", () => {
     primeSession({ username: "staff_dan", role: "staff", id: 4 });
     wrapOrders();
 
-    expect(screen.getByRole("heading", { name: /^Kitchen$/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^Mark ready$/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^Load orders$/i })).toBeInTheDocument();
+    expect(screen.getByTestId("kitchen-order-board")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Kitchen queue/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Load orders|Refresh orders/i })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Advanced filters/i })).not.toBeInTheDocument();
 
-    expect(screen.queryByRole("button", { name: /^Assign driver$/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^Place order$/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^Confirm pickup$/i })).not.toBeInTheDocument();
   });

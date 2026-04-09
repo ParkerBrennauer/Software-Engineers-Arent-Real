@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { createElement } from "react";
 import { MemoryRouter } from "react-router-dom";
 import { AuthProvider } from "../state/AuthContext";
+import { RestaurantWorkspaceProvider } from "../state/RestaurantWorkspaceContext";
 import { CartProvider } from "../state/CartContext";
 import CartPanel from "../components/CartPanel";
 import DiscountsPage from "../pages/DiscountsPage";
@@ -18,7 +19,11 @@ function wrap(ui, { route = "/" } = {}) {
     createElement(
       MemoryRouter,
       { initialEntries: [route] },
-      createElement(AuthProvider, null, createElement(CartProvider, null, ui))
+      createElement(
+        AuthProvider,
+        null,
+        createElement(RestaurantWorkspaceProvider, null, createElement(CartProvider, null, ui))
+      )
     )
   );
 }
@@ -151,6 +156,12 @@ describe("discount feature", () => {
       "frontend-auth-user",
       JSON.stringify({ username: "cafe_owner", role: "owner", id: 1, requires2FA: false })
     );
+    localStorage.setItem(
+      "frontend-restaurant-workspace-by-user-v1",
+      JSON.stringify({
+        cafe_owner: { restaurantId: 3, label: "Restaurant 3 · italian", cuisine: "italian" },
+      })
+    );
     fetch.mockImplementation((url) => {
       if (String(url).includes("/users/current-user")) {
         return Promise.resolve(jsonFetch(true, { username: "cafe_owner" }));
@@ -158,7 +169,7 @@ describe("discount feature", () => {
       return Promise.resolve(jsonFetch(true, { message: "valid code, enjoy saving" }));
     });
     wrap(createElement(DiscountsPage));
-    fireEvent.change(screen.getByPlaceholderText("e.g. 1"), { target: { value: "3" } });
+    await waitFor(() => expect(screen.getByLabelText(/Restaurant ID/i)).toHaveValue("3"));
     fireEvent.change(screen.getByPlaceholderText("0.85"), { target: { value: "0.85" } });
     fireEvent.change(screen.getByPlaceholderText("SAVE10"), { target: { value: "SAVE10" } });
     fireEvent.click(screen.getByRole("button", { name: "Create code" }));
