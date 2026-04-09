@@ -6,122 +6,155 @@ from src.repositories.restaurant_repo import RestaurantRepo
 from src.utils.distance import calculate_distance
 from src.services.payment_service import PaymentService
 
-class OrderService:
 
+class OrderService:
     @staticmethod
     def _dict_to_order(data: dict) -> Order:
         payload = dict(data)
-        for key in ('order_status', 'payment_status'):
-            if key in payload and payload[key] is not None and not isinstance(payload[key], str):
-                payload[key] = getattr(payload[key], 'value', payload[key])
-        payload.setdefault('cuisine', 'unknown')
-        if payload.get('distance') is None:
-            payload['distance'] = 0.0
-        if payload.get('time') is None:
-            payload['time'] = 0
+        for key in ("order_status", "payment_status"):
+            if (
+                key in payload
+                and payload[key] is not None
+                and not isinstance(payload[key], str)
+            ):
+                payload[key] = getattr(payload[key], "value", payload[key])
+        payload.setdefault("cuisine", "unknown")
+        if payload.get("distance") is None:
+            payload["distance"] = 0.0
+        if payload.get("time") is None:
+            payload["time"] = 0
         return Order.model_validate(payload)
 
     @staticmethod
     async def _require_paid_order(order_id: int | str) -> dict:
         existing = await OrderRepo.get_order(order_id)
         if existing is None:
-            raise ValueError('Order not found')
-        if existing.get('payment_status') != 'accepted':
-            raise ValueError('This action requires a completed payment.')
+            raise ValueError("Order not found")
+        if existing.get("payment_status") != "accepted":
+            raise ValueError("This action requires a completed payment.")
         return existing
 
     @staticmethod
     async def get_distance(customer: str, restaurant: str) -> float:
         try:
             users = await UserRepo.read_all()
-            customer_data = next((u for u in users if u.get('username') == customer), None)
-            if not customer_data or not customer_data.get('location') or (not customer_data['location']):
+            customer_data = next(
+                (u for u in users if u.get("username") == customer), None
+            )
+            if (
+                not customer_data
+                or not customer_data.get("location")
+                or (not customer_data["location"])
+            ):
                 return 0.0
-            customer_lon, customer_lat = customer_data['location'][0]
-            restaurant_id_str = restaurant.replace('Restaurant_', '')
+            customer_lon, customer_lat = customer_data["location"][0]
+            restaurant_id_str = restaurant.replace("Restaurant_", "")
             restaurants = await RestaurantRepo.read_all()
             if isinstance(restaurants, dict):
                 restaurant_data = restaurants.get(restaurant_id_str)
             else:
-                restaurant_data = next((r for r in restaurants if str(r.get('restaurant_id')) == restaurant_id_str), None)
-            if not restaurant_data or not restaurant_data.get('location'):
+                restaurant_data = next(
+                    (
+                        r
+                        for r in restaurants
+                        if str(r.get("restaurant_id")) == restaurant_id_str
+                    ),
+                    None,
+                )
+            if not restaurant_data or not restaurant_data.get("location"):
                 return 0.0
-            restaurant_lon, restaurant_lat = restaurant_data['location']
-            return calculate_distance(customer_lon, customer_lat, restaurant_lon, restaurant_lat)
+            restaurant_lon, restaurant_lat = restaurant_data["location"]
+            return calculate_distance(
+                customer_lon, customer_lat, restaurant_lon, restaurant_lat
+            )
         except Exception:
             return 0.0
 
     @staticmethod
     async def create_order(create_order: OrderCreate) -> dict:
         order_data = create_order.model_dump()
-        order_data['order_status'] = 'payment pending'
-        order_data['payment_status'] = 'pending'
+        order_data["order_status"] = "payment pending"
+        order_data["payment_status"] = "pending"
         largest_order_id = await OrderRepo.get_largest_order_id()
-        order_data['id'] = largest_order_id + 1 if largest_order_id is not None else 1
-        order_data['locked'] = False
-        order_data['items'] = order_data.get('items', [])
-        if order_data.get('distance') is None:
-            order_data['distance'] = await OrderService.get_distance(order_data.get('customer', ''), order_data.get('restaurant', ''))
-        order_data['cost'] = await OrderService.calculate_order_cost(order_data['items'], order_data.get('distance', 0.0))
+        order_data["id"] = largest_order_id + 1 if largest_order_id is not None else 1
+        order_data["locked"] = False
+        order_data["items"] = order_data.get("items", [])
+        if order_data.get("distance") is None:
+            order_data["distance"] = await OrderService.get_distance(
+                order_data.get("customer", ""), order_data.get("restaurant", "")
+            )
+        order_data["cost"] = await OrderService.calculate_order_cost(
+            order_data["items"], order_data.get("distance", 0.0)
+        )
         saved_data = await OrderRepo.save_order(order_data)
         return OrderInternal.model_validate(saved_data)
 
     @staticmethod
-    async def pay_order(order_id: int | str, username: str, simulate: str = 'auto') -> Order:
+    async def pay_order(
+        order_id: int | str, username: str, simulate: str = "auto"
+    ) -> Order:
         raw = await OrderRepo.get_order(order_id)
         if raw is None:
-            raise ValueError('Order not found')
-        if raw.get('customer') != username:
-            raise ValueError('User does not have permission to pay for this order')
-        if raw.get('payment_status') == PaymentStatus.ACCEPTED.value:
-            raise ValueError('Payment already successfully processed for this order.')
+            raise ValueError("Order not found")
+        if raw.get("customer") != username:
+            raise ValueError("User does not have permission to pay for this order")
+        if raw.get("payment_status") == PaymentStatus.ACCEPTED.value:
+            raise ValueError("Payment already successfully processed for this order.")
         customer = await UserRepo.get_by_username(username)
         if not customer:
-            raise ValueError('Customer profile not found')
-        pd = customer.get('payment_details')
+            raise ValueError("Customer profile not found")
+        pd = customer.get("payment_details")
         if not pd or not str(pd).isdigit() or len(str(pd)) not in (15, 16):
-            raise ValueError('Add valid payment details to your profile before paying (15–16 digits).')
+            raise ValueError(
+                "Add valid payment details to your profile before paying (15–16 digits)."
+            )
         order_model = OrderService._dict_to_order(raw)
         processed = await PaymentService.process_payment(
             order_model, card_digits=str(pd), simulate=simulate
         )
         merged = processed.model_dump()
         for key, val in list(merged.items()):
-            if hasattr(val, 'value'):
+            if hasattr(val, "value"):
                 merged[key] = val.value
-        merged['id'] = int(order_id)
+        merged["id"] = int(order_id)
         saved = await OrderRepo.update_order(order_id, merged)
         if not saved:
-            raise ValueError('Order not found')
+            raise ValueError("Order not found")
         if processed.payment_status == PaymentStatus.ACCEPTED:
             await OrderService.lock_order(int(order_id))
-        return OrderService._dict_to_order(saved if isinstance(saved, dict) else dict(saved))
+        return OrderService._dict_to_order(
+            saved if isinstance(saved, dict) else dict(saved)
+        )
 
     @staticmethod
     async def update_order(order_id: int, update_data: dict) -> OrderInternal:
         existing_order = await OrderRepo.get_order(order_id)
         if existing_order is None:
-            raise ValueError('Order not found')
+            raise ValueError("Order not found")
         if isinstance(existing_order, Order):
             existing_order = existing_order.model_dump()
-        if existing_order.get('locked'):
-            raise ValueError('Order is locked and cannot be updated')
+        if existing_order.get("locked"):
+            raise ValueError("Order is locked and cannot be updated")
         updated_order = {**existing_order, **update_data}
-        updated_order['items'] = update_data.get('items', existing_order.get('items', []))
-        updated_order['cost'] = await OrderService.calculate_order_cost(updated_order['items'], updated_order.get('distance', 0.0))
+        updated_order["items"] = update_data.get(
+            "items", existing_order.get("items", [])
+        )
+        updated_order["cost"] = await OrderService.calculate_order_cost(
+            updated_order["items"], updated_order.get("distance", 0.0)
+        )
         saved_order = await OrderRepo.update_order(order_id, updated_order)
         if isinstance(saved_order, str):
             return saved_order
-        if isinstance(saved_order, dict) and 'id' not in saved_order:
-            saved_order['id'] = int(order_id)
+        if isinstance(saved_order, dict) and "id" not in saved_order:
+            saved_order["id"] = int(order_id)
         return OrderInternal.model_validate(saved_order)
 
     @staticmethod
-    async def calculate_order_cost(items: list, distance: float=0.0) -> float:
+    async def calculate_order_cost(items: list, distance: float = 0.0) -> float:
         total = 0.0
         for item in items:
             if isinstance(item, dict):
-                total += item.get('price', 0)
+                total += item.get("price", 0)
             else:
                 total += 0
         delivery_fee = 2.0 + distance * 0.5
@@ -133,39 +166,41 @@ class OrderService:
     async def lock_order(order_id: int) -> OrderInternal:
         existing_order = await OrderRepo.get_order(order_id)
         if existing_order is None:
-            raise ValueError('Order not found')
+            raise ValueError("Order not found")
         if isinstance(existing_order, Order):
             existing_order = existing_order.model_dump()
-        if existing_order.get('locked'):
+        if existing_order.get("locked"):
             return OrderInternal.model_validate(existing_order)
-        updated_order = {**existing_order, 'locked': True}
+        updated_order = {**existing_order, "locked": True}
         saved_data = await OrderRepo.update_order(order_id, updated_order)
         if isinstance(saved_data, str):
             return saved_data
-        if isinstance(saved_data, dict) and 'id' not in saved_data:
-            saved_data['id'] = int(order_id)
+        if isinstance(saved_data, dict) and "id" not in saved_data:
+            saved_data["id"] = int(order_id)
         return OrderInternal.model_validate(saved_data)
 
     @staticmethod
     async def get_order_status(order_id: int):
         existing_order = await OrderRepo.get_order(order_id)
         if existing_order is None:
-            raise ValueError('Order not found')
+            raise ValueError("Order not found")
         return existing_order
 
     @staticmethod
     async def cancel_order(order_id: int):
-        return await OrderService.update_order(order_id, {'order_status': 'cancelled'})
+        return await OrderService.update_order(order_id, {"order_status": "cancelled"})
 
     @staticmethod
     async def mark_ready_for_pickup(order_id: int):
         await OrderService._require_paid_order(order_id)
-        return await OrderService.update_order(order_id, {'order_status': OrderStatus.READY_FOR_PICKUP.value})
+        return await OrderService.update_order(
+            order_id, {"order_status": OrderStatus.READY_FOR_PICKUP.value}
+        )
 
     @staticmethod
     async def assign_driver(order_id: int, driver: str):
         await OrderService._require_paid_order(order_id)
-        return await OrderService.update_order(order_id, {'driver': driver})
+        return await OrderService.update_order(order_id, {"driver": driver})
 
     @staticmethod
     async def get_driver_orders(driver: str):
@@ -174,42 +209,53 @@ class OrderService:
     @staticmethod
     async def pickup_order(order_id: int):
         await OrderService._require_paid_order(order_id)
-        return await OrderService.update_order(order_id, {'order_status': OrderStatus.PICKED_UP.value})
+        return await OrderService.update_order(
+            order_id, {"order_status": OrderStatus.PICKED_UP.value}
+        )
 
     @staticmethod
     async def report_restaurant_delay(order_id: int, reason: str):
-        updated = await OrderService.update_order(order_id, {'order_status': 'delayed', 'delay_reason': reason})
-        if 'cancel' in reason.lower() or 'cannot prepare' in reason.lower():
+        updated = await OrderService.update_order(
+            order_id, {"order_status": "delayed", "delay_reason": reason}
+        )
+        if "cancel" in reason.lower() or "cannot prepare" in reason.lower():
             return await OrderService.process_refund(order_id)
         return updated
 
     @staticmethod
     async def report_driver_delay(order_id: int, reason: str):
-        return await OrderService.update_order(order_id, {'order_status': 'delayed', 'delay_reason': reason})
+        return await OrderService.update_order(
+            order_id, {"order_status": "delayed", "delay_reason": reason}
+        )
 
     @staticmethod
     async def process_refund(order_id: int):
         order = await OrderRepo.get_order(order_id)
         if order is None:
-            raise ValueError('Order not found')
+            raise ValueError("Order not found")
         if isinstance(order, Order):
             order_dict = order.model_dump()
         else:
             order_dict = order
-        if order_dict.get('refund_issued', False):
-            raise ValueError('Refund already issued')
-        if order_dict.get('order_status') not in ['delayed', 'cancelled']:
-            raise ValueError('Refund not applicable')
-        if order_dict.get('payment_status') != 'accepted':
-            raise ValueError('Cannot refund unpaid order')
-        updated_order = {**order_dict, 'id': order_dict.get('id', int(order_id)), 'refund_issued': True, 'refund_amount': order_dict.get('cost', 0)}
+        if order_dict.get("refund_issued", False):
+            raise ValueError("Refund already issued")
+        if order_dict.get("order_status") not in ["delayed", "cancelled"]:
+            raise ValueError("Refund not applicable")
+        if order_dict.get("payment_status") != "accepted":
+            raise ValueError("Cannot refund unpaid order")
+        updated_order = {
+            **order_dict,
+            "id": order_dict.get("id", int(order_id)),
+            "refund_issued": True,
+            "refund_amount": order_dict.get("cost", 0),
+        }
         saved = await OrderRepo.update_order(order_id, updated_order)
         if isinstance(saved, str):
             return saved
         if isinstance(saved, Order):
             saved = saved.model_dump()
-        if isinstance(saved, dict) and saved.get('id') is None:
-            saved['id'] = int(order_id)
+        if isinstance(saved, dict) and saved.get("id") is None:
+            saved["id"] = int(order_id)
         return OrderInternal.model_validate(saved)
 
     @staticmethod
@@ -217,9 +263,9 @@ class OrderService:
         orders = await OrderRepo.get_all_orders()
         result = []
         for order_data in orders.values():
-            if order_data.get('restaurant') != restaurant:
+            if order_data.get("restaurant") != restaurant:
                 continue
-            if order_data.get('payment_status') != PaymentStatus.ACCEPTED.value:
+            if order_data.get("payment_status") != PaymentStatus.ACCEPTED.value:
                 continue
             result.append(OrderService._dict_to_order(order_data))
         return result
@@ -229,10 +275,10 @@ class OrderService:
         orders = await OrderRepo._read_raw()
         results = []
         if not username:
-            raise ValueError('No username submitted')
+            raise ValueError("No username submitted")
         for order_id, order in orders.items():
-            if order['customer'] == username:
+            if order["customer"] == username:
                 hydrated_order = dict(order)
-                hydrated_order.setdefault('id', str(order_id))
+                hydrated_order.setdefault("id", str(order_id))
                 results.append(hydrated_order)
         return results
