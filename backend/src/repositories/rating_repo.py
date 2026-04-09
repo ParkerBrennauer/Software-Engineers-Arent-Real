@@ -2,6 +2,7 @@ import json
 from typing import Any
 import aiofiles
 from src.core.config import REVIEWS_FILE, RESTAURANTS_FILE, REPORTS_FILE
+from src.repositories.order_repo import OrderRepo
 
 class RatingRepo:
     FILE_PATH = REVIEWS_FILE
@@ -21,14 +22,44 @@ class RatingRepo:
     @classmethod
     async def get_by_order_id(cls, order_id: str) -> dict[str, Any] | None:
         reviews = await cls.read_all()
-        return reviews.get(order_id)
+        review = reviews.get(order_id)
+        order = await OrderRepo.get_by_id(order_id)
+        if review is None and order is None:
+            return None
+        if review is None:
+            return order
+        if order is None:
+            return review
+        return {**order, **review}
+
+    @classmethod
+    async def _ensure_review_entry(
+        cls, reviews: dict[str, dict[str, Any]], order_id: str
+    ) -> dict[str, Any] | None:
+        existing_review = reviews.get(order_id)
+        if existing_review is not None:
+            return existing_review
+
+        order = await OrderRepo.get_by_id(order_id)
+        if order is None:
+            return None
+
+        review_entry = {
+            "customer": order.get("customer"),
+            "restaurant": order.get("restaurant"),
+            "submitted_stars": None,
+            "review_text": None,
+        }
+        reviews[order_id] = review_entry
+        return review_entry
 
     @classmethod
     async def update_submitted_rating(cls, order_id: str, stars: int) -> dict[str, Any] | None:
         reviews = await cls.read_all()
-        if order_id not in reviews:
+        review_entry = await cls._ensure_review_entry(reviews, order_id)
+        if review_entry is None:
             return None
-        reviews[order_id]['submitted_stars'] = stars
+        review_entry['submitted_stars'] = stars
         async with aiofiles.open(cls.FILE_PATH, mode='w') as file:
             await file.write(json.dumps(reviews, indent=1))
         return reviews[order_id]
@@ -64,9 +95,10 @@ class RatingRepo:
     @classmethod
     async def update_review_text(cls, order_id: str, review_text: str) -> dict[str, Any] | None:
         reviews = await cls.read_all()
-        if order_id not in reviews:
+        review_entry = await cls._ensure_review_entry(reviews, order_id)
+        if review_entry is None:
             return None
-        reviews[order_id]['review_text'] = review_text
+        review_entry['review_text'] = review_text
         async with aiofiles.open(cls.FILE_PATH, mode='w') as file:
             await file.write(json.dumps(reviews, indent=1))
         return reviews[order_id]
@@ -74,12 +106,13 @@ class RatingRepo:
     @classmethod
     async def update_review_fields(cls, order_id: str, stars: int | None=None, review_text: str | None=None) -> dict[str, Any] | None:
         reviews = await cls.read_all()
-        if order_id not in reviews:
+        review_entry = await cls._ensure_review_entry(reviews, order_id)
+        if review_entry is None:
             return None
         if stars is not None:
-            reviews[order_id]['submitted_stars'] = stars
+            review_entry['submitted_stars'] = stars
         if review_text is not None:
-            reviews[order_id]['review_text'] = review_text
+            review_entry['review_text'] = review_text
         async with aiofiles.open(cls.FILE_PATH, mode='w') as file:
             await file.write(json.dumps(reviews, indent=1))
         return reviews[order_id]

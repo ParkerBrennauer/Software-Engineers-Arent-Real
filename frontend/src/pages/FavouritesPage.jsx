@@ -15,6 +15,7 @@ export default function FavouritesPage() {
   const { user } = useAuth();
   const { addItem } = useCart();
   const [restaurants, setRestaurants] = useState([]);
+  const [favoriteRestaurantIds, setFavoriteRestaurantIds] = useState([]);
   const [favouriteItems, setFavouriteItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -25,6 +26,7 @@ export default function FavouritesPage() {
   useEffect(() => {
     if (!isCustomerSignedIn) {
       setRestaurants([]);
+      setFavoriteRestaurantIds([]);
       setFavouriteItems([]);
       setLoading(false);
       setError("");
@@ -37,11 +39,15 @@ export default function FavouritesPage() {
       setLoading(true);
       setError("");
       try {
-        const [restaurantData, favouriteData] = await Promise.all([
+        const [restaurantData, favouriteData, favoriteRestaurantData] = await Promise.all([
           api.restaurants.getAll(),
           api.customer.getFavourites(),
+          api.customer.getFavoriteRestaurants(),
         ]);
         const favouriteKeys = Array.isArray(favouriteData) ? favouriteData : [];
+        const restaurantIds = Array.isArray(favoriteRestaurantData?.favorite_restaurants)
+          ? favoriteRestaurantData.favorite_restaurants.map((restaurantId) => String(restaurantId))
+          : [];
         const favouriteItemData = await Promise.all(
           favouriteKeys.map(async (itemKey) => {
             try {
@@ -54,10 +60,12 @@ export default function FavouritesPage() {
         );
         if (cancelled) return;
         setRestaurants(normalizeApiArray(restaurantData));
+        setFavoriteRestaurantIds(restaurantIds);
         setFavouriteItems(favouriteItemData.filter(Boolean));
       } catch (e) {
         if (cancelled) return;
         setRestaurants([]);
+        setFavoriteRestaurantIds([]);
         setFavouriteItems([]);
         setError(e?.message || "Could not load favourite items.");
       } finally {
@@ -69,6 +77,14 @@ export default function FavouritesPage() {
       cancelled = true;
     };
   }, [isCustomerSignedIn]);
+
+  const favoriteRestaurants = useMemo(
+    () =>
+      restaurants
+        .filter((restaurant) => favoriteRestaurantIds.includes(String(restaurant?.restaurant_id)))
+        .sort((a, b) => restaurantName(a).localeCompare(restaurantName(b))),
+    [favoriteRestaurantIds, restaurants]
+  );
 
   const favouriteItemsByRestaurant = useMemo(() => {
     if (favouriteItems.length === 0 || restaurants.length === 0) return [];
@@ -115,9 +131,49 @@ export default function FavouritesPage() {
       <header className="page-header-block">
         <h1 className="page-title">Favourites</h1>
         <p className="page-lede muted">
-          See every favourite item you&apos;ve saved, grouped by the restaurants that have one.
+          See your favourite restaurants and the items you&apos;ve saved from their menus.
         </p>
       </header>
+
+      <section className="panel favourites-section" aria-labelledby="favourite-restaurants-heading">
+        <div className="restaurant-favourites__header">
+          <h2 id="favourite-restaurants-heading" className="restaurant-menu-section__title">
+            Favourite restaurants
+          </h2>
+          {!isCustomerSignedIn && (
+            <p className="muted small-print">Sign in as a customer to view your saved restaurants.</p>
+          )}
+        </div>
+
+        {loading && <p className="muted">Loading favourite restaurants…</p>}
+        {!loading && !error && isCustomerSignedIn && favoriteRestaurants.length === 0 && (
+          <p className="muted">You have no favourite restaurants yet.</p>
+        )}
+
+        {!loading && !error && isCustomerSignedIn && favoriteRestaurants.length > 0 && (
+          <div className="favourites-restaurant-list">
+            {favoriteRestaurants.map((restaurant) => (
+              <article className="panel favourites-restaurant-card" key={restaurant.restaurant_id}>
+                <div className="favourites-restaurant-card__header">
+                  <div>
+                    <h3 className="favourites-restaurant-card__title">{restaurantName(restaurant)}</h3>
+                    <p className="muted small-print">
+                      Cuisine: {restaurant?.cuisine || "—"}
+                    </p>
+                  </div>
+                  <Link
+                    className="restaurant-browse-card__cta"
+                    to={`/restaurants/${restaurant.restaurant_id}`}
+                    state={{ restaurant }}
+                  >
+                    View menu
+                  </Link>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
 
       <section className="panel favourites-section" aria-labelledby="favourite-items-heading">
         <div className="restaurant-favourites__header">

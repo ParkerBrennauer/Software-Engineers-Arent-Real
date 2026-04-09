@@ -92,7 +92,7 @@ async def test_add_favorite_restaurant_missing_customer_returns_not_found(
         return None
 
     async def fake_add_favorite_restaurant(_customer_id: str, _restaurant_id: int):
-        raise ValueError("Customer not found")
+        raise ValueError("User not found")
 
     monkeypatch.setattr(
         "src.api.routers.customer_router.UserService.get_current_user",
