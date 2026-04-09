@@ -3,17 +3,39 @@ import { Link } from "react-router-dom";
 import { api } from "../api/client";
 import { normalizeApiArray } from "../utils/normalizeApiArray";
 
+const SORT_OPTIONS = [
+  { value: "", label: "Default order" },
+  { value: "AlphabetAsc", label: "Restaurant ID: Low to high" },
+  { value: "AlphabetDesc", label: "Restaurant ID: High to low" },
+  { value: "RatingAsc", label: "Rating: Low to high" },
+  { value: "RatingDesc", label: "Rating: High to low" },
+];
+
 export default function RestaurantsPage() {
   const [restaurants, setRestaurants] = useState([]);
   const [query, setQuery] = useState("");
+  const [selectedFilters, setSelectedFilters] = useState([]);
+  const [sort, setSort] = useState("");
+  const [filterOptions, setFilterOptions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  function captureFilterOptions(rows) {
+    const nextOptions = [...new Set(normalizeApiArray(rows).map((r) => r?.cuisine).filter(Boolean))].sort((a, b) =>
+      a.localeCompare(b)
+    );
+    setFilterOptions((current) =>
+      (current.length ? [...new Set([...current, ...nextOptions])] : nextOptions).sort((a, b) => a.localeCompare(b))
+    );
+  }
 
   async function loadAll() {
     setLoading(true);
     setError("");
     try {
-      setRestaurants(normalizeApiArray(await api.restaurants.getAll()));
+      const data = normalizeApiArray(await api.restaurants.getAll());
+      captureFilterOptions(data);
+      setRestaurants(data);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -27,8 +49,11 @@ export default function RestaurantsPage() {
       setLoading(true);
       setError("");
       try {
-        const data = await api.restaurants.getAll();
-        if (active) setRestaurants(normalizeApiArray(data));
+        const data = normalizeApiArray(await api.restaurants.getAll());
+        if (active) {
+          captureFilterOptions(data);
+          setRestaurants(data);
+        }
       } catch (err) {
         if (active) setError(err.message);
       } finally {
@@ -45,16 +70,37 @@ export default function RestaurantsPage() {
     setLoading(true);
     setError("");
     try {
-      if (!query.trim()) {
+      const trimmedQuery = query.trim();
+      const hasAdvancedControls = selectedFilters.length > 0 || Boolean(sort);
+
+      if (!trimmedQuery && !hasAdvancedControls) {
         await loadAll();
         return;
       }
-      setRestaurants(normalizeApiArray(await api.restaurants.search(query)));
+
+      if (!hasAdvancedControls) {
+        setRestaurants(normalizeApiArray(await api.restaurants.search(trimmedQuery)));
+        return;
+      }
+
+      const filtersForRequest = selectedFilters.length > 0 ? selectedFilters : filterOptions;
+      const advancedResults = await api.restaurants.advancedSearch({
+        query: trimmedQuery,
+        filters: filtersForRequest,
+        sort,
+      });
+      setRestaurants(normalizeApiArray(advancedResults));
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
+  }
+
+  function toggleFilter(nextFilter) {
+    setSelectedFilters((current) =>
+      current.includes(nextFilter) ? current.filter((filter) => filter !== nextFilter) : [...current, nextFilter]
+    );
   }
 
   const cards = useMemo(
@@ -89,8 +135,39 @@ export default function RestaurantsPage() {
           Tap a restaurant to see the full menu. Your cart stays in the header while you browse.
         </p>
       </header>
-      <div className="row">
-        <input placeholder="Search restaurants" value={query} onChange={(e) => setQuery(e.target.value)} />
+      <div className="row restaurants-browse__toolbar">
+        <input
+          placeholder="Search restaurants"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          aria-label="Search restaurants"
+        />
+        <details className="restaurants-browse__dropdown">
+          <summary>Filters {selectedFilters.length > 0 ? `(${selectedFilters.length})` : ""}</summary>
+          <div className="restaurants-browse__dropdown-panel">
+            {filterOptions.length === 0 ? (
+              <p className="muted restaurants-browse__dropdown-empty">No cuisine filters available yet.</p>
+            ) : (
+              filterOptions.map((filter) => (
+                <label key={filter} className="checkbox-inline restaurants-browse__checkbox">
+                  <input
+                    type="checkbox"
+                    checked={selectedFilters.includes(filter)}
+                    onChange={() => toggleFilter(filter)}
+                  />
+                  <span>{filter}</span>
+                </label>
+              ))
+            )}
+          </div>
+        </details>
+        <select value={sort} onChange={(e) => setSort(e.target.value)} aria-label="Sort restaurants">
+          {SORT_OPTIONS.map((option) => (
+            <option key={option.value || "default"} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
         <button type="button" onClick={runSearch}>
           Search
         </button>
@@ -98,6 +175,12 @@ export default function RestaurantsPage() {
           Refresh
         </button>
       </div>
+      {(selectedFilters.length > 0 || sort) && (
+        <p className="muted small-print">
+          {selectedFilters.length > 0 ? `Filters: ${selectedFilters.join(", ")}.` : "Filters: none selected."}{" "}
+          {sort ? `Sort: ${SORT_OPTIONS.find((option) => option.value === sort)?.label || sort}.` : "Sort: default."}
+        </p>
+      )}
       {loading && <p>Loading restaurants...</p>}
       {error && <p className="error">{error}</p>}
       {!loading && !error && cards.length === 0 && <p className="muted">No restaurants returned.</p>}

@@ -15,7 +15,7 @@ async def search_restaurants(query: str):
     results = await RestaurantService.get_restaurants_search(query)
     return results
 
-@router.post('/search/advanced', status_code=status.HTTP_200_OK)
+@router.post('/search/advanced/{query}/{filters}/{sort}', status_code=status.HTTP_200_OK)
 async def search_restaurants_advanced(body: RestaurantSearchAdvanced):
     results = await RestaurantService.get_restaurants_search_advance(body.query, body.filters, body.sort)
     return results

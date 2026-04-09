@@ -59,7 +59,15 @@ export const api = {
   restaurants: {
     getAll: () => request("/restaurants"),
     search: (query) => request(`/restaurants/search/${encodeURIComponent(query)}`),
-    advancedSearch: (payload) => request("/restaurants/search/advanced", { method: "POST", body: JSON.stringify(payload) }),
+    advancedSearch: (payload) => {
+      const query = encodeURIComponent(payload?.query ?? "");
+      const filters = encodeURIComponent((payload?.filters || []).join(","));
+      const sort = encodeURIComponent(payload?.sort ?? "");
+      return request(`/restaurants/search/advanced/${query}/${filters}/${sort}`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+    },
     menu: (restaurantId) => request(`/restaurants/${restaurantId}/menu`),
     create: (payload) => request("/restaurants", { method: "POST", body: JSON.stringify(payload) }),
     update: (restaurantId, payload) =>
@@ -132,4 +140,3 @@ export const api = {
       request(`/restaurant_administration/restaurants/${restaurantId}/orders/filter/status-and-date?order_status=${encodeURIComponent(order_status)}&start_time=${start_time}&end_time=${end_time}`),
   },
 };
-
