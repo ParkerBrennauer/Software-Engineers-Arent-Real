@@ -2,11 +2,13 @@ import random
 from src.repositories.order_repo import OrderRepo
 from src.schemas.order_schema import OrderStatus
 from src.schemas.order_tracking_schema import OrderTrackingResponse, OrderTrackingStatusUpdate
+from src.services.order_services import OrderService
 
 class OrderTrackingService:
     RESTAURANT_STATUSES = {OrderStatus.CREATED, OrderStatus.PAYMENT_PENDING, OrderStatus.PAYMENT_ACCEPTED, OrderStatus.CONFIRMED, OrderStatus.PREPARING, OrderStatus.READY_FOR_PICKUP}
     DELIVERY_STATUSES = {OrderStatus.PICKED_UP, OrderStatus.OUT_FOR_DELIVERY, OrderStatus.DELAYED}
     INACTIVE_TRACKING_STATUSES = {OrderStatus.DELIVERED, OrderStatus.CANCELLED, OrderStatus.PAYMENT_REJECTED}
+    SIGNIFICANT_DELAY_ETA_MINUTES = 100
 
     @staticmethod
     def _coerce_status(status: str | OrderStatus | None) -> OrderStatus:
@@ -115,11 +117,37 @@ class OrderTrackingService:
             normalized_order['order_status'] = status.value
             normalized_order['distance'] = distance
             normalized_order['time'] = time_minutes
+            if refresh:
+                await cls._maybe_refund_significant_delay(str(order_id), normalized_order, time_minutes)
             return normalized_order
         saved_order = await OrderRepo.update_order(order_id, updates)
         if not saved_order:
             raise ValueError('Order not found')
+        if refresh:
+            merged = dict(saved_order)
+            await cls._maybe_refund_significant_delay(str(order_id), merged, time_minutes)
         return saved_order
+
+    @classmethod
+    async def _maybe_refund_significant_delay(cls, order_id: str, order_snapshot: dict, eta_minutes: int) -> None:
+        if eta_minutes < cls.SIGNIFICANT_DELAY_ETA_MINUTES:
+            return
+        if order_snapshot.get('sig_delay_refund_done') or order_snapshot.get('refund_issued'):
+            return
+        if order_snapshot.get('payment_status') != 'accepted':
+            return
+        st = cls._coerce_status(order_snapshot.get('order_status'))
+        if st in {OrderStatus.DELIVERED, OrderStatus.CANCELLED, OrderStatus.PAYMENT_REJECTED}:
+            return
+        await OrderRepo.update_order(order_id, {
+            'order_status': OrderStatus.DELAYED.value,
+            'delay_reason': f'Significant delay: estimated wait remains {eta_minutes} minutes.',
+            'sig_delay_refund_done': True,
+        })
+        try:
+            await OrderService.process_refund(order_id)
+        except ValueError:
+            pass
 
     @classmethod
     def _build_tracking_response(cls, order_id: str, order: dict) -> OrderTrackingResponse:

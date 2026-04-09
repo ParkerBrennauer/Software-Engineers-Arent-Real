@@ -66,15 +66,20 @@ async def test_cancel_order(mock_update):
     mock_update.assert_called_once_with(1, {'order_status': 'cancelled'})
 
 @pytest.mark.asyncio
+@patch('src.repositories.order_repo.OrderRepo.get_order', new_callable=AsyncMock)
 @patch('src.services.order_services.OrderService.update_order', new_callable=AsyncMock)
-async def test_mark_ready_for_pickup(mock_update):
-    mock_update.return_value = {'id': 1, 'order_status': 'ready_for_pickup'}
+async def test_mark_ready_for_pickup(mock_update, mock_get):
+    mock_get.return_value = {'id': 1, 'payment_status': 'accepted', 'locked': False}
+    mock_update.return_value = {'id': 1, 'order_status': 'ready for pickup'}
     await OrderService.mark_ready_for_pickup(1)
-    mock_update.assert_called_once_with(1, {'order_status': 'ready_for_pickup'})
+    mock_update.assert_called_once()
+    assert mock_update.call_args[0][1]['order_status'] == 'ready for pickup'
 
 @pytest.mark.asyncio
+@patch('src.repositories.order_repo.OrderRepo.get_order', new_callable=AsyncMock)
 @patch('src.services.order_services.OrderService.update_order', new_callable=AsyncMock)
-async def test_assign_driver(mock_update):
+async def test_assign_driver(mock_update, mock_get):
+    mock_get.return_value = {'id': 1, 'payment_status': 'accepted', 'locked': False}
     mock_update.return_value = {'id': 1, 'driver': 'driver_001'}
     await OrderService.assign_driver(1, 'driver_001')
     mock_update.assert_called_once_with(1, {'driver': 'driver_001'})
@@ -82,7 +87,7 @@ async def test_assign_driver(mock_update):
 @pytest.mark.asyncio
 async def test_process_payment_success():
     order = Order(items=[{'id': 1, 'price': 10.0}], cost=11.3, restaurant='Test', customer='test_user', time=30, cuisine='Italian', distance=2.0, payment_status=PaymentStatus.PENDING)
-    result = await PaymentService.process_payment(order)
+    result = await PaymentService.process_payment(order, card_digits='4111111111111112', simulate='accept')
     assert result.payment_status == PaymentStatus.ACCEPTED
     assert result.order_status == OrderStatus.CONFIRMED
 
@@ -90,7 +95,7 @@ async def test_process_payment_success():
 async def test_process_payment_already_accepted():
     order = Order(items=[{'id': 1, 'price': 10.0}], cost=11.3, restaurant='Test', customer='test_user', time=30, cuisine='Italian', distance=2.0, payment_status=PaymentStatus.ACCEPTED)
     with pytest.raises(ValueError, match='Payment already successfully processed'):
-        await PaymentService.process_payment(order)
+        await PaymentService.process_payment(order, card_digits='4111111111111112', simulate='accept')
 
 @pytest.mark.asyncio
 @patch('src.repositories.item_repo.ItemRepo.get_by_key', new_callable=AsyncMock)

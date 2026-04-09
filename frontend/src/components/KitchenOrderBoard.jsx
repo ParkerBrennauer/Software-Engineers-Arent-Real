@@ -171,6 +171,14 @@ export default function KitchenOrderBoard({ showRefund = false, showAdvancedLink
     return runOrderAction(oid, () => api.orders.refund(oid));
   }
 
+  function handleRestaurantDelay(o) {
+    const oid = getOrderId(o);
+    if (!oid) return;
+    const reason = window.prompt("Describe the delay for this order (shown to customers and drivers):", "Kitchen running behind");
+    if (reason == null || !String(reason).trim()) return;
+    return runOrderAction(oid, () => api.orders.restaurantDelay(oid, String(reason).trim()));
+  }
+
   const needsKitchen = orders.filter((o) => canShowMarkReady(o?.order_status));
   const other = orders.filter((o) => !canShowMarkReady(o?.order_status));
 
@@ -233,13 +241,23 @@ export default function KitchenOrderBoard({ showRefund = false, showAdvancedLink
             </button>
           )}
           {showReady && (
-            <button
-              type="button"
-              disabled={working === oid || loading}
-              onClick={() => handleMarkReady(o)}
-            >
-              {working === oid ? "…" : "Mark ready"}
-            </button>
+            <>
+              <button
+                type="button"
+                className="kitchen-btn-secondary"
+                disabled={working === oid || loading}
+                onClick={() => handleRestaurantDelay(o)}
+              >
+                Report delay
+              </button>
+              <button
+                type="button"
+                disabled={working === oid || loading}
+                onClick={() => handleMarkReady(o)}
+              >
+                {working === oid ? "…" : "Mark ready"}
+              </button>
+            </>
           )}
           {showAssign && (
             <>

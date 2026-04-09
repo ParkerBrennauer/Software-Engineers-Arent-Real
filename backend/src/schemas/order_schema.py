@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Literal
 from pydantic import BaseModel
 
 class OrderStatus(str, Enum):
@@ -35,6 +36,13 @@ class Order(BaseModel):
     delivery_instructions: str | None = None
     refund_issued: bool = False
     refund_amount: float | None = None
+    payment_rejection_reason: str | None = None
+    payment_simulation_steps: list[str] | None = None
+    id: int | None = None
+    tip_percent: float | None = None
+    tip_amount: float | None = None
+    tip_paid: bool = False
+    sig_delay_refund_done: bool = False
 
 class OrderCreate(BaseModel):
     items: list
@@ -45,6 +53,10 @@ class OrderCreate(BaseModel):
     cuisine: str
     distance: float | None = None
     delivery_instructions: str | None = None
+
+class PaymentAttemptRequest(BaseModel):
+
+    simulate: Literal['auto', 'accept', 'reject'] = 'auto'
 
 class OrderUpdate(BaseModel):
     items: list | None = None

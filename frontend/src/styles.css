@@ -632,6 +632,19 @@ code {
   margin: 0 0 0.75rem 0;
   font-size: 1.25rem;
 }
+.restaurant-menu-section__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.restaurant-menu-section__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
 .restaurant-favourites {
   margin-bottom: 1.25rem;
 }
@@ -740,9 +753,52 @@ code {
   background: rgba(146, 112, 22, 0.24);
   color: #ffe7a8;
 }
+.menu-item-card__edit {
+  flex-shrink: 0;
+  font-size: 0.84rem;
+  font-weight: 600;
+  padding: 0.45rem 0.7rem;
+}
 .menu-item-card__add {
   margin-top: auto;
   align-self: flex-start;
+}
+.owner-item-form {
+  margin-top: 1rem;
+  display: grid;
+  gap: 0.85rem;
+}
+.owner-item-form--inline {
+  margin-top: 0.75rem;
+  padding: 0.9rem;
+  border-radius: 12px;
+  border: 1px solid rgba(126, 200, 255, 0.18);
+  background: rgba(16, 28, 56, 0.45);
+}
+.owner-item-form__title {
+  margin: 0;
+  font-size: 1rem;
+}
+.owner-item-form__dietary {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.owner-item-form__dietary legend {
+  margin-bottom: 0.45rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.owner-item-form__dietary-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+}
+.owner-item-form__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
 .restaurant-cart-aside {

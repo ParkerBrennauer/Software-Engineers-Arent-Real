@@ -1,11 +1,34 @@
-from src.schemas.order_schema import OrderCreate, Order
+from src.schemas.order_schema import OrderCreate, Order, OrderStatus, PaymentStatus
 from src.models.order_model import OrderInternal
 from src.repositories.order_repo import OrderRepo
 from src.repositories.user_repo import UserRepo
 from src.repositories.restaurant_repo import RestaurantRepo
 from src.utils.distance import calculate_distance
+from src.services.payment_service import PaymentService
 
 class OrderService:
+
+    @staticmethod
+    def _dict_to_order(data: dict) -> Order:
+        payload = dict(data)
+        for key in ('order_status', 'payment_status'):
+            if key in payload and payload[key] is not None and not isinstance(payload[key], str):
+                payload[key] = getattr(payload[key], 'value', payload[key])
+        payload.setdefault('cuisine', 'unknown')
+        if payload.get('distance') is None:
+            payload['distance'] = 0.0
+        if payload.get('time') is None:
+            payload['time'] = 0
+        return Order.model_validate(payload)
+
+    @staticmethod
+    async def _require_paid_order(order_id: int | str) -> dict:
+        existing = await OrderRepo.get_order(order_id)
+        if existing is None:
+            raise ValueError('Order not found')
+        if existing.get('payment_status') != 'accepted':
+            raise ValueError('This action requires a completed payment.')
+        return existing
 
     @staticmethod
     async def get_distance(customer: str, restaurant: str) -> float:
@@ -42,6 +65,37 @@ class OrderService:
         order_data['cost'] = await OrderService.calculate_order_cost(order_data['items'], order_data.get('distance', 0.0))
         saved_data = await OrderRepo.save_order(order_data)
         return OrderInternal.model_validate(saved_data)
+
+    @staticmethod
+    async def pay_order(order_id: int | str, username: str, simulate: str = 'auto') -> Order:
+        raw = await OrderRepo.get_order(order_id)
+        if raw is None:
+            raise ValueError('Order not found')
+        if raw.get('customer') != username:
+            raise ValueError('User does not have permission to pay for this order')
+        if raw.get('payment_status') == PaymentStatus.ACCEPTED.value:
+            raise ValueError('Payment already successfully processed for this order.')
+        customer = await UserRepo.get_by_username(username)
+        if not customer:
+            raise ValueError('Customer profile not found')
+        pd = customer.get('payment_details')
+        if not pd or not str(pd).isdigit() or len(str(pd)) not in (15, 16):
+            raise ValueError('Add valid payment details to your profile before paying (15–16 digits).')
+        order_model = OrderService._dict_to_order(raw)
+        processed = await PaymentService.process_payment(
+            order_model, card_digits=str(pd), simulate=simulate
+        )
+        merged = processed.model_dump()
+        for key, val in list(merged.items()):
+            if hasattr(val, 'value'):
+                merged[key] = val.value
+        merged['id'] = int(order_id)
+        saved = await OrderRepo.update_order(order_id, merged)
+        if not saved:
+            raise ValueError('Order not found')
+        if processed.payment_status == PaymentStatus.ACCEPTED:
+            await OrderService.lock_order(int(order_id))
+        return OrderService._dict_to_order(saved if isinstance(saved, dict) else dict(saved))
 
     @staticmethod
     async def update_order(order_id: int, update_data: dict) -> OrderInternal:
@@ -105,10 +159,12 @@ class OrderService:
 
     @staticmethod
     async def mark_ready_for_pickup(order_id: int):
-        return await OrderService.update_order(order_id, {'order_status': 'ready_for_pickup'})
+        await OrderService._require_paid_order(order_id)
+        return await OrderService.update_order(order_id, {'order_status': OrderStatus.READY_FOR_PICKUP.value})
 
     @staticmethod
     async def assign_driver(order_id: int, driver: str):
+        await OrderService._require_paid_order(order_id)
         return await OrderService.update_order(order_id, {'driver': driver})
 
     @staticmethod
@@ -117,7 +173,8 @@ class OrderService:
 
     @staticmethod
     async def pickup_order(order_id: int):
-        return await OrderService.update_order(order_id, {'order_status': 'picked_up'})
+        await OrderService._require_paid_order(order_id)
+        return await OrderService.update_order(order_id, {'order_status': OrderStatus.PICKED_UP.value})
 
     @staticmethod
     async def report_restaurant_delay(order_id: int, reason: str):
@@ -151,7 +208,7 @@ class OrderService:
             return saved
         if isinstance(saved, Order):
             saved = saved.model_dump()
-        if isinstance(saved, dict) and 'id' not in saved:
+        if isinstance(saved, dict) and saved.get('id') is None:
             saved['id'] = int(order_id)
         return OrderInternal.model_validate(saved)
 
@@ -160,8 +217,11 @@ class OrderService:
         orders = await OrderRepo.get_all_orders()
         result = []
         for order_data in orders.values():
-            if order_data.get('restaurant') == restaurant:
-                result.append(Order(**order_data))
+            if order_data.get('restaurant') != restaurant:
+                continue
+            if order_data.get('payment_status') != PaymentStatus.ACCEPTED.value:
+                continue
+            result.append(OrderService._dict_to_order(order_data))
         return result
 
     @staticmethod

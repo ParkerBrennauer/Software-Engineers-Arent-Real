@@ -24,6 +24,9 @@ export default function OrderPlacementSuccess({ orderPayload, onDismiss, trackSe
         <h3 id="order-placement-success-heading" className="order-placement-success__title">
           Thank you! Your order has been created.
         </h3>
+        <p className="muted small-print order-placement-success__pay-hint">
+          Complete payment below to confirm your order with the restaurant (simulated card processing).
+        </p>
       </div>
 
       <div className="order-placement-success__body">

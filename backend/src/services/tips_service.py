@@ -21,6 +21,8 @@ class TipService:
         order = await OrderService.get_order_status(order_id)
         if not order:
             raise ValueError('Order not found')
+        if order.get('payment_status') != 'accepted':
+            raise ValueError('Tips can only be added after payment is accepted.')
         subtotal = order['cost']
         final_tip = TipService.calculate_tip(subtotal, tip_percent=tip_percent, tip_amount=tip_amount)
         updated = await OrderService.update_order(order_id, {'tip_percent': tip_percent, 'tip_amount': final_tip, 'tip_paid': False})
