@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { api } from "../api/client";
 import { AuthProvider } from "../state/AuthContext";
+import { RestaurantWorkspaceProvider } from "../state/RestaurantWorkspaceContext";
 import { CartProvider, useCart } from "../state/CartContext";
 import OrdersPage from "../pages/OrdersPage";
 import OrderPlacementSuccess from "../components/OrderPlacementSuccess";
@@ -15,7 +16,15 @@ function jsonFetch(ok, data, status = 200) {
 
 function wrap(ui) {
   return render(
-    createElement(MemoryRouter, null, createElement(AuthProvider, null, createElement(CartProvider, null, ui)))
+    createElement(
+      MemoryRouter,
+      null,
+      createElement(
+        AuthProvider,
+        null,
+        createElement(RestaurantWorkspaceProvider, null, createElement(CartProvider, null, ui))
+      )
+    )
   );
 }
 

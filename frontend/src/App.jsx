@@ -13,6 +13,7 @@ import ProfilePage from "./pages/ProfilePage";
 import DiscountsPage from "./pages/DiscountsPage";
 import FavouritesPage from "./pages/FavouritesPage";
 import CartIconNav from "./components/CartIconNav";
+import OwnerVenueBar from "./components/OwnerVenueBar";
 
 function HomePage() {
   return (
@@ -76,6 +77,7 @@ export default function App() {
   return (
     <main className="app-shell">
       <Nav />
+      <OwnerVenueBar />
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />

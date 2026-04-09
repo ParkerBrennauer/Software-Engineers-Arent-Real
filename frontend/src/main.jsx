@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import { AuthProvider } from "./state/AuthContext";
+import { RestaurantWorkspaceProvider } from "./state/RestaurantWorkspaceContext";
 import { CartProvider } from "./state/CartContext";
 import "./styles.css";
 
@@ -10,9 +11,11 @@ createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
       <AuthProvider>
-        <CartProvider>
-          <App />
-        </CartProvider>
+        <RestaurantWorkspaceProvider>
+          <CartProvider>
+            <App />
+          </CartProvider>
+        </RestaurantWorkspaceProvider>
       </AuthProvider>
     </BrowserRouter>
   </StrictMode>

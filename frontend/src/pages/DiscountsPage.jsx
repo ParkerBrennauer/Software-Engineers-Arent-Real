@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api/client";
 import { useAuth } from "../state/AuthContext";
+import { useRestaurantWorkspace } from "../state/RestaurantWorkspaceContext";
 
 function parseRestaurantId(value) {
   const n = Number(String(value).trim());
@@ -17,6 +18,7 @@ function parseDiscountRate(value) {
 
 export default function DiscountsPage() {
   const { user } = useAuth();
+  const { linkedRestaurant, status: workspaceStatus, beginSwitchRestaurant } = useRestaurantWorkspace();
   const isOwner = user?.role === "owner";
 
   const [createRate, setCreateRate] = useState("0.9");
@@ -31,6 +33,13 @@ export default function DiscountsPage() {
   const [deleteMessage, setDeleteMessage] = useState("");
   const [deleteError, setDeleteError] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState(false);
+
+  const ownerVenueReady = isOwner && workspaceStatus === "ready" && linkedRestaurant?.id != null;
+
+  useEffect(() => {
+    if (!ownerVenueReady || linkedRestaurant?.id == null) return;
+    setCreateRestaurantId(String(linkedRestaurant.id));
+  }, [ownerVenueReady, linkedRestaurant?.id]);
 
   async function submitCreate(e) {
     e.preventDefault();
@@ -136,8 +145,19 @@ export default function DiscountsPage() {
           <article className="panel owner-discount-panel">
             <h2 className="section-heading">Create a promo code</h2>
             <p className="muted small-print">
-              Enter your restaurant&apos;s numeric ID and choose a code guests can type at checkout. Use a multiplier
-              under 1 for a discount (for example, 0.85 means guests pay about 85% of the cart total).
+              {ownerVenueReady && linkedRestaurant ? (
+                <>
+                  Codes apply to your linked venue <strong>{linkedRestaurant.label}</strong>.{" "}
+                  <button type="button" className="discounts-switch-venue" onClick={beginSwitchRestaurant}>
+                    Switch venue
+                  </button>
+                </>
+              ) : (
+                <>
+                  Enter your restaurant&apos;s numeric ID and choose a code guests can type at checkout. Use a multiplier
+                  under 1 for a discount (for example, 0.85 means guests pay about 85% of the cart total).
+                </>
+              )}
             </p>
             <form className="discount-form" onSubmit={submitCreate}>
               <div className="row form-grid">
@@ -149,6 +169,8 @@ export default function DiscountsPage() {
                     onChange={(e) => setCreateRestaurantId(e.target.value.replace(/\D/g, ""))}
                     placeholder="e.g. 1"
                     required
+                    readOnly={ownerVenueReady}
+                    disabled={ownerVenueReady}
                   />
                 </label>
                 <label className="field">

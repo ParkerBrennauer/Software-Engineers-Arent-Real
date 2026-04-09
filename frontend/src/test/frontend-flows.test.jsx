@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { createElement } from "react";
 import { MemoryRouter } from "react-router-dom";
 import { AuthProvider } from "../state/AuthContext";
+import { RestaurantWorkspaceProvider } from "../state/RestaurantWorkspaceContext";
 import { CartProvider } from "../state/CartContext";
 import LoginPage from "../pages/LoginPage";
 import RegisterPage from "../pages/RegisterPage";
@@ -21,7 +22,11 @@ function wrap(ui) {
     createElement(
       MemoryRouter,
       null,
-      createElement(AuthProvider, null, createElement(CartProvider, null, ui))
+      createElement(
+        AuthProvider,
+        null,
+        createElement(RestaurantWorkspaceProvider, null, createElement(CartProvider, null, ui))
+      )
     )
   );
 }

@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { api } from "../api/client";
 import { useCart } from "../state/CartContext";
 import { useAuth } from "../state/AuthContext";
 import CartPanel from "../components/CartPanel";
 import OrderPlacementSuccess from "../components/OrderPlacementSuccess";
 import FriendlyDataSummary from "../components/FriendlyDataSummary";
+import KitchenOrderBoard from "../components/KitchenOrderBoard";
 import { resolveOrdersUiRole } from "../utils/ordersRoleUi";
 
 function OrderIdFields({ orderId, setOrderId, disabled, idPrefix = "" }) {
@@ -32,7 +32,6 @@ export default function OrdersPage() {
   const [orderId, setOrderId] = useState("");
   const [deliveryInstructions, setDeliveryInstructions] = useState("");
   const [driverName, setDriverName] = useState("");
-  const [restaurantId, setRestaurantId] = useState("");
   const [history, setHistory] = useState([]);
   const [result, setResult] = useState(null);
   const [placementSuccess, setPlacementSuccess] = useState(null);
@@ -488,185 +487,9 @@ export default function OrdersPage() {
         </>
       )}
 
-      {resolvedRole === "owner" && (
-        <>
-          <article className="panel orders-role-section">
-            <h2 className="section-heading">Kitchen &amp; dispatch</h2>
-            <p className="muted small-print">Mark orders ready, assign drivers, and handle refunds when allowed.</p>
-            <OrderIdFields orderId={orderId} setOrderId={setOrderId} disabled={busy} idPrefix="owner" />
-            <div className="row action-toolbar">
-              <button
-                type="button"
-                disabled={busy || !orderId.trim()}
-                onClick={() => {
-                  const valid = requireOrderId();
-                  if (valid) run(() => api.orders.get(valid));
-                }}
-              >
-                View order
-              </button>
-              <button
-                type="button"
-                disabled={busy || !orderId.trim()}
-                onClick={() => {
-                  const valid = requireOrderId();
-                  if (valid) run(() => api.orders.ready(valid));
-                }}
-              >
-                Mark ready
-              </button>
-              <button
-                type="button"
-                disabled={busy || !orderId.trim()}
-                onClick={() => {
-                  const valid = requireOrderId();
-                  if (valid) run(() => api.orders.refund(valid));
-                }}
-              >
-                Refund
-              </button>
-            </div>
-            <div className="row">
-              <input
-                placeholder="Driver username"
-                value={driverName}
-                onChange={(e) => setDriverName(e.target.value)}
-                disabled={busy}
-                aria-label="Driver username to assign"
-              />
-              <button
-                type="button"
-                disabled={busy || !orderId.trim() || !driverName.trim()}
-                onClick={() => {
-                  const valid = requireOrderId();
-                  if (valid) run(() => api.orders.assignDriver(valid, driverName));
-                }}
-              >
-                Assign driver
-              </button>
-            </div>
-            <div className="row action-toolbar">
-              <button
-                type="button"
-                disabled={busy || !orderId.trim()}
-                onClick={() => {
-                  const valid = requireOrderId();
-                  if (valid) run(() => api.orders.tracking(valid));
-                }}
-              >
-                Tracking
-              </button>
-              <button
-                type="button"
-                disabled={busy || !orderId.trim()}
-                onClick={() => {
-                  const valid = requireOrderId();
-                  if (valid) run(() => api.orders.refreshTracking(valid));
-                }}
-              >
-                Refresh tracking
-              </button>
-            </div>
-          </article>
+      {resolvedRole === "owner" && <KitchenOrderBoard showRefund showAdvancedLink />}
 
-          <article className="panel orders-role-section">
-            <h2 className="section-heading">Restaurant queue</h2>
-            <p className="muted small-print">Load active orders for one of your locations by ID.</p>
-            <div className="row">
-              <input
-                placeholder="Restaurant ID"
-                value={restaurantId}
-                onChange={(e) => setRestaurantId(e.target.value)}
-                disabled={busy}
-                aria-label="Restaurant ID"
-              />
-              <button
-                type="button"
-                disabled={busy || !restaurantId.trim()}
-                onClick={() => run(() => api.restaurantAdministration.orders(restaurantId))}
-              >
-                Load orders
-              </button>
-            </div>
-            <Link className="button-link" to="/operations">
-              Advanced filters &amp; team tools
-            </Link>
-          </article>
-        </>
-      )}
-
-      {resolvedRole === "staff" && (
-        <>
-          <article className="panel orders-role-section">
-            <h2 className="section-heading">Kitchen</h2>
-            <p className="muted small-print">Mark orders ready when they&apos;re prepared to go out.</p>
-            <OrderIdFields orderId={orderId} setOrderId={setOrderId} disabled={busy} idPrefix="staff" />
-            <div className="row action-toolbar">
-              <button
-                type="button"
-                disabled={busy || !orderId.trim()}
-                onClick={() => {
-                  const valid = requireOrderId();
-                  if (valid) run(() => api.orders.get(valid));
-                }}
-              >
-                View order
-              </button>
-              <button
-                type="button"
-                disabled={busy || !orderId.trim()}
-                onClick={() => {
-                  const valid = requireOrderId();
-                  if (valid) run(() => api.orders.ready(valid));
-                }}
-              >
-                Mark ready
-              </button>
-              <button
-                type="button"
-                disabled={busy || !orderId.trim()}
-                onClick={() => {
-                  const valid = requireOrderId();
-                  if (valid) run(() => api.orders.tracking(valid));
-                }}
-              >
-                Tracking
-              </button>
-              <button
-                type="button"
-                disabled={busy || !orderId.trim()}
-                onClick={() => {
-                  const valid = requireOrderId();
-                  if (valid) run(() => api.orders.refreshTracking(valid));
-                }}
-              >
-                Refresh tracking
-              </button>
-            </div>
-          </article>
-
-          <article className="panel orders-role-section">
-            <h2 className="section-heading">Order queue</h2>
-            <p className="muted small-print">Load live orders for your restaurant using its ID.</p>
-            <div className="row">
-              <input
-                placeholder="Restaurant ID"
-                value={restaurantId}
-                onChange={(e) => setRestaurantId(e.target.value)}
-                disabled={busy}
-                aria-label="Restaurant ID"
-              />
-              <button
-                type="button"
-                disabled={busy || !restaurantId.trim()}
-                onClick={() => run(() => api.restaurantAdministration.orders(restaurantId))}
-              >
-                Load orders
-              </button>
-            </div>
-          </article>
-        </>
-      )}
+      {resolvedRole === "staff" && <KitchenOrderBoard />}
 
       {resolvedRole === "customer" && history.length > 0 && (
         <section className="panel orders-role-section">
