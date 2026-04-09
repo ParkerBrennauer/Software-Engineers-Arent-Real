@@ -1,11 +1,13 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { api } from "../api/client";
 import { useAuth } from "../state/AuthContext";
+import { useRestaurantWorkspace } from "../state/RestaurantWorkspaceContext";
 import { canViewOperationsContent } from "../utils/operationsAccess";
 import FriendlyDataSummary from "../components/FriendlyDataSummary";
 
 export default function OperationsPage() {
   const { user } = useAuth();
+  const { linkedRestaurant, status: workspaceStatus, beginSwitchRestaurant } = useRestaurantWorkspace();
   const mayUseOperations = canViewOperationsContent(user?.role);
   const [restaurantId, setRestaurantId] = useState("");
   const [staffUsername, setStaffUsername] = useState("");
@@ -41,12 +43,23 @@ export default function OperationsPage() {
     }
   }
 
+  const ownerLinkedReady =
+    mayUseOperations &&
+    (user?.role === "owner" || user?.role === "staff") &&
+    workspaceStatus === "ready" &&
+    linkedRestaurant?.id != null;
+
+  useEffect(() => {
+    if (!ownerLinkedReady || linkedRestaurant?.id == null) return;
+    setRestaurantId(String(linkedRestaurant.id));
+  }, [ownerLinkedReady, linkedRestaurant?.id]);
+
   if (!mayUseOperations) {
     return (
       <section className="card operations-access">
         <h1 className="page-title">Business tools</h1>
         <div className="access-restricted-notice" role="status">
-          <p>This area is for restaurant owners. Sign in with an owner account to continue.</p>
+          <p>This area is for restaurant owners and team accounts. Sign in with an owner or staff account to continue.</p>
         </div>
       </section>
     );
@@ -62,8 +75,23 @@ export default function OperationsPage() {
       <article className="panel orders-role-section">
         <h2 className="section-heading">Order reports</h2>
         <p className="muted small-print">Filter orders by restaurant and time range.</p>
+        {ownerLinkedReady && linkedRestaurant && (
+          <p className="muted small-print operations-linked-venue">
+            Using your linked venue <strong>{linkedRestaurant.label}</strong> ({linkedRestaurant.id}).
+            <button type="button" className="operations-switch-venue" onClick={beginSwitchRestaurant}>
+              Switch venue
+            </button>
+          </p>
+        )}
         <div className="row">
-          <input placeholder="Restaurant ID" value={restaurantId} onChange={(e) => setRestaurantId(e.target.value)} />
+          <input
+            placeholder="Restaurant ID"
+            value={restaurantId}
+            onChange={(e) => setRestaurantId(e.target.value)}
+            aria-label="Restaurant ID for reports"
+            readOnly={ownerLinkedReady}
+            disabled={ownerLinkedReady}
+          />
         </div>
         <div className="row action-toolbar">
           <button disabled={busy || !restaurantId.trim()} onClick={() => run(() => api.restaurantAdministration.orders(restaurantId))}>

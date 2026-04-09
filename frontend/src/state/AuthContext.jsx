@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { api } from "../api/client";
+import { readRoleHint } from "../utils/authRoleHintStorage";
 
 const AuthContext = createContext(null);
 
@@ -12,12 +13,38 @@ function inferRoleFromUsername(username) {
   return "customer";
 }
 
+const STORED_ROLES = new Set(["owner", "staff", "driver", "customer", "admin"]);
+
+/**
+ * Backend login responses omit role; prefer registration hint, then cached role, then username guess.
+ * @param {string} username
+ * @param {string | undefined} storedRole
+ */
+export function resolveSessionRole(username, storedRole) {
+  const hint = readRoleHint(username);
+  if (hint && STORED_ROLES.has(hint)) {
+    return hint;
+  }
+  if (typeof storedRole === "string" && storedRole.trim()) {
+    const s = storedRole.trim().toLowerCase();
+    if (STORED_ROLES.has(s)) return s;
+  }
+  return inferRoleFromUsername(username);
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
     const cached = localStorage.getItem("frontend-auth-user");
     if (!cached) return null;
     try {
-      return JSON.parse(cached);
+      const parsed = JSON.parse(cached);
+      if (parsed && typeof parsed === "object" && parsed.username) {
+        return {
+          ...parsed,
+          role: resolveSessionRole(String(parsed.username), parsed.role),
+        };
+      }
+      return parsed;
     } catch {
       localStorage.removeItem("frontend-auth-user");
       return null;
@@ -45,6 +72,12 @@ export function AuthProvider({ children }) {
         const current = await api.users.currentUser();
         if (!current?.username && mounted) {
           setUser(null);
+        } else if (mounted && current?.username) {
+          setUser((prev) =>
+            prev && prev.username === current.username
+              ? { ...prev, role: resolveSessionRole(prev.username, prev.role) }
+              : prev
+          );
         }
       } catch {
         if (mounted) setUser(null);
@@ -64,7 +97,7 @@ export function AuthProvider({ children }) {
       const result = await api.users.login(payload);
       const current = await api.users.currentUser();
       const username = current?.username || payload.username;
-      const derivedRole = inferRoleFromUsername(username);
+      const derivedRole = resolveSessionRole(username);
       const requires2FA = Boolean(result?.requires_2fa);
       setUser({
         id: result?.id ?? null,
