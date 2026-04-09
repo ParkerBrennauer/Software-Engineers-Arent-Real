@@ -41,12 +41,8 @@ export default function OrdersPage() {
   const [tipPercentInput, setTipPercentInput] = useState("15");
   const [tipFixedInput, setTipFixedInput] = useState("");
   const [tipSuccess, setTipSuccess] = useState(null);
-<<<<<<< Updated upstream
-  const [paymentSimulate, setPaymentSimulate] = useState("auto");
-  const [autoRefreshStatus, setAutoRefreshStatus] = useState(false);
-=======
   const [paymentSuccess, setPaymentSuccess] = useState(null);
->>>>>>> Stashed changes
+  const [autoRefreshStatus, setAutoRefreshStatus] = useState(false);
 
   useEffect(() => {
     if (resolvedRole === "driver" && user?.username) {
@@ -281,37 +277,6 @@ export default function OrdersPage() {
               Look up an order by number. Some actions may not be available depending on order status.
             </p>
             <OrderIdFields orderId={orderId} setOrderId={setOrderId} disabled={busy} idPrefix="customer" />
-<<<<<<< Updated upstream
-            <div className="row payment-sim-row">
-              <label className="field payment-sim-field">
-                <span>Simulated payment</span>
-                <select
-                  value={paymentSimulate}
-                  onChange={(e) => setPaymentSimulate(e.target.value)}
-                  disabled={busy}
-                  aria-label="Simulated payment outcome"
-                >
-                  <option value="auto">Normal (accept any 15–16 digit card)</option>
-                  <option value="accept">Force accept (same as normal)</option>
-                  <option value="reject">Force reject (testing only)</option>
-                </select>
-              </label>
-              <button
-                type="button"
-                disabled={busy || !orderId.trim()}
-                onClick={() => {
-                  const valid = requireOrderId();
-                  if (valid) run(() => api.orders.pay(valid, { simulate: paymentSimulate }));
-                }}
-              >
-                Pay for order
-              </button>
-            </div>
-            <p className="muted small-print">
-              Charges the card saved on your profile (15–16 digits). Normal mode always approves valid cards. Use “Force
-              reject” only to test a declined payment—then pay again on the same order if needed.
-            </p>
-=======
             {paymentSuccess && (
               <section className="panel tip-applied-success" role="status" aria-live="polite">
                 <div className="tip-applied-success__header">
@@ -346,7 +311,6 @@ export default function OrdersPage() {
                 </div>
               </section>
             )}
->>>>>>> Stashed changes
             <fieldset className="tip-fieldset" disabled={busy}>
               <legend className="tip-legend">Tip on this order</legend>
               <p className="muted small-print">
