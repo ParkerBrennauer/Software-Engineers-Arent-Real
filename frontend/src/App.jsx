@@ -11,6 +11,7 @@ import ReviewsPage from "./pages/ReviewsPage";
 import OperationsPage from "./pages/OperationsPage";
 import ProfilePage from "./pages/ProfilePage";
 import DiscountsPage from "./pages/DiscountsPage";
+import FavouritesPage from "./pages/FavouritesPage";
 import CartIconNav from "./components/CartIconNav";
 
 function HomePage() {
@@ -47,6 +48,7 @@ function Nav() {
         <Link to="/">Home</Link>
         <Link to="/restaurants">Restaurants</Link>
         <Link to="/orders">Orders</Link>
+        <Link to="/favourites">Favourites</Link>
         <Link to="/reviews">Reviews</Link>
         <Link to="/operations">Business</Link>
         <Link to="/discounts">Promos</Link>
@@ -81,6 +83,7 @@ export default function App() {
         <Route path="/restaurants" element={<RestaurantsPage />} />
         <Route path="/restaurants/:restaurantId" element={<RestaurantDetailPage />} />
         <Route path="/orders" element={<RequireAuth><OrdersPage /></RequireAuth>} />
+        <Route path="/favourites" element={<RequireAuth><FavouritesPage /></RequireAuth>} />
         <Route path="/reviews" element={<ReviewsPage />} />
         <Route path="/operations" element={<RequireAuth><OperationsPage /></RequireAuth>} />
         <Route path="/profile" element={<RequireAuth><ProfilePage /></RequireAuth>} />
@@ -89,4 +92,3 @@ export default function App() {
     </main>
   );
 }
-
