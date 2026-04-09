@@ -5,6 +5,8 @@ export default function ProfilePage() {
   const [currentUser, setCurrentUser] = useState(null);
   const [addresses, setAddresses] = useState([]);
   const [addressInput, setAddressInput] = useState("");
+  const [latInput, setLatInput] = useState("");
+  const [lngInput, setLngInput] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -46,13 +48,21 @@ export default function ProfilePage() {
 
   async function addAddress() {
     setError("");
-    if (!addressInput.trim()) {
-      setError("Enter an address.");
+    if (!addressInput.trim() || !latInput.trim() || !lngInput.trim()) {
+      setError("Enter an address, latitude, and longitude.");
+      return;
+    }
+    const lat = parseFloat(latInput);
+    const lng = parseFloat(lngInput);
+    if (isNaN(lat) || isNaN(lng)) {
+      setError("Latitude and longitude must be numbers.");
       return;
     }
     try {
-      await api.users.addAddress(addressInput.trim());
+      await api.users.addAddress(addressInput.trim(), lat, lng);
       setAddressInput("");
+      setLatInput("");
+      setLngInput("");
       await load();
     } catch (err) {
       setError(err.message);
@@ -111,7 +121,21 @@ export default function ProfilePage() {
             onChange={(e) => setAddressInput(e.target.value)}
             aria-label="New address"
           />
-          <button type="button" disabled={!addressInput.trim()} onClick={addAddress}>
+          <input
+            placeholder="Latitude (e.g. 40.7128)"
+            value={latInput}
+            onChange={(e) => setLatInput(e.target.value)}
+            aria-label="Latitude"
+            style={{ maxWidth: "120px" }}
+          />
+          <input
+            placeholder="Longitude (e.g. -74.0060)"
+            value={lngInput}
+            onChange={(e) => setLngInput(e.target.value)}
+            aria-label="Longitude"
+            style={{ maxWidth: "120px" }}
+          />
+          <button type="button" disabled={!addressInput.trim() || !latInput.trim() || !lngInput.trim()} onClick={addAddress}>
             Save address
           </button>
         </div>
@@ -119,8 +143,10 @@ export default function ProfilePage() {
           <p className="muted">No saved addresses yet.</p>
         ) : (
           <ul className="profile-address-list">
-            {addresses.map((address) => (
-              <li key={address}>{address}</li>
+            {addresses.map((addr, idx) => (
+              <li key={idx}>
+                {typeof addr === "string" ? addr : addr.address}
+              </li>
             ))}
           </ul>
         )}
