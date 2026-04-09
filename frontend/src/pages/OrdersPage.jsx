@@ -41,8 +41,12 @@ export default function OrdersPage() {
   const [tipPercentInput, setTipPercentInput] = useState("15");
   const [tipFixedInput, setTipFixedInput] = useState("");
   const [tipSuccess, setTipSuccess] = useState(null);
+<<<<<<< Updated upstream
   const [paymentSimulate, setPaymentSimulate] = useState("auto");
   const [autoRefreshStatus, setAutoRefreshStatus] = useState(false);
+=======
+  const [paymentSuccess, setPaymentSuccess] = useState(null);
+>>>>>>> Stashed changes
 
   useEffect(() => {
     if (resolvedRole === "driver" && user?.username) {
@@ -52,6 +56,7 @@ export default function OrdersPage() {
 
   useEffect(() => {
     setTipSuccess(null);
+    setPaymentSuccess(null);
   }, [orderId]);
 
   useEffect(() => {
@@ -76,6 +81,32 @@ export default function OrdersPage() {
     try {
       const data = await call();
       setResult(data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function payForOrder() {
+    const valid = requireOrderId();
+    if (!valid) return;
+    setBusy(true);
+    setError("");
+    setPaymentSuccess(null);
+    try {
+      const data = await api.orders.pay(valid, { simulate: "auto" });
+      setResult(data);
+      const status = data?.payment_status != null ? String(data.payment_status) : "";
+      if (status.toLowerCase() === "accepted") {
+        setPaymentSuccess({ orderId: valid });
+      } else {
+        const reason =
+          data?.payment_rejection_reason != null && String(data.payment_rejection_reason).trim()
+            ? String(data.payment_rejection_reason)
+            : "Payment was rejected.";
+        setError(reason);
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -250,6 +281,7 @@ export default function OrdersPage() {
               Look up an order by number. Some actions may not be available depending on order status.
             </p>
             <OrderIdFields orderId={orderId} setOrderId={setOrderId} disabled={busy} idPrefix="customer" />
+<<<<<<< Updated upstream
             <div className="row payment-sim-row">
               <label className="field payment-sim-field">
                 <span>Simulated payment</span>
@@ -279,6 +311,42 @@ export default function OrdersPage() {
               Charges the card saved on your profile (15–16 digits). Normal mode always approves valid cards. Use “Force
               reject” only to test a declined payment—then pay again on the same order if needed.
             </p>
+=======
+            {paymentSuccess && (
+              <section className="panel tip-applied-success" role="status" aria-live="polite">
+                <div className="tip-applied-success__header">
+                  <span className="tip-applied-success__icon" aria-hidden="true">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="28"
+                      height="28"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                      <polyline points="22 4 12 14.01 9 11.01" />
+                    </svg>
+                  </span>
+                  <h3 className="tip-applied-success__title">Payment successful</h3>
+                </div>
+                <div className="tip-applied-success__body">
+                  <p className="tip-applied-success__meta">
+                    Order <span className="tip-applied-success__strong">#{paymentSuccess.orderId}</span> has been paid and
+                    confirmed.
+                  </p>
+                </div>
+                <div className="tip-applied-success__actions row">
+                  <button type="button" className="tip-applied-success__dismiss" onClick={() => setPaymentSuccess(null)}>
+                    Dismiss
+                  </button>
+                </div>
+              </section>
+            )}
+>>>>>>> Stashed changes
             <fieldset className="tip-fieldset" disabled={busy}>
               <legend className="tip-legend">Tip on this order</legend>
               <p className="muted small-print">
@@ -396,6 +464,9 @@ export default function OrdersPage() {
               </label>
             </div>
             <div className="row action-toolbar">
+              <button type="button" disabled={busy || !orderId.trim()} onClick={payForOrder}>
+                Pay for order
+              </button>
               <button
                 type="button"
                 disabled={busy || !orderId.trim()}
