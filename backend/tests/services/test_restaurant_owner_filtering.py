@@ -9,10 +9,10 @@ async def _mock_get_by_username(_):
     return {'username': 'owner1', 'role': 'owner', 'restaurant_id': 10}
 
 async def _mock_read_all():
-    return [{'id': 10, 'name': 'Pizza'}]
+    return {'10': {'restaurant_id': 10, 'cuisine': 'Italian'}}
 
 async def _mock_get_orders(*args, **kwargs):
-    return [{'id': 1, 'items': ['Pizza'], 'cost': 16.95, 'restaurant': 'Pizza', 'customer': 'c1', 'time': 150, 'cuisine': 'Italian', 'distance': 2.5, 'order_status': OrderStatus.CONFIRMED.value, 'payment_status': 'accepted'}]
+    return [{'id': 1, 'items': ['Pizza'], 'cost': 16.95, 'restaurant': 'Restaurant_10', 'customer': 'c1', 'time': 150, 'cuisine': 'Italian', 'distance': 2.5, 'order_status': OrderStatus.CONFIRMED.value, 'payment_status': 'accepted'}]
 
 @pytest.mark.asyncio
 async def test_filter_by_status_owner(monkeypatch):
@@ -20,7 +20,7 @@ async def test_filter_by_status_owner(monkeypatch):
     monkeypatch.setattr(RestaurantRepo, 'read_all', _mock_read_all)
     monkeypatch.setattr(OrderRepo, 'get_orders_by_status', _mock_get_orders)
     result = await RestaurantOwnerService.get_restaurant_orders_by_status(10, 'owner1', OrderStatus.CONFIRMED.value)
-    assert len(result) == 1 and result[0].restaurant == 'Pizza'
+    assert len(result) == 1 and result[0].restaurant == 'Restaurant_10'
 
 @pytest.mark.asyncio
 async def test_filter_by_status_denied(monkeypatch):
@@ -69,7 +69,7 @@ async def test_filter_restaurant_not_found(monkeypatch):
     monkeypatch.setattr(UserRepo, 'get_by_username', _mock_get_by_username)
 
     async def mock_other_restaurant():
-        return [{'id': 20, 'name': 'Other'}]
+        return {'20': {'restaurant_id': 20, 'cuisine': 'Other'}}
     monkeypatch.setattr(RestaurantRepo, 'read_all', mock_other_restaurant)
     with pytest.raises(ValueError, match='Restaurant not found'):
         await RestaurantOwnerService.get_restaurant_orders_by_status(10, 'owner1', OrderStatus.CONFIRMED.value)

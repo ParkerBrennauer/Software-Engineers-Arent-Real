@@ -195,6 +195,31 @@ async def test_submit_order_success(mock_service, mock_current_user):
 
 @pytest.mark.asyncio
 @patch("src.services.user_service.UserService.get_current_user")
+@patch("src.services.order_services.OrderService.pay_order", new_callable=AsyncMock)
+async def test_pay_order_success(mock_pay, mock_current_user):
+    mock_current_user.return_value = "john_doe"
+    mock_pay.return_value = {
+        "items": [],
+        "cost": 12.0,
+        "restaurant": "Restaurant_1",
+        "customer": "john_doe",
+        "time": 25,
+        "cuisine": "Italian",
+        "distance": 2.0,
+        "order_status": "confirmed",
+        "payment_status": "accepted",
+        "id": 5,
+    }
+    response = client.post("/orders/5/pay", json={"simulate": "accept"})
+    assert response.status_code == 200
+    assert response.json()["payment_status"] == "accepted"
+    mock_pay.assert_called_once()
+    assert mock_pay.call_args[0][0] == "5"
+    assert mock_pay.call_args[0][1] == "john_doe"
+
+
+@pytest.mark.asyncio
+@patch("src.services.user_service.UserService.get_current_user")
 @patch("src.services.order_services.OrderService.create_order", new_callable=AsyncMock)
 async def test_submit_order_error(mock_service, mock_current_user):
     mock_current_user.return_value = "john_doe"

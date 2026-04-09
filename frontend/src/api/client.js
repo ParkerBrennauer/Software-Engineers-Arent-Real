@@ -82,6 +82,11 @@ export const api = {
   },
   orders: {
     place: (payload) => request("/orders/place", { method: "POST", body: JSON.stringify(payload) }),
+    pay: (orderId, payload) =>
+      request(`/orders/${orderId}/pay`, {
+        method: "POST",
+        body: JSON.stringify(payload ?? { simulate: "auto" }),
+      }),
     addItems: (orderId, payload) => request(`/orders/${orderId}/items`, { method: "POST", body: JSON.stringify(payload) }),
     get: (orderId) => request(`/orders/${orderId}`),
     byRestaurant: (restaurant) => request(`/orders/restaurant/${encodeURIComponent(restaurant)}`),

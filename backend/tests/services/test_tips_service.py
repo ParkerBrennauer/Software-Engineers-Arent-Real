@@ -29,7 +29,7 @@ def test_calculate_tip_missing_inputs():
 @pytest.mark.asyncio
 @patch('src.services.tips_service.OrderService')
 async def test_apply_tip_percent(mock_order_service):
-    mock_order_service.get_order_status = AsyncMock(return_value={'id': 1, 'cost': 100})
+    mock_order_service.get_order_status = AsyncMock(return_value={'id': 1, 'cost': 100, 'payment_status': 'accepted'})
     mock_order_service.update_order = AsyncMock(return_value={'id': 1, 'tip_percent': 10, 'tip_amount': 10})
     result = await TipService.apply_tip(1, tip_percent=10)
     assert result['tip_amount'] == 10
@@ -38,7 +38,7 @@ async def test_apply_tip_percent(mock_order_service):
 @pytest.mark.asyncio
 @patch('src.services.tips_service.OrderService')
 async def test_apply_tip_fixed(mock_order_service):
-    mock_order_service.get_order_status = AsyncMock(return_value={'id': 1, 'cost': 100})
+    mock_order_service.get_order_status = AsyncMock(return_value={'id': 1, 'cost': 100, 'payment_status': 'accepted'})
     mock_order_service.update_order = AsyncMock(return_value={'id': 1, 'tip_amount': 20})
     result = await TipService.apply_tip(1, tip_amount=20)
     assert result['tip_amount'] == 20

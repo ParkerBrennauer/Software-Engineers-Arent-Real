@@ -3,8 +3,8 @@ from src.repositories.restaurant_repo import RestaurantRepo
 from src.repositories.order_repo import OrderRepo
 from src.models.user_model import UserInternal
 from src.schemas.user_schema import UserRole
-from src.schemas.order_schema import Order
 from src.core.utils import get_role_value
+from src.services.order_services import OrderService
 
 class RestaurantOwnerService:
 
@@ -31,7 +31,7 @@ class RestaurantOwnerService:
         return UserInternal.model_validate(updated_user)
 
     @staticmethod
-    async def get_restaurant_orders(restaurant_id: int, username: str) -> list:
+    async def _assert_staff_or_owner(restaurant_id: int, username: str) -> str:
         user = await UserRepo.get_by_username(username)
         if not user:
             raise ValueError('User not found')
@@ -42,94 +42,58 @@ class RestaurantOwnerService:
         if not (is_owner or is_staff):
             raise ValueError("User does not have permission to view this restaurant's orders")
         restaurants = await RestaurantRepo.read_all()
-        restaurant_name = None
-        for restaurant in restaurants:
-            if restaurant.get('id') == restaurant_id:
-                restaurant_name = restaurant.get('name')
-                break
-        if not restaurant_name:
+        key = str(restaurant_id)
+        if isinstance(restaurants, dict):
+            if key not in restaurants:
+                raise ValueError('Restaurant not found')
+        elif isinstance(restaurants, list):
+            found = any((isinstance(r, dict) and (r.get('restaurant_id') == restaurant_id or r.get('id') == restaurant_id)) for r in restaurants)
+            if not found:
+                raise ValueError('Restaurant not found')
+        else:
             raise ValueError('Restaurant not found')
+        return f'Restaurant_{restaurant_id}'
+
+    @staticmethod
+    def _append_paid_restaurant_order(order_data: dict, restaurant_key: str, bucket: list) -> None:
+        if order_data.get('restaurant') != restaurant_key:
+            return
+        if order_data.get('payment_status') != 'accepted':
+            return
+        bucket.append(OrderService._dict_to_order(order_data))
+
+    @staticmethod
+    async def get_restaurant_orders(restaurant_id: int, username: str) -> list:
+        restaurant_key = await RestaurantOwnerService._assert_staff_or_owner(restaurant_id, username)
         all_orders = await OrderRepo.get_all_orders()
         restaurant_orders = []
         for order_data in all_orders.values():
-            if order_data.get('restaurant') == restaurant_name:
-                restaurant_orders.append(Order(**order_data))
+            RestaurantOwnerService._append_paid_restaurant_order(order_data, restaurant_key, restaurant_orders)
         return restaurant_orders
 
     @staticmethod
     async def get_restaurant_orders_by_status(restaurant_id: int, username: str, status: str) -> list:
-        user = await UserRepo.get_by_username(username)
-        if not user:
-            raise ValueError('User not found')
-        user_role = get_role_value(user)
-        user_restaurant_id = user.get('restaurant_id')
-        is_owner = user_role == UserRole.RESTAURANT_OWNER.value and user_restaurant_id == restaurant_id
-        is_staff = user_role == UserRole.RESTAURANT_STAFF.value and user_restaurant_id == restaurant_id
-        if not (is_owner or is_staff):
-            raise ValueError("User does not have permission to view this restaurant's orders")
-        restaurants = await RestaurantRepo.read_all()
-        restaurant_name = None
-        for restaurant in restaurants:
-            if restaurant.get('id') == restaurant_id:
-                restaurant_name = restaurant.get('name')
-                break
-        if not restaurant_name:
-            raise ValueError('Restaurant not found')
+        restaurant_key = await RestaurantOwnerService._assert_staff_or_owner(restaurant_id, username)
         orders_by_status = await OrderRepo.get_orders_by_status(status)
         restaurant_orders = []
         for order_data in orders_by_status:
-            if order_data.get('restaurant') == restaurant_name:
-                restaurant_orders.append(Order(**order_data))
+            RestaurantOwnerService._append_paid_restaurant_order(order_data, restaurant_key, restaurant_orders)
         return restaurant_orders
 
     @staticmethod
     async def get_restaurant_orders_by_date_range(restaurant_id: int, username: str, start_time: int, end_time: int) -> list:
-        user = await UserRepo.get_by_username(username)
-        if not user:
-            raise ValueError('User not found')
-        user_role = get_role_value(user)
-        user_restaurant_id = user.get('restaurant_id')
-        is_owner = user_role == UserRole.RESTAURANT_OWNER.value and user_restaurant_id == restaurant_id
-        is_staff = user_role == UserRole.RESTAURANT_STAFF.value and user_restaurant_id == restaurant_id
-        if not (is_owner or is_staff):
-            raise ValueError("User does not have permission to view this restaurant's orders")
-        restaurants = await RestaurantRepo.read_all()
-        restaurant_name = None
-        for restaurant in restaurants:
-            if restaurant.get('id') == restaurant_id:
-                restaurant_name = restaurant.get('name')
-                break
-        if not restaurant_name:
-            raise ValueError('Restaurant not found')
+        restaurant_key = await RestaurantOwnerService._assert_staff_or_owner(restaurant_id, username)
         orders_by_date = await OrderRepo.get_orders_by_date_range(start_time, end_time)
         restaurant_orders = []
         for order_data in orders_by_date:
-            if order_data.get('restaurant') == restaurant_name:
-                restaurant_orders.append(Order(**order_data))
+            RestaurantOwnerService._append_paid_restaurant_order(order_data, restaurant_key, restaurant_orders)
         return restaurant_orders
 
     @staticmethod
     async def get_restaurant_orders_by_status_and_date(restaurant_id: int, username: str, status: str, start_time: int, end_time: int) -> list:
-        user = await UserRepo.get_by_username(username)
-        if not user:
-            raise ValueError('User not found')
-        user_role = get_role_value(user)
-        user_restaurant_id = user.get('restaurant_id')
-        is_owner = user_role == UserRole.RESTAURANT_OWNER.value and user_restaurant_id == restaurant_id
-        is_staff = user_role == UserRole.RESTAURANT_STAFF.value and user_restaurant_id == restaurant_id
-        if not (is_owner or is_staff):
-            raise ValueError("User does not have permission to view this restaurant's orders")
-        restaurants = await RestaurantRepo.read_all()
-        restaurant_name = None
-        for restaurant in restaurants:
-            if restaurant.get('id') == restaurant_id:
-                restaurant_name = restaurant.get('name')
-                break
-        if not restaurant_name:
-            raise ValueError('Restaurant not found')
+        restaurant_key = await RestaurantOwnerService._assert_staff_or_owner(restaurant_id, username)
         orders_filtered = await OrderRepo.get_orders_by_status_and_date(status, start_time, end_time)
         restaurant_orders = []
         for order_data in orders_filtered:
-            if order_data.get('restaurant') == restaurant_name:
-                restaurant_orders.append(Order(**order_data))
+            RestaurantOwnerService._append_paid_restaurant_order(order_data, restaurant_key, restaurant_orders)
         return restaurant_orders
