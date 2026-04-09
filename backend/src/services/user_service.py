@@ -1,6 +1,6 @@
 import random
 from datetime import datetime, timedelta, timezone
-from src.schemas.user_schema import UserRegister, UserRole, UserUpdate
+from src.schemas.user_schema import UserRegister, UserRole, UserUpdate, AddressAdd
 from src.repositories.user_repo import UserRepo
 from src.models.user_model import UserInternal
 from passlib.context import CryptContext
@@ -193,17 +193,22 @@ class UserService:
         return True
 
     @staticmethod
-    async def add_address(username: str, address: str) -> dict:
+    async def add_address(username: str, address_in: AddressAdd) -> dict:
         user = await UserRepo.get_by_username(username)
         if not user:
             raise ValueError("User not found")
 
         addresses = user.get("saved_addresses", [])
-        if address not in addresses:
-            addresses.append(address)
+        if address_in.address not in addresses:
+            addresses.append(address_in.address)
+
+        locations = user.get("location", [])
+        new_loc = [address_in.longitude, address_in.latitude]
+        if new_loc not in locations:
+            locations.append(new_loc)
 
         updated_user = await UserRepo.update_by_username(
-            username, {"saved_addresses": addresses}
+            username, {"saved_addresses": addresses, "location": locations}
         )
         if not updated_user:
             raise ValueError("User not found")
@@ -211,9 +216,20 @@ class UserService:
         return UserInternal.model_validate(updated_user)
 
     @staticmethod
-    async def get_addresses(username: str) -> list[str]:
+    async def get_addresses(username: str) -> list[AddressAdd]:
         user = await UserRepo.get_by_username(username)
         if not user:
             raise ValueError("User not found")
 
-        return user.get("saved_addresses", [])
+        saved_addresses = user.get("saved_addresses", [])
+        locations = user.get("location", [])
+
+        result = []
+        for i, address in enumerate(saved_addresses):
+            lat = 0.0
+            lon = 0.0
+            if i < len(locations) and len(locations[i]) >= 2:
+                lon, lat = locations[i]
+            result.append(AddressAdd(address=address, latitude=lat, longitude=lon))
+
+        return result
