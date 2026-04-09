@@ -103,17 +103,24 @@ export function RestaurantWorkspaceProvider({ children }) {
     };
   }, [user?.username, user?.role, user?.requires2FA, bootstrapping, isWorkspaceRole, resetWorkspace]);
 
-  const selectRestaurant = useCallback((restaurant) => {
+  const selectRestaurant = useCallback(async (restaurant) => {
     if (!user?.username || !restaurant?.restaurant_id) return;
     const id = Number(restaurant.restaurant_id);
     if (!Number.isInteger(id) || id <= 0) return;
     const label = buildRestaurantDisplayLabel(restaurant);
     const cuisine = restaurant?.cuisine != null ? String(restaurant.cuisine) : "";
-    writeLinkedRestaurant(user.username, { restaurantId: id, label, cuisine });
-    setLinked({ id, label, cuisine });
-    setStatus("ready");
-    setPickerOpen(false);
-    setError("");
+
+    try {
+      await api.restaurantAdministration.switchVenue(id);
+      writeLinkedRestaurant(user.username, { restaurantId: id, label, cuisine });
+      setLinked({ id, label, cuisine });
+      setStatus("ready");
+      setPickerOpen(false);
+      setError("");
+    } catch (err) {
+      console.error("Failed to switch venue: ", err);
+      setError(err?.message || "Failed to switch venue.");
+    }
   }, [user?.username]);
 
   const openPicker = useCallback(() => {

@@ -27,6 +27,24 @@ async def assign_staff(body: StaffAssignmentRequest):
         raise convert_service_error(err)
 
 
+@router.patch(
+    "/restaurants/{restaurant_id}/venue",
+    response_model=UserResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def switch_venue(restaurant_id: int):
+    username = UserService.get_current_user()
+    if not username:
+        raise convert_service_error(ValueError("No user currently logged in"))
+    try:
+        updated_user = await RestaurantOwnerService.switch_venue(
+            username, restaurant_id
+        )
+        return updated_user
+    except ValueError as err:
+        raise convert_service_error(err)
+
+
 @router.get(
     "/restaurants/{restaurant_id}/orders",
     response_model=list[Order],

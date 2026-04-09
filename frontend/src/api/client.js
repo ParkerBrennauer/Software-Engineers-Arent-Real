@@ -131,6 +131,7 @@ export const api = {
   },
   restaurantAdministration: {
     assignStaff: (staff_username) => request("/restaurant_administration/staff", { method: "POST", body: JSON.stringify({ staff_username }) }),
+    switchVenue: (restaurantId) => request(`/restaurant_administration/restaurants/${restaurantId}/venue`, { method: "PATCH" }),
     orders: (restaurantId) => request(`/restaurant_administration/restaurants/${restaurantId}/orders`),
     ordersByStatus: (restaurantId, order_status) =>
       request(`/restaurant_administration/restaurants/${restaurantId}/orders/filter/status?order_status=${encodeURIComponent(order_status)}`),
