@@ -1,4 +1,5 @@
 import json
+import re
 from typing import Any
 import aiofiles
 from src.core.config import REVIEWS_FILE, RESTAURANTS_FILE, REPORTS_FILE
@@ -90,6 +91,20 @@ class RatingRepo:
         for restaurant_id, restaurant_data in restaurants.items():
             if order_id in restaurant_data.get('order_ids', []):
                 return int(restaurant_id)
+        order = await OrderRepo.get_by_id(order_id)
+        if order is None:
+            return None
+        explicit_restaurant_id = order.get("restaurant_id")
+        if explicit_restaurant_id is not None:
+            try:
+                return int(explicit_restaurant_id)
+            except (TypeError, ValueError):
+                pass
+        restaurant_label = order.get("restaurant")
+        if isinstance(restaurant_label, str):
+            match = re.search(r"(\d+)", restaurant_label)
+            if match:
+                return int(match.group(1))
         return None
 
     @classmethod
