@@ -1,5 +1,5 @@
 from fastapi import APIRouter, status
-from src.schemas.order_schema import OrderCreate, OrderUpdate
+from src.schemas.order_schema import OrderCreate, OrderUpdate, Order, PaymentAttemptRequest
 from src.schemas.order_tracking_schema import (
     OrderTrackingResponse,
     OrderTrackingStatusUpdate,
@@ -24,6 +24,21 @@ async def place_order(order: OrderCreate):
     try:
         order.customer = current_user
         return await OrderService.create_order(order)
+    except ValueError as err:
+        raise convert_service_error(err)
+
+
+@router.post(
+    "/{order_id}/pay",
+    response_model=Order,
+    status_code=status.HTTP_200_OK,
+)
+async def pay_order(order_id: str, body: PaymentAttemptRequest = PaymentAttemptRequest()):
+    current_user = UserService.get_current_user()
+    if not current_user:
+        raise convert_service_error(ValueError("No user currently logged in"))
+    try:
+        return await OrderService.pay_order(order_id, current_user, simulate=body.simulate)
     except ValueError as err:
         raise convert_service_error(err)
 

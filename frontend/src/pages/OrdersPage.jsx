@@ -41,6 +41,8 @@ export default function OrdersPage() {
   const [tipPercentInput, setTipPercentInput] = useState("15");
   const [tipFixedInput, setTipFixedInput] = useState("");
   const [tipSuccess, setTipSuccess] = useState(null);
+  const [paymentSimulate, setPaymentSimulate] = useState("auto");
+  const [autoRefreshStatus, setAutoRefreshStatus] = useState(false);
 
   useEffect(() => {
     if (resolvedRole === "driver" && user?.username) {
@@ -51,6 +53,22 @@ export default function OrdersPage() {
   useEffect(() => {
     setTipSuccess(null);
   }, [orderId]);
+
+  useEffect(() => {
+    if (!autoRefreshStatus || resolvedRole !== "customer") return undefined;
+    const valid = normalizedOrderId();
+    if (!valid) return undefined;
+    const id = window.setInterval(() => {
+      api.orders
+        .get(valid)
+        .then((data) => {
+          setResult(data);
+          setError("");
+        })
+        .catch((err) => setError(err.message));
+    }, 30000);
+    return () => window.clearInterval(id);
+  }, [autoRefreshStatus, orderId, resolvedRole]);
 
   async function run(call) {
     setBusy(true);
@@ -232,6 +250,35 @@ export default function OrdersPage() {
               Look up an order by number. Some actions may not be available depending on order status.
             </p>
             <OrderIdFields orderId={orderId} setOrderId={setOrderId} disabled={busy} idPrefix="customer" />
+            <div className="row payment-sim-row">
+              <label className="field payment-sim-field">
+                <span>Simulated payment</span>
+                <select
+                  value={paymentSimulate}
+                  onChange={(e) => setPaymentSimulate(e.target.value)}
+                  disabled={busy}
+                  aria-label="Simulated payment outcome"
+                >
+                  <option value="auto">Normal (accept any 15–16 digit card)</option>
+                  <option value="accept">Force accept (same as normal)</option>
+                  <option value="reject">Force reject (testing only)</option>
+                </select>
+              </label>
+              <button
+                type="button"
+                disabled={busy || !orderId.trim()}
+                onClick={() => {
+                  const valid = requireOrderId();
+                  if (valid) run(() => api.orders.pay(valid, { simulate: paymentSimulate }));
+                }}
+              >
+                Pay for order
+              </button>
+            </div>
+            <p className="muted small-print">
+              Charges the card saved on your profile (15–16 digits). Normal mode always approves valid cards. Use “Force
+              reject” only to test a declined payment—then pay again on the same order if needed.
+            </p>
             <fieldset className="tip-fieldset" disabled={busy}>
               <legend className="tip-legend">Tip on this order</legend>
               <p className="muted small-print">
@@ -337,6 +384,17 @@ export default function OrdersPage() {
                 </div>
               </section>
             )}
+            <div className="row action-toolbar customer-order-tools">
+              <label className="checkbox-inline muted small-print">
+                <input
+                  type="checkbox"
+                  checked={autoRefreshStatus}
+                  onChange={(e) => setAutoRefreshStatus(e.target.checked)}
+                  disabled={busy}
+                />
+                Auto-refresh status every 30s
+              </label>
+            </div>
             <div className="row action-toolbar">
               <button
                 type="button"
@@ -378,6 +436,14 @@ export default function OrdersPage() {
               >
                 Refresh tracking
               </button>
+              <a
+                className="button-link"
+                href="https://www.openstreetmap.org/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Maps &amp; routing
+              </a>
               <button
                 type="button"
                 disabled={busy || !orderId.trim()}

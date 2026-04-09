@@ -22,7 +22,7 @@ async def test_cancel_order():
 
 @pytest.mark.asyncio
 async def test_get_restaurant_orders():
-    fake_orders = {'1': {'items': ['Spaghetti'], 'cost': 20.0, 'restaurant': "Trevor's pasta", 'customer': 'Joe', 'time': 20, 'cuisine': 'Italian', 'distance': 2.5}, '2': {'items': ['Burger'], 'cost': 15.0, 'restaurant': 'MD', 'customer': 'Mike', 'time': 15, 'cuisine': 'American', 'distance': 7.5}}
+    fake_orders = {'1': {'items': ['Spaghetti'], 'cost': 20.0, 'restaurant': "Trevor's pasta", 'customer': 'Joe', 'time': 20, 'cuisine': 'Italian', 'distance': 2.5, 'payment_status': 'accepted'}, '2': {'items': ['Burger'], 'cost': 15.0, 'restaurant': 'MD', 'customer': 'Mike', 'time': 15, 'cuisine': 'American', 'distance': 7.5, 'payment_status': 'accepted'}}
     with patch('src.repositories.order_repo.OrderRepo.get_all_orders', new_callable=AsyncMock) as mock_get:
         mock_get.return_value = fake_orders
         orders = await OrderService.get_restaurant_orders("Trevor's pasta")
@@ -30,7 +30,8 @@ async def test_get_restaurant_orders():
 
 @pytest.mark.asyncio
 async def test_mark_ready_for_pickup():
-    with patch('src.repositories.order_repo.OrderRepo.update_order', new_callable=AsyncMock) as mock_update:
+    with patch('src.repositories.order_repo.OrderRepo.get_order', new_callable=AsyncMock) as mock_get, patch('src.repositories.order_repo.OrderRepo.update_order', new_callable=AsyncMock) as mock_update:
+        mock_get.return_value = {'id': 123, 'payment_status': 'accepted', 'locked': False}
         mock_update.return_value = 'updated_order'
         result = await OrderService.mark_ready_for_pickup('123')
         assert result == 'updated_order'
@@ -49,7 +50,8 @@ async def test_report_restaurant_delay():
 
 @pytest.mark.asyncio
 async def test_assign_driver():
-    with patch('src.repositories.order_repo.OrderRepo.update_order', new_callable=AsyncMock) as mock_update:
+    with patch('src.repositories.order_repo.OrderRepo.get_order', new_callable=AsyncMock) as mock_get, patch('src.repositories.order_repo.OrderRepo.update_order', new_callable=AsyncMock) as mock_update:
+        mock_get.return_value = {'id': 123, 'payment_status': 'accepted', 'locked': False}
         mock_update.return_value = 'updated_order'
         result = await OrderService.assign_driver('123', 'driver1')
         assert result == 'updated_order'
@@ -66,7 +68,8 @@ async def test_get_driver_orders():
 
 @pytest.mark.asyncio
 async def test_pickup_order():
-    with patch('src.repositories.order_repo.OrderRepo.update_order', new_callable=AsyncMock) as mock_update:
+    with patch('src.repositories.order_repo.OrderRepo.get_order', new_callable=AsyncMock) as mock_get, patch('src.repositories.order_repo.OrderRepo.update_order', new_callable=AsyncMock) as mock_update:
+        mock_get.return_value = {'id': 123, 'payment_status': 'accepted', 'locked': False}
         mock_update.return_value = 'picked_up'
         result = await OrderService.pickup_order('123')
         mock_update.assert_called_once()
