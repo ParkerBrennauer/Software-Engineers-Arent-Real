@@ -5,17 +5,20 @@ from fastapi import status
 @pytest.mark.asyncio
 async def test_add_address_success(client, monkeypatch):
     username = "testuser"
-    payload = {"address": "123 Random Blvd"}
+    payload = {"address": "123 Random Blvd", "latitude": 49.0, "longitude": -119.0}
 
     def fake_get_current_user():
         return username
 
-    async def fake_add_address(_username: str, _address: str):
+    async def fake_add_address(_username: str, _address):
 
         class DummyUser:
             id = 1
             requires_2fa = False
             saved_addresses = ["123 Random Blvd"]
+            location = [[-119.0, 49.0]]
+            is_logged_in = False
+            last_login = None
 
         return DummyUser()
 
@@ -40,7 +43,7 @@ async def test_add_address_success(client, monkeypatch):
 @pytest.mark.asyncio
 async def test_add_address_user_not_found(client, monkeypatch):
     username = "unknown"
-    payload = {"address": "123 Random Blvd"}
+    payload = {"address": "123 Random Blvd", "latitude": 49.0, "longitude": -119.0}
 
     def fake_get_current_user():
         return None
@@ -56,10 +59,16 @@ async def test_add_address_user_not_found(client, monkeypatch):
     assert "No user currently logged in" in response.json()["detail"]
 
 
+from src.schemas.user_schema import AddressAdd
+
+
 @pytest.mark.asyncio
 async def test_get_addresses_success(client, monkeypatch):
     username = "testuser"
-    expected_addresses = ["123 Random Blvd", "456 Side St"]
+    expected_addresses = [
+        AddressAdd(address="123 Random Blvd", latitude=49.0, longitude=-119.0),
+        AddressAdd(address="456 Side St", latitude=49.1, longitude=-119.1),
+    ]
 
     def fake_get_current_user():
         return username
@@ -78,7 +87,9 @@ async def test_get_addresses_success(client, monkeypatch):
     response = client.get("/users/addresses")
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == expected_addresses
+    assert len(response.json()) == 2
+    assert response.json()[0]["address"] == "123 Random Blvd"
+    assert response.json()[0]["longitude"] == -119.0
 
 
 @pytest.mark.asyncio
