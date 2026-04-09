@@ -66,10 +66,16 @@ describe("Restaurant workspace (owner/staff)", () => {
       if (u.includes("/users/current-user")) {
         return Promise.resolve(jsonFetch(true, { username: "own2" }));
       }
+      if (u.includes("/restaurant_administration/restaurants/") && u.includes("/venue")) {
+        return Promise.resolve(jsonFetch(true, { message: "OK" }));
+      }
       if (u.includes("/restaurant_administration/restaurants/") && u.includes("/orders")) {
         return Promise.resolve(
           jsonFetch(false, { detail: "User does not have permission to view this restaurant's orders" }, 403)
         );
+      }
+      if (u.includes("/restaurant_administration/restaurants/") && u.includes("/venue")) {
+        return Promise.resolve(jsonFetch(true, { message: "OK" }));
       }
       if (u.includes("/restaurants") && !u.includes("/restaurants/")) {
         return Promise.resolve(jsonFetch(true, [{ restaurant_id: 8, cuisine: "pizza", avg_ratings: 4.5 }]));
