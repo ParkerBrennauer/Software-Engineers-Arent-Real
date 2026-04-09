@@ -53,7 +53,7 @@ export const api = {
     verify2FA: (code) => request("/users/2fa/verify", { method: "POST", body: JSON.stringify({ code }) }),
     resetPassword: (username, payload) =>
       request(`/users/${encodeURIComponent(username)}/reset-password`, { method: "POST", body: JSON.stringify(payload) }),
-    addAddress: (address) => request("/users/addresses", { method: "POST", body: JSON.stringify({ address }) }),
+    addAddress: (address, latitude, longitude) => request("/users/addresses", { method: "POST", body: JSON.stringify({ address, latitude, longitude }) }),
     getAddresses: () => request("/users/addresses"),
   },
   restaurants: {
