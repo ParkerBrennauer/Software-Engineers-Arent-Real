@@ -169,17 +169,19 @@ export default function FavouritesPage() {
                         </p>
                         <p className="muted small-print">Saved from {restaurantName(restaurant)}</p>
                       </div>
-                      <button
-                        type="button"
-                        className="menu-item-card__add"
-                        onClick={() => {
-                          const result = addItem(item);
-                          if (!result?.ok) setCartMessage(result?.message || "Unable to add item to cart.");
-                          else setCartMessage("");
-                        }}
-                      >
-                        Add to cart
-                      </button>
+                      {isCustomerSignedIn && (
+                        <button
+                          type="button"
+                          className="menu-item-card__add"
+                          onClick={() => {
+                            const result = addItem(item);
+                            if (!result?.ok) setCartMessage(result?.message || "Unable to add item to cart.");
+                            else setCartMessage("");
+                          }}
+                        >
+                          Add to cart
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>
