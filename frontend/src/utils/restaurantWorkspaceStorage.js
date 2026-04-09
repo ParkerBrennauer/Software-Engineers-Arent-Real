@@ -1,6 +1,7 @@
 /**
  * Per-username persisted venue choice for owner/staff workflows.
- * Backend does not expose owner→restaurant on public user endpoints; this is client-only.
+ * The backend omits role and restaurant_id on `/users/login` and `/users/current-user`, so the app
+ * may auto-detect venue via administration order checks, then caches the choice here for refresh-safe UX.
  */
 const STORAGE_KEY = "frontend-restaurant-workspace-by-user-v1";
 

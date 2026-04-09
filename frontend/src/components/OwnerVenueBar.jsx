@@ -10,6 +10,7 @@ export default function OwnerVenueBar() {
     isWorkspaceRole,
     linkedRestaurant,
     status,
+    error,
     pickerOpen,
     openPicker,
     closePicker,
@@ -32,6 +33,11 @@ export default function OwnerVenueBar() {
       />
       <div className="owner-venue-bar" data-testid="owner-venue-bar" role="region" aria-label="Your venue">
         {status === "loading" && <p className="owner-venue-bar__line muted">Loading your workspace…</p>}
+        {status === "resolving" && (
+          <p className="owner-venue-bar__line muted" data-testid="owner-venue-resolving">
+            Connecting your account to your venue…
+          </p>
+        )}
         {status === "ready" && linkedRestaurant && (
           <div className="owner-venue-bar__inner">
             <span className="owner-venue-bar__chip" title={linkedRestaurant.label}>
@@ -44,6 +50,7 @@ export default function OwnerVenueBar() {
         )}
         {showBanner && (
           <div className="owner-venue-bar__banner" role="status">
+            {error ? <p className="owner-venue-bar__hint muted">{error}</p> : null}
             <p>
               <strong>Choose your venue</strong> to use kitchen tools and reports without re-entering a venue number.
             </p>

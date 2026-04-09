@@ -1,5 +1,8 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useAuth } from "./AuthContext";
+import { api } from "../api/client";
+import { normalizeApiArray } from "../utils/normalizeApiArray";
+import { resolveVenueViaAdminOrdersProbe } from "../utils/ownerVenueResolution";
 import {
   clearLinkedRestaurant,
   readLinkedRestaurant,
@@ -45,9 +48,11 @@ export function RestaurantWorkspaceProvider({ children }) {
       return;
     }
 
-    setError("");
+    let cancelled = false;
+
     const cached = readLinkedRestaurant(user.username);
     if (cached) {
+      setError("");
       setLinked({
         id: cached.restaurantId,
         label: cached.label,
@@ -55,11 +60,47 @@ export function RestaurantWorkspaceProvider({ children }) {
       });
       setStatus("ready");
       setPickerOpen(false);
-      return;
+      return undefined;
     }
+
     setLinked(null);
-    setStatus("needs_selection");
-    setPickerOpen(true);
+    setError("");
+    setStatus("resolving");
+    setPickerOpen(false);
+
+    (async () => {
+      try {
+        const data = await api.restaurants.getAll();
+        if (cancelled) return;
+        const list = normalizeApiArray(data).filter((r) => r?.restaurant_id != null);
+        const found = await resolveVenueViaAdminOrdersProbe(list);
+        if (cancelled) return;
+        if (found?.restaurant_id != null) {
+          const id = Number(found.restaurant_id);
+          if (Number.isInteger(id) && id > 0) {
+            const label = buildRestaurantDisplayLabel(found);
+            const cuisine = found?.cuisine != null ? String(found.cuisine) : "";
+            writeLinkedRestaurant(user.username, { restaurantId: id, label, cuisine });
+            setLinked({ id, label, cuisine });
+            setStatus("ready");
+            setPickerOpen(false);
+            setError("");
+            return;
+          }
+        }
+        setStatus("needs_selection");
+        setPickerOpen(true);
+      } catch {
+        if (cancelled) return;
+        setStatus("needs_selection");
+        setPickerOpen(true);
+        setError("We could not detect your venue automatically. Please choose it once below.");
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [user?.username, user?.role, user?.requires2FA, bootstrapping, isWorkspaceRole, resetWorkspace]);
 
   const selectRestaurant = useCallback((restaurant) => {
@@ -98,7 +139,7 @@ export function RestaurantWorkspaceProvider({ children }) {
     () => ({
       isWorkspaceRole,
       linkedRestaurant: linked,
-      /** idle | loading | ready | needs_selection */
+      /** idle | loading | resolving | ready | needs_selection */
       status: resolvedStatus,
       error,
       pickerOpen,

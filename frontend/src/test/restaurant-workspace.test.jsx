@@ -66,6 +66,11 @@ describe("Restaurant workspace (owner/staff)", () => {
       if (u.includes("/users/current-user")) {
         return Promise.resolve(jsonFetch(true, { username: "own2" }));
       }
+      if (u.includes("/restaurant_administration/restaurants/") && u.includes("/orders")) {
+        return Promise.resolve(
+          jsonFetch(false, { detail: "User does not have permission to view this restaurant's orders" }, 403)
+        );
+      }
       if (u.includes("/restaurants") && !u.includes("/restaurants/")) {
         return Promise.resolve(jsonFetch(true, [{ restaurant_id: 8, cuisine: "pizza", avg_ratings: 4.5 }]));
       }
@@ -78,5 +83,35 @@ describe("Restaurant workspace (owner/staff)", () => {
     await waitFor(() => expect(screen.getByText(/Current venue:/i)).toBeInTheDocument());
     const stored = JSON.parse(localStorage.getItem("frontend-restaurant-workspace-by-user-v1"));
     expect(stored.own2.restaurantId).toBe(8);
+  });
+
+  it("auto-links owner when administration orders allows their venue", async () => {
+    localStorage.setItem(
+      "frontend-auth-user",
+      JSON.stringify({ username: "own3", role: "owner", id: 4, requires2FA: false })
+    );
+    fetch.mockImplementation((url) => {
+      const u = String(url);
+      if (u.includes("/users/current-user")) {
+        return Promise.resolve(jsonFetch(true, { username: "own3" }));
+      }
+      if (u.includes("/restaurant_administration/restaurants/12/orders")) {
+        return Promise.resolve(jsonFetch(true, []));
+      }
+      if (u.includes("/restaurant_administration/restaurants/") && u.includes("/orders")) {
+        return Promise.resolve(
+          jsonFetch(false, { detail: "User does not have permission to view this restaurant's orders" }, 403)
+        );
+      }
+      if (u.includes("/restaurants") && !u.includes("/restaurants/")) {
+        return Promise.resolve(jsonFetch(true, [{ restaurant_id: 12, cuisine: "Thai", avg_ratings: 4.2 }]));
+      }
+      return Promise.resolve(jsonFetch(true, {}));
+    });
+    wrap(createElement(OwnerVenueBar));
+    await waitFor(() => expect(screen.getByText(/Current venue:/i)).toBeInTheDocument());
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    const stored = JSON.parse(localStorage.getItem("frontend-restaurant-workspace-by-user-v1"));
+    expect(stored.own3.restaurantId).toBe(12);
   });
 });

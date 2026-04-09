@@ -45,7 +45,7 @@ export default function OperationsPage() {
 
   const ownerLinkedReady =
     mayUseOperations &&
-    user?.role === "owner" &&
+    (user?.role === "owner" || user?.role === "staff") &&
     workspaceStatus === "ready" &&
     linkedRestaurant?.id != null;
 
@@ -59,7 +59,7 @@ export default function OperationsPage() {
       <section className="card operations-access">
         <h1 className="page-title">Business tools</h1>
         <div className="access-restricted-notice" role="status">
-          <p>This area is for restaurant owners. Sign in with an owner account to continue.</p>
+          <p>This area is for restaurant owners and team accounts. Sign in with an owner or staff account to continue.</p>
         </div>
       </section>
     );

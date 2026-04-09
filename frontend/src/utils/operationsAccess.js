@@ -1,5 +1,5 @@
 /** Roles that may use restaurant administration tooling in Operations. */
-const OPERATIONS_CONTENT_ROLES = new Set(["owner", "admin"]);
+const OPERATIONS_CONTENT_ROLES = new Set(["owner", "staff", "admin"]);
 
 /**
  * @param {unknown} role

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { api } from "../api/client";
+import { writeRoleHint } from "../utils/authRoleHintStorage";
 
 export default function RegisterPage() {
   const [form, setForm] = useState({
@@ -33,6 +34,7 @@ export default function RegisterPage() {
       }
       else if (form.role === "driver") await api.users.registerDriver(payload);
       else await api.users.register(payload);
+      writeRoleHint(form.username.trim(), form.role);
       setMessage("Account created. You can now log in.");
     } catch (err) {
       setError(err.message);

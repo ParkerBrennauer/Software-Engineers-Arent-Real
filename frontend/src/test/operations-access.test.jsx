@@ -53,7 +53,7 @@ function wrapOperationsRouteOnly(initialEntry) {
   );
 }
 
-const restricted = /for restaurant owners/i;
+const restricted = /restaurant owners and team accounts/i;
 
 describe("canViewOperationsContent", () => {
   it("allows owner and admin (case-insensitive)", () => {
@@ -63,9 +63,9 @@ describe("canViewOperationsContent", () => {
     expect(canViewOperationsContent("Admin")).toBe(true);
   });
 
-  it("denies customer, staff, driver, and unknown strings", () => {
+  it("denies customer, driver, and unknown strings; allows staff", () => {
     expect(canViewOperationsContent("customer")).toBe(false);
-    expect(canViewOperationsContent("staff")).toBe(false);
+    expect(canViewOperationsContent("staff")).toBe(true);
     expect(canViewOperationsContent("driver")).toBe(false);
     expect(canViewOperationsContent("superuser")).toBe(false);
   });
@@ -125,11 +125,28 @@ describe("Operations access UI", () => {
     expect(screen.queryByRole("heading", { name: /Business tools/i })).not.toBeInTheDocument();
   });
 
-  it("treats staff and drivers as unauthorized for operations content", async () => {
+  it("lets staff see operations controls when a venue is linked", async () => {
     fetch.mockResolvedValue(jsonFetch(true, { username: "staffer" }));
     localStorage.setItem(
       "frontend-auth-user",
       JSON.stringify({ username: "staffer", role: "staff", id: 3, requires2FA: false })
+    );
+    localStorage.setItem(
+      "frontend-restaurant-workspace-by-user-v1",
+      JSON.stringify({
+        staffer: { restaurantId: 2, label: "Restaurant 2", cuisine: "" },
+      })
+    );
+    wrapOperationsRouteOnly("/operations");
+    expect(await screen.findByRole("button", { name: /^All orders$/ })).toBeInTheDocument();
+    expect(screen.queryByText(restricted)).not.toBeInTheDocument();
+  });
+
+  it("treats drivers as unauthorized for operations content", async () => {
+    fetch.mockResolvedValue(jsonFetch(true, { username: "driver1" }));
+    localStorage.setItem(
+      "frontend-auth-user",
+      JSON.stringify({ username: "driver1", role: "driver", id: 31, requires2FA: false })
     );
     wrapOperationsRouteOnly("/operations");
     expect(await screen.findByText(restricted)).toBeInTheDocument();
